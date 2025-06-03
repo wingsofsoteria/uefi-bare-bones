@@ -1,0 +1,6 @@
+OVMF_CODE.4m.fd
+.vs
+.vscode
+gdt.c
+gdt.s
+fs.dmp
