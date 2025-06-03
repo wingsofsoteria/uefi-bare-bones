@@ -4,3 +4,9 @@ OVMF_CODE.4m.fd
 gdt.c
 gdt.s
 fs.dmp
+*.o
+bootloader
+loader/uefi/*.o
+loader/uefi/*.a
+fat.img
+test.elf
