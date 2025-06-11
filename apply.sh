@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-make clean
 make
 if ! test -b /dev/sda1; then
     echo "using fat.img"
@@ -21,9 +20,11 @@ if ! test -b /dev/sda1; then
     sudo mkfs.fat -F32 /dev/loop100p1
     sudo mount /dev/loop100p1 /mnt
     echo "adding files to fat.img"
-    sudo mkdir -p /mnt/EFI/BOOT
-    sudo cp bootloader/bootx64.efi /mnt/EFI/BOOT
+    sudo mkdir -p /mnt/efi/boot
+    sudo cp bootloader/bootx64.efi /mnt/efi/boot
+	sudo cp kernel/kernel /mnt/
     sudo cp test.elf /mnt/
+	sudo cp loader/config.txt /mnt/efi/boot
     sudo umount /mnt
     sudo losetup -d /dev/loop100
 else
@@ -31,6 +32,7 @@ else
     sudo mount /dev/sda1 /mnt
     sudo mkdir -p /mnt/EFI/BOOT
     sudo cp bootloader/bootx64.efi /mnt/EFI/BOOT
+	sudo cp kernel/kernel /mnt/
     sudo cp test.elf /mnt/
     sudo umount /mnt
 fi

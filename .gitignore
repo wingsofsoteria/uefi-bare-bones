@@ -10,3 +10,4 @@ loader/uefi/*.o
 loader/uefi/*.a
 fat.img
 test.elf
+loader.old
