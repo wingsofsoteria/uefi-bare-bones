@@ -1,0 +1,15 @@
+Since last commit:
+	added compile_commands and .clang-format
+	Fixed apply.sh to correctly use QEMU_DEBUG flag ONLY when running on qemu (wildly sending bytes to a theoretical serial port is NOT a good idea)
+	Manually specified qemu ram size (it was causing a weird issue with allocations)
+	Switched back to custom elf loader using posix uefi
+		Previous issues with kernel not loading were due to not specifying SYSV_ABI for the entry point
+		The loader from the previous commit had issues with executables that were linked from more than one object file (probably due to the old kernel CFLAGS(see below))
+	Changed kernel CFLAGS to include -fpie, -fpic, and --static and removed -mcmodel=large
+		-mcmodel=large causes the kernel to require relocations and I have not added those to the loader
+		-fpic and -fpie make the kernel easier to load into memory
+		--static removes dynamic headers, making the loader simpler since I don't need to do ANY relocations (so far)
+	Using AllocatePool instead of AllocatePages to test an error with program headers not getting moved to the correct memory addresses
+	Added proper test loader and program
+		the test loader should be as identical as possible to the actual loader
+			only difference being mmap calls that I can't use in UEFI and stack arrays in the test loader vs heap arrays in the actual loader

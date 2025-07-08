@@ -1,14 +1,12 @@
 CC=clang
 CFLAGS=-I. -ffreestanding -fshort-wchar -mno-red-zone -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fPIC
 LDFLAGS=-nostdlib -fpie --static
-ifneq ($(QEMU_DEBUG),)
-CFLAGS += -DQEMU_DEBUG
-endif
-all: kernel
+all: test loader
 %.o: %.c
 	$(CC) -c $^ -o $@ $(CFLAGS)
-kernel: kernel.o qemu.o pixel.o
+test: test.o lib.o
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
-
+loader:
+	$(CC) -g -o loader loader.c
 clean: 
-	rm -f $(wildcard *.o) kernel
+	rm -f $(wildcard *.o) test loader

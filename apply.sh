@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-make
 if ! test -b /dev/sda1; then
+	QEMU_DEBUG=1 make
     echo "using fat.img"
     if ! test -f fat.img; then
         echo "creating fat.img"
@@ -21,18 +21,17 @@ if ! test -b /dev/sda1; then
     sudo mount /dev/loop100p1 /mnt
     echo "adding files to fat.img"
     sudo mkdir -p /mnt/efi/boot
-    sudo cp bootloader/bootx64.efi /mnt/efi/boot
+    sudo cp loader/bootx64.efi /mnt/efi/boot
 	sudo cp kernel/kernel /mnt/
-    sudo cp test.elf /mnt/
-	sudo cp loader/config.txt /mnt/efi/boot
+	tree /mnt
     sudo umount /mnt
     sudo losetup -d /dev/loop100
 else
+	make
     echo "using disk"
     sudo mount /dev/sda1 /mnt
     sudo mkdir -p /mnt/EFI/BOOT
-    sudo cp bootloader/bootx64.efi /mnt/EFI/BOOT
+    sudo cp loader/bootx64.efi /mnt/EFI/BOOT
 	sudo cp kernel/kernel /mnt/
-    sudo cp test.elf /mnt/
     sudo umount /mnt
 fi

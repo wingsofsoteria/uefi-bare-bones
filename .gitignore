@@ -5,9 +5,14 @@ gdt.c
 gdt.s
 fs.dmp
 *.o
-bootloader
 loader/uefi/*.o
 loader/uefi/*.a
+loader/bootx64.efi
+kernel/kernel
 fat.img
 test.elf
 loader.old
+.cache
+test/loader
+test/test
+
