@@ -2,6 +2,8 @@ Since last commit:
 	added compile_commands and .clang-format
 	Fixed apply.sh to correctly use QEMU_DEBUG flag ONLY when running on qemu (wildly sending bytes to a theoretical serial port is NOT a good idea)
 	Manually specified qemu ram size (it was causing a weird issue with allocations)
+		trying to store a large array on the stack causes the entire emulator to crash regardless of ram size
+		malloc calls also crashed with anything less than 2G ram
 	Switched back to custom elf loader using posix uefi
 		Previous issues with kernel not loading were due to not specifying SYSV_ABI for the entry point
 		The loader from the previous commit had issues with executables that were linked from more than one object file (probably due to the old kernel CFLAGS(see below))
