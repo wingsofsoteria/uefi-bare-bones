@@ -1,4 +1,13 @@
-Since last commit:
+Current:
+	changed clang format
+	made clang format ignore posix-uefi
+	created basic libc + printf
+	passed uefi memory map to kernel
+	refactored code
+	added crt{i,n}.s
+	removed posix-uefi from repository
+
+993ffe8:
 	added compile_commands and .clang-format
 	Fixed apply.sh to correctly use QEMU_DEBUG flag ONLY when running on qemu (wildly sending bytes to a theoretical serial port is NOT a good idea)
 	Manually specified qemu ram size (it was causing a weird issue with allocations)

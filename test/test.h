@@ -1,3 +1,4 @@
+// clang-format Language: C
 #ifndef __SOTERIA_TEST_H__
 #define __SOTERIA_TEST_H__
 

@@ -23,6 +23,7 @@ if ! test -b /dev/sda1; then
     sudo mkdir -p /mnt/efi/boot
     sudo cp loader/bootx64.efi /mnt/efi/boot
 	sudo cp kernel/kernel /mnt/
+	sudo cp initfs /mnt/
 	tree /mnt
     sudo umount /mnt
     sudo losetup -d /dev/loop100
@@ -33,5 +34,6 @@ else
     sudo mkdir -p /mnt/EFI/BOOT
     sudo cp loader/bootx64.efi /mnt/EFI/BOOT
 	sudo cp kernel/kernel /mnt/
+	sudo cp initfs /mnt/
     sudo umount /mnt
 fi

@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-I. -ffreestanding -fshort-wchar -mno-red-zone -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fPIC
+CFLAGS=-I. -ffreestanding -g -fshort-wchar -mno-red-zone -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fPIC
 LDFLAGS=-nostdlib -fpie --static
 all: test loader
 %.o: %.c

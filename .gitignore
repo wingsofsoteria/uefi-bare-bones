@@ -5,8 +5,7 @@ gdt.c
 gdt.s
 fs.dmp
 *.o
-loader/uefi/*.o
-loader/uefi/*.a
+*.a
 loader/bootx64.efi
 kernel/kernel
 fat.img
@@ -15,4 +14,8 @@ loader.old
 .cache
 test/loader
 test/test
+font
 
+gen_font.c
+scratch.c
+a.out
