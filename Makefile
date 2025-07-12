@@ -8,11 +8,11 @@ all: $(EXEC) test
 .PHONY: kernel test libc
 
 $(EXEC): kernel initfs
-	USE_GCC=1 make -C loader
+	make -C loader
 libc:
 	make -C libc
 kernel: libc
-	make -C kernel
+	QEMU_DEBUG=1 make -C kernel
 initfs: font
 	echo font | cpio -o > initfs
 font:

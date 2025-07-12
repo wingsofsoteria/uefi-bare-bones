@@ -1,93 +1,20 @@
 #include "uefi/uefi.h"
+#include "bootinfo.h"
+#include "elf.h"
+#include <stdint.h>
+#include <stdbool.h>
 
-typedef uint16_t Elf64_Half;
-typedef uint32_t Elf64_Word;
-typedef int32_t Elf64_Sword;
-typedef uint64_t Elf64_Xword;
-typedef int64_t Elf64_Sxword;
-typedef uint64_t Elf64_Addr;
-typedef uint64_t Elf64_Off;
-typedef uint16_t Elf64_Section;
-typedef Elf64_Half Elf64_Versym;
-
-#define EI_NIDENT (16)
-#define EI_MAG0   0
-#define EI_MAG1   1
-#define EI_MAG2   2
-#define EI_MAG3   3
-#define PT_LOAD   1
-
-typedef struct
-{
-  unsigned char e_ident[EI_NIDENT];
-  Elf64_Half e_type;
-  Elf64_Half e_machine;
-  Elf64_Word e_version;
-  Elf64_Addr e_entry;
-  Elf64_Off e_phoff;
-  Elf64_Off e_shoff;
-  Elf64_Word e_flags;
-  Elf64_Half e_ehsize;
-  Elf64_Half e_phentsize;
-  Elf64_Half e_phnum;
-  Elf64_Half e_shentsize;
-  Elf64_Half e_shnum;
-  Elf64_Half e_shstrndx;
-} Elf64_Ehdr;
-
-typedef struct
-{
-  Elf64_Word p_type;
-  Elf64_Word p_flags;
-  Elf64_Off p_offset;
-  Elf64_Addr p_vaddr;
-  Elf64_Addr p_paddr;
-  Elf64_Xword p_filesz;
-  Elf64_Xword p_memsz;
-  Elf64_Xword p_align;
-} Elf64_Phdr;
-
-typedef struct
-{
-  char magic[5];
-  uint64_t base;
-  uint64_t size;
-  uint32_t pitch;
-  uint32_t horizontal_resolution;
-  uint32_t vertical_resolution;
-  void* initfs;
-  int initfs_size;
-  efi_memory_descriptor_t* mmap;
-  uint64_t mmap_size;
-  uint64_t desc_size;
-} kernel_bootinfo_t;
-
-typedef struct
-{
-  uint16_t c_magic;
-  uint16_t c_dev;
-  uint16_t c_ino;
-  uint16_t c_mode;
-  uint16_t c_uid;
-  uint16_t c_gid;
-  uint16_t c_nlink;
-  uint16_t c_rdev;
-  uint16_t c_mtime[2];
-  uint16_t c_namesize;
-  uint16_t c_filesize[2];
-} cpio_header_t;
-
-int is_image_valid(Elf64_Ehdr* hdr)
+bool is_image_valid(Elf64_Ehdr* hdr)
 {
   if (hdr->e_ident[EI_MAG0] != 0x7F)
-    return 0;
+    return false;
   if (hdr->e_ident[EI_MAG1] != 0x45)
-    return 0;
+    return false;
   if (hdr->e_ident[EI_MAG2] != 0x4C)
-    return 0;
+    return false;
   if (hdr->e_ident[EI_MAG3] != 0x46)
-    return 0;
-  return 1;
+    return false;
+  return true;
 }
 
 void* load(char* buf, unsigned int size)
@@ -101,7 +28,7 @@ void* load(char* buf, unsigned int size)
   Elf64_Phdr* phdr = (Elf64_Phdr*)(buf + hdr->e_phoff);
   uint32_t align   = 4096;
   uint64_t addr;
-  uint64_t begin = 18446744073709551615;
+  uint64_t begin = 18446744073709551615U;
   for (uint16_t i = 0; i < hdr->e_phnum; i++)
   {
     Elf64_Phdr current = phdr[i];
@@ -143,9 +70,69 @@ void* load(char* buf, unsigned int size)
   }
   return entry_addr;
 }
-int
-main()
+
+void cls()
 {
+  efi_guid_t con_guid = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID;
+  simple_text_output_interface_t* con;
+  BS->LocateProtocol(&con_guid, NULL, (void**)&con);
+  con->ClearScreen(con);
+}
+
+int guid_equal(efi_guid_t a, efi_guid_t b)
+{
+  return a.Data1 == b.Data1 &&
+    a.Data2 == b.Data2 &&
+    a.Data3 == b.Data3 &&
+    a.Data4[0] == b.Data4[0] &&
+    a.Data4[1] == b.Data4[1] &&
+    a.Data4[2] == b.Data4[2] &&
+    a.Data4[3] == b.Data4[3] &&
+    a.Data4[4] == b.Data4[4] &&
+    a.Data4[5] == b.Data4[5] &&
+    a.Data4[6] == b.Data4[6] &&
+    a.Data4[7] == b.Data4[7];
+}
+
+void* get_configuration_table(efi_guid_t guid)
+{
+  for (int i = 0; i < ST->NumberOfTableEntries; i++)
+  {
+    efi_configuration_table_t table = ST->ConfigurationTable[i];
+    efi_guid_t table_guid           = table.VendorGuid;
+    if (guid_equal(table_guid, guid))
+    {
+      printf("found entry\n");
+      return table.VendorTable;
+    }
+  }
+  return NULL;
+}
+
+bool rsdp_checksum(acpi_rsdp_structure_t* rsdp)
+{
+  uint8_t* bytes = (uint8_t*)rsdp;
+  uint8_t sum    = 0;
+  int checksum_bytes;
+  if (rsdp->revision > 0)
+  {
+    printf("Revision was: %d, using XSDT checksum\n", rsdp->revision);
+    checksum_bytes = 36;
+  }
+  else
+  {
+    checksum_bytes = 20;
+  }
+  for (int i = 0; i < checksum_bytes; i++)
+  {
+    sum += bytes[i];
+  }
+  return sum == 0;
+}
+
+int main()
+{
+  efi_status_t status;
   __attribute__((sysv_abi)) int (*ptr)(kernel_bootinfo_t*);
   int kernel_size = 1048576 * 5;
   int initfs_size = 12288;
@@ -181,23 +168,48 @@ main()
   ptr = load(elf_buffer, kernel_size);
   free(elf_buffer);
   sleep(3);
-  efi_guid_t con_guid = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID;
-  simple_text_output_interface_t* con;
-  BS->LocateProtocol(&con_guid, NULL, (void**)&con);
-  con->ClearScreen(con);
+  cls();
   if (ptr == NULL)
   {
     printf("Got Null Entry Point\n");
+  }
+  printf("getting rsdp\n");
+  efi_guid_t acpi_guid     = ACPI_20_TABLE_GUID;
+  efi_guid_t fallback_guid = ACPI_TABLE_GUID;
+  void* acpi_table         = get_configuration_table(acpi_guid);
+  bool fallback            = false;
+  if (acpi_table == NULL)
+  {
+    acpi_table = get_configuration_table(fallback_guid);
+    if (acpi_table == NULL)
+    {
+      // TODO ACTUALLY HANDLE UNSUPPORTED SYSTEMS
+      printf("ACPI Unsupported\n");
+      return 1;
+    }
+    else
+    {
+      fallback = true;
+    }
   }
 
   printf("getting EFI gop\n");
   efi_guid_t gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
   efi_gop_t* gop;
-  efi_status_t status = BS->LocateProtocol(&gop_guid, NULL, (void**)&gop);
+  status = BS->LocateProtocol(&gop_guid, NULL, (void**)&gop);
   if (status != EFI_SUCCESS)
   {
     return 1;
   }
+
+  acpi_rsdp_structure_t* rsdp_structure = (acpi_rsdp_structure_t*)acpi_table;
+  printf("RSDP_STRUCTURE: %x, %d, %x, %d, %x\n", rsdp_structure->signature, rsdp_structure->checksum, rsdp_structure->oemid, rsdp_structure->revision, rsdp_structure->rsdt_address);
+  if (!strcmp(rsdp_structure->signature, "RSD PTR ") || !rsdp_checksum(rsdp_structure))
+  {
+    printf("Invalid RSDP\n");
+    for (;;);
+  }
+
   printf("filling out boot info\n");
   kernel_bootinfo_t bootinfo;
   memset(&bootinfo, 0, sizeof(bootinfo));
@@ -209,7 +221,17 @@ main()
   bootinfo.size                  = gop->Mode->FrameBufferSize;
   bootinfo.initfs                = initfs_buffer;
   bootinfo.initfs_size           = initfs_size;
-  printf("filled out boot info\n");
+  if (rsdp_structure->revision > 0)
+  {
+    bootinfo.xsdt_address = rsdp_structure->xsdt_address;
+    bootinfo.rsdt_address = 0;
+  }
+  else
+  {
+    bootinfo.xsdt_address = 0;
+    bootinfo.rsdt_address = rsdp_structure->rsdt_address;
+  }
+  printf("exiting boot services\n");
   status             = 0;
   uint64_t mmap_size = 0, desc_size = 0, cnt = 3, map_key = 0;
   uint32_t desc_version;
@@ -236,7 +258,7 @@ main()
 
   RT->SetVirtualAddressMap(mmap_size, desc_size, desc_version, memory_map);
 
-  bootinfo.mmap      = memory_map;
+  bootinfo.mmap      = (loader_memory_descriptor_t*)memory_map;
   bootinfo.mmap_size = mmap_size;
   bootinfo.desc_size = desc_size;
 

@@ -1,4 +1,5 @@
 TARGET = bootx64.efi
+CFLAGS = -I..
 include uefi/Makefile
 
 clean:

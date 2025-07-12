@@ -1,4 +1,5 @@
-#include <kernel.h>
+#include <qemu.h>
+#include <stdint.h>
 static inline void outb(uint16_t port, uint8_t val)
 {
   __asm__ volatile("outb %b0, %1"
@@ -36,7 +37,7 @@ void qemu_printn(unsigned long long int value, int base)
   {
     copy /= base; // THIS IS PROBABLY INEFFICIENT BUT IT WORKS FOR NOW
   };
-  char out[size + 1]; // TODO: GET PROPER SIZE
+  char out[size + 1];
   int i  = size;
   out[i] = 0;
 

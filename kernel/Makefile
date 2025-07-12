@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-Iinclude -ffreestanding -fshort-wchar -mno-red-zone -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fPIC -g
+CFLAGS=-Iinclude -I.. -ffreestanding -fshort-wchar -mno-red-zone -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fPIC -g
 CPPFLAGS=-mno-mmx -mno-sse -mno-sse2 -fPIC
 LDFLAGS=-nostdlib -fpie --static
 ifneq ($(QEMU_DEBUG),)
