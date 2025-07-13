@@ -1,4 +1,6 @@
+#include "cpio.h"
 #include "gdt.h"
+#include "graphics.h"
 #include "page.h"
 #include "qemu.h"
 #include <kernel.h>
@@ -16,6 +18,11 @@
 int _start(kernel_bootinfo_t* bootinfo)
 {
   qemu_printf("Kernel Start %d\n", -1);
+  if (sizeof(cpio_header_t) != 26)
+  {
+    qemu_printf("ERR: cpio header size is incorrect %d", sizeof(cpio_header_t));
+    for (;;);
+  }
   load_gdt();
   load_idt();
   if (bootinfo->mmap_size == 0)
@@ -34,18 +41,13 @@ int _start(kernel_bootinfo_t* bootinfo)
   }
   qemu_printf("Number of pages in memory map: %d\n", page_num);
   qemu_printf("Map Finished\n");
-  cpio_header_t* hdr = (cpio_header_t*)bootinfo->initfs;
-  if (hdr->c_magic != 0070707)
-  {
-    return 1;
-  }
-  int hdr_size = sizeof(cpio_header_t);
-  char* font   = (char*)(bootinfo->initfs) + hdr_size + hdr->c_namesize + 1;
-
+  qemu_printf("Starting Kernel\n");
+  init_cpio(bootinfo->initfs);
+  qemu_printf("Got magic value: %s\n", bootinfo->magic);
+  uint8_t* font = get_file();
+  next_header();
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution, bootinfo->vertical_resolution);
   init_text(font);
-  qemu_printf("Starting Kernel\n");
-  qemu_printf("Got magic value: %s\n", bootinfo->magic);
   fill(0, 0, fb_xres, fb_yres, 0x000000);
   printf("Framebuffer Base: %x\nFramebuffer Size: %x\n", bootinfo->base, bootinfo->size);
   qemu_printf("Framebuffer Base: %x\nFramebuffer Size: %x\n", bootinfo->base, bootinfo->size);

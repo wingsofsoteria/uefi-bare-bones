@@ -7,4 +7,5 @@
 #include <gdt.h>
 #include <qemu.h>
 #include <page.h>
+#include <cpio.h>
 #endif

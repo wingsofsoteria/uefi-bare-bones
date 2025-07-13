@@ -135,7 +135,7 @@ int main()
   efi_status_t status;
   __attribute__((sysv_abi)) int (*ptr)(kernel_bootinfo_t*);
   int kernel_size = 1048576 * 5;
-  int initfs_size = 12288;
+  int initfs_size = 1048576;
 
   FILE* initfs = fopen("\\initfs", "r");
   if (initfs == NULL)

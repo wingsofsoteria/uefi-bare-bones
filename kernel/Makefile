@@ -10,7 +10,7 @@ all: kernel
 	$(CC) -c $< -o $@ $(CPPFLAGS)
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
-kernel: crti.o kernel.o ../libc/libk.a qemu.o idt.o gdt.o pages.o graphics/pixel.o graphics/tty.o crtn.o
+kernel: crti.o kernel.o ../libc/libk.a qemu.o idt.o gdt.o cpio.o pages.o graphics/pixel.o graphics/tty.o crtn.o
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
 
 clean: 

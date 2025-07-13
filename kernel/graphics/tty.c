@@ -1,10 +1,11 @@
 #include <graphics.h>
-char* address;
+#include <stdint.h>
+uint8_t* font_address;
 int cursor = 0;
 int line   = 0;
-void init_text(char* addr)
+void init_text(uint8_t* addr)
 {
-  address = addr;
+  font_address = addr;
 }
 
 void tty_putc(char ch)
@@ -29,7 +30,7 @@ void tty_putc(char ch)
   {
     for (int i = 0; i < 8; i++)
     {
-      char line = address[(ch * 8) + j];
+      char line = font_address[(ch * 8) + j];
       if (line & mask)
       {
         put_pixel(x + i, y + j, 0xFFFFFF);

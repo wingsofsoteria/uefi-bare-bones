@@ -1,4 +1,11 @@
-Current:
+current:
+	even more refactoring
+	moved cpio parsing to separate file
+	added strncmp
+	increased memory allocated to initfs for future use (8KB to 1MB)
+	added separate archive list for cpio (easier to add new files)
+	updated makefile to not clean initfs and added it to .PHONY to force it to get rebuilt each time (easier for git)
+c3176f9:
 	changed clang format
 	made clang format ignore posix-uefi
 	created basic libc + printf

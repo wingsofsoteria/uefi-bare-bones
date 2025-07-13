@@ -1,4 +1,5 @@
 #include <graphics.h>
+#include <stdint.h>
 uint64_t fb_base;
 uint32_t fb_pitch;
 int fb_yres;
