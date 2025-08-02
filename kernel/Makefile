@@ -1,17 +1,18 @@
 CC=clang
-CFLAGS=-Iinclude -I.. -ffreestanding -fshort-wchar -mno-red-zone -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fPIC -g
+CFLAGS=-Iinclude -I../libc/include -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=kernel -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fPIC
 CPPFLAGS=-mno-mmx -mno-sse -mno-sse2 -fPIC
-LDFLAGS=-nostdlib -fpie --static
+LDFLAGS= -nostdlib -fpie --static -z max-page-size=0x1000
+OBJS=$(patsubst %.c,objs/%.o,$(wildcard *.c)) $(patsubst %.s,objs/%.o,$(wildcard *.s))
 ifneq ($(QEMU_DEBUG),)
 CFLAGS += -DQEMU_DEBUG
 endif
 all: kernel
-%.o: %.s
-	$(CC) -c $< -o $@ $(CPPFLAGS)
-%.o: %.c
+objs/%.o: %.s
+	nasm -felf64 $< -o $@
+objs/%.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
-kernel: crti.o kernel.o ../libc/libk.a qemu.o idt.o gdt.o cpio.o pages.o graphics/pixel.o graphics/tty.o crtn.o
+kernel:$(OBJS) ../libc/libk.a
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
 
 clean: 
-	rm -f $(wildcard *.o) $(wildcard graphics/*.o) kernel
+	rm $(OBJS)

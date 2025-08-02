@@ -12,7 +12,7 @@ $(EXEC): kernel initfs
 libc:
 	make -C libc
 kernel: libc
-	QEMU_DEBUG=1 make -C kernel
+	make -C kernel
 initfs: font
 	cpio -o < initfs_list > initfs
 font:

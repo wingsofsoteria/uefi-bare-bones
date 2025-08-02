@@ -1,7 +1,7 @@
 .vs
 .vscode
 .cache
-OVMF_CODE.4m.fd
+OVMF*
 kernel/kernel
 loader/uefi
 loader/bootx64.efi
@@ -16,3 +16,4 @@ gen_font.c
 scratch.c
 *.o
 *.a
+log

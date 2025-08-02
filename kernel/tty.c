@@ -21,6 +21,12 @@ void tty_putc(char ch)
     cursor  = 0;
     line   += 1;
   }
+  if (line >= 25)
+  {
+    clear_screen();
+    cursor = 0;
+    line   = 0;
+  }
 
   int y = line * 8;
   int x = cursor * 8;

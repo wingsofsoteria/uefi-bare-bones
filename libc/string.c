@@ -78,3 +78,45 @@ void* memset(void* mem, int val, size_t size)
   }
   return mem;
 }
+
+// assume str is at least char[size + 1]
+char* itoa(unsigned long long int number, char* str, int base, int size)
+{
+  str[size] = 0;
+  int i     = size;
+  if (number == 0)
+  {
+    str[--i] = '0';
+  }
+
+  while (number != 0)
+  {
+    unsigned long long int temp = number % base;
+    if (temp < 10)
+    {
+      temp += 48;
+    }
+    else
+    {
+      temp += 55;
+    }
+    str[--i]  = temp;
+    number   /= base;
+  }
+  return str;
+}
+
+int numlen(unsigned long long int value, int base)
+{
+  if (value == 0)
+  {
+    return 1;
+  }
+  unsigned long long int copy = value;
+  int size                    = 0;
+  for (; copy != 0; size++)
+  {
+    copy /= base; // THIS IS PROBABLY INEFFICIENT BUT IT WORKS FOR NOW
+  };
+  return size;
+}

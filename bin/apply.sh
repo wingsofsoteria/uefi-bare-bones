@@ -31,9 +31,11 @@ else
 	make
     echo "using disk"
     sudo mount /dev/sda1 /mnt
+	sudo rm -rf /mnt/*
     sudo mkdir -p /mnt/EFI/BOOT
     sudo cp loader/bootx64.efi /mnt/EFI/BOOT
 	sudo cp kernel/kernel /mnt/
 	sudo cp initfs /mnt/
+	tree /mnt
     sudo umount /mnt
 fi

@@ -1,4 +1,15 @@
 current:
+	NOTE: multiple source files were removed and had to be recreated so previous changelogs may be inaccurate (oopsie :3)
+	changed project layout
+	added liballoc
+	parsed efi memory descriptors into a format easily usable by liballoc
+	removed crti,crtn from kernel (will probably add back later but it does not have any real use right now)
+	updated tty to clear screen after 25 lines
+	recreated loader in posix-uefi (it was easier than modifying an existing loader to pass the information for the kernel)
+	rewrote gdt and idt
+	remapped kernel to use the same address space as the linux kernel
+	paging now works correctly (deferencing virtual addresses now actually returns correct information instead of page faulting)
+7413cd4:
 	even more refactoring
 	moved cpio parsing to separate file
 	added strncmp

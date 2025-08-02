@@ -1,8 +1,9 @@
-#include "qemu.h"
+#include <qemu.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <cpio.h>
+#include <types.h>
 uint8_t* cpio_address;
 
 bool cpio_eof = false;
@@ -16,8 +17,8 @@ void init_cpio(uint8_t* addr)
 
 void debug_cpio()
 {
-  qemu_printf("CPIO HEADER MAGIC %x\n", ((cpio_header_t*)cpio_address)->c_magic);
-  qemu_printf("CPIO HEADER FILENAME %s\n", (uint8_t*)(cpio_address + CPIO_HEADER_SIZE));
+  debug("CPIO HEADER MAGIC %x\n", ((cpio_header_t*)cpio_address)->c_magic);
+  debug("CPIO HEADER FILENAME %s\n", (uint8_t*)(cpio_address + CPIO_HEADER_SIZE));
 }
 
 bool check_header()
@@ -40,6 +41,7 @@ uint8_t* get_file()
   {
     return NULL;
   }
+  next_header();
   return (uint8_t*)(header) + CPIO_HEADER_SIZE + header->c_namesize + 1;
 }
 

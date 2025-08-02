@@ -11,4 +11,6 @@ void* memmove(void*, void*, size_t);
 void* memset(void*, int, size_t);
 size_t strlen(const char*);
 int strncmp(const char* s1, const char* s2, size_t n);
+char* itoa(unsigned long long int number, char* str, int base, int size);
+int numlen(unsigned long long int value, int base);
 #endif

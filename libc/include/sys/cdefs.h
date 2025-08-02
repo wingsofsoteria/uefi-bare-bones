@@ -1,5 +1,5 @@
 // clang-format Language: C
 #ifndef _SYS_CDEFS_H
 #define _SYS_CDEFS_H
-#define __soteria_libc
+#define __libc
 #endif

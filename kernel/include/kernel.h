@@ -1,11 +1,12 @@
 // clang-format Language: C
-#ifndef __SOTERIA_KERNEL_KERNEL_H__
-#define __SOTERIA_KERNEL_KERNEL_H__
-#include <stdint.h>
-#include <graphics.h>
-#include <idt.h>
-#include <gdt.h>
-#include <qemu.h>
-#include <page.h>
-#include <cpio.h>
+#ifndef __KERNEL_KERNEL_H__
+#define __KERNEL_KERNEL_H__
+#include "graphics.h"
+#include "cpu.h"
+#include "qemu.h"
+#include "memory.h"
+#include "types.h"
+#include "cpio.h"
+#include "liballoc.h"
+#include <stdbool.h>
 #endif

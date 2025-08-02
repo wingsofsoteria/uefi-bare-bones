@@ -6,6 +6,10 @@ int fb_yres;
 int fb_xres;
 void init_fb(uint64_t base, uint32_t pitch, int x, int y)
 {
+  if (base == 0)
+  {
+    for (;;);
+  }
   fb_base  = base;
   fb_pitch = pitch;
   fb_xres  = x;
@@ -34,6 +38,11 @@ void fill(int start_x, int start_y, int width, int height, uint32_t color)
       *(uint32_t*)(fb_base + fb_pitch * y + 4 * x) = color;
     }
   }
+}
+
+void clear_screen()
+{
+  fill(0, 0, fb_xres, fb_yres, 0x0);
 }
 
 void put_pixel(int x, int y, uint32_t color)

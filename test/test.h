@@ -1,6 +1,6 @@
 // clang-format Language: C
-#ifndef __SOTERIA_TEST_H__
-#define __SOTERIA_TEST_H__
+#ifndef __TEST_H__
+#define __TEST_H__
 
 int add(int, int);
 #endif

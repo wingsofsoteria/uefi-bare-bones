@@ -14,12 +14,12 @@ int puts(const char* string)
 
 int putchar(int ic)
 {
-#if defined(__is_libk)
+  // #if defined(__is_libk)
   char c = (char)ic;
   tty_putc(c);
-#else
+  // #else
   // TODO: Implement stdio and the write system call.
-#endif
+  // #endif
   return ic;
 }
 
@@ -101,29 +101,54 @@ int printf(const char* restrict format, ...)
     {
       format++;
       unsigned long long int value = va_arg(parameters, unsigned long long int);
-      unsigned long long int copy  = value;
-      int size                     = 0;
-      for (; copy != 0; size++)
-      {
-        copy /= 16; // THIS IS PROBABLY INEFFICIENT BUT IT WORKS FOR NOW
-      };
+      int size                     = numlen(value, 16);
       char out[size + 1]; // TODO: GET PROPER SIZE
-      int i  = size;
-      out[i] = 0;
-      while (value != 0)
+      itoa(value, out, 16, size);
+      if (!print(out, size))
       {
-        unsigned long long int temp = value % 16;
-        if (temp < 10)
-        {
-          temp += 48;
-        }
-        else
-        {
-          temp += 55;
-        }
-        out[--i]  = temp;
-        value    /= 16;
+        return -1;
       }
+      written += size;
+    }
+    else if (*format == 'd')
+    {
+      format++;
+      int value = va_arg(parameters, int);
+      int size;
+      bool is_negative = false;
+      if (value < 0)
+      {
+        size         = numlen(-value, 10);
+        size        += 1;
+        is_negative  = true;
+      }
+      else
+      {
+        size = numlen(value, 10);
+      }
+      char out[size + 1];
+      if (is_negative)
+      {
+        out[0] = '-';
+        itoa(-value, out, 10, size);
+      }
+      else
+      {
+        itoa(value, out, 10, size);
+      }
+      if (!print(out, size))
+      {
+        return -1;
+      }
+      written += size;
+    }
+    else if (*format == 'b')
+    {
+      format++;
+      unsigned long long int value = va_arg(parameters, unsigned long long int);
+      int size                     = numlen(value, 2);
+      char out[size + 1]; // TODO: GET PROPER SIZE
+      itoa(value, out, 2, size);
       if (!print(out, size))
       {
         return -1;
