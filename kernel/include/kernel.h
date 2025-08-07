@@ -8,5 +8,5 @@
 #include "types.h"
 #include "cpio.h"
 #include "liballoc.h"
-#include <stdbool.h>
+#include "acpi.h"
 #endif

@@ -41,5 +41,11 @@ int _start(kernel_bootinfo_t* bootinfo)
   *test2     = 511;
   debug("Malloc test pointer: %x = %d\n", test2, *test2);
   free(test);
+
+  if (bootinfo->xsdt_address != 0)
+  {
+    xsdt(bootinfo->xsdt_address);
+  }
+
   for (;;);
 }

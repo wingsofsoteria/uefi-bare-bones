@@ -41,34 +41,42 @@ int printf(const char* restrict format, ...)
   va_list parameters;
   va_start(parameters, format);
 
-  int written = 0;
+  int written      = 0;
+  int fmt_len      = -1;
+  bool skip_to_fmt = false;
+  const char* start_fmt;
+
   while (*format != '\0')
   {
     size_t maxrem = INT_MAX - written;
-    if (format[0] != '%' || format[1] == '%')
+    if (!skip_to_fmt)
     {
-      if (format[0] == '%')
+      if (format[0] != '%' || format[1] == '%')
       {
-        format++;
+        if (format[0] == '%')
+        {
+          format++;
+        }
+        size_t amount = 1;
+        while (format[amount] && format[amount] != '%')
+        {
+          amount++;
+        }
+        if (maxrem < amount)
+        {
+          return -1;
+        }
+        if (!print(format, amount))
+        {
+          return -1;
+        }
+        format  += amount;
+        written += amount;
+        continue;
       }
-      size_t amount = 1;
-      while (format[amount] && format[amount] != '%')
-      {
-        amount++;
-      }
-      if (maxrem < amount)
-      {
-        return -1;
-      }
-      if (!print(format, amount))
-      {
-        return -1;
-      }
-      format  += amount;
-      written += amount;
-      continue;
+      start_fmt = format++;
     }
-    const char* start_fmt = format++;
+    skip_to_fmt = false;
     if (*format == 'c')
     {
       format++;
@@ -87,7 +95,16 @@ int printf(const char* restrict format, ...)
     {
       format++;
       const char* str = va_arg(parameters, const char*);
-      size_t len      = strlen(str);
+      size_t len;
+      if (fmt_len == -1)
+      {
+        len = strlen(str);
+      }
+      else
+      {
+        len     = fmt_len;
+        fmt_len = -1;
+      }
       if (maxrem < len)
       {
         // TODO: Set errno to EOVERFLOW.
@@ -101,10 +118,20 @@ int printf(const char* restrict format, ...)
     {
       format++;
       unsigned long long int value = va_arg(parameters, unsigned long long int);
-      int size                     = numlen(value, 16);
+      int len;
+      int size = numlen(value, 16);
+      if (fmt_len == -1)
+      {
+        len = size;
+      }
+      else
+      {
+        len     = fmt_len;
+        fmt_len = -1;
+      }
       char out[size + 1]; // TODO: GET PROPER SIZE
       itoa(value, out, 16, size);
-      if (!print(out, size))
+      if (!print(out, len))
       {
         return -1;
       }
@@ -136,7 +163,17 @@ int printf(const char* restrict format, ...)
       {
         itoa(value, out, 10, size);
       }
-      if (!print(out, size))
+      int len;
+      if (fmt_len == -1)
+      {
+        len = size;
+      }
+      else
+      {
+        len     = fmt_len;
+        fmt_len = -1;
+      }
+      if (!print(out, len))
       {
         return -1;
       }
@@ -149,11 +186,31 @@ int printf(const char* restrict format, ...)
       int size                     = numlen(value, 2);
       char out[size + 1]; // TODO: GET PROPER SIZE
       itoa(value, out, 2, size);
-      if (!print(out, size))
+      int len;
+      if (fmt_len == -1)
+      {
+        len = size;
+      }
+      else
+      {
+        len     = fmt_len;
+        fmt_len = -1;
+      }
+      if (!print(out, len))
       {
         return -1;
       }
       written += size;
+    }
+    else if (*format == '.')
+    {
+      skip_to_fmt = true;
+      format++;
+      fmt_len = 0;
+      while (*format > 48 && *format < 58)
+      {
+        fmt_len += (*format++) - 48;
+      }
     }
     else
     {

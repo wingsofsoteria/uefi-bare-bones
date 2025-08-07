@@ -3,6 +3,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "loader.h"
+
+typedef struct
+{
+  char signature[8];
+  uint8_t checksum;
+  char oemid[6];
+  uint8_t revision;
+  uint32_t rsdt_address;
+  uint32_t length;
+  uint64_t xsdt_address;
+  uint8_t extended_checksum;
+  char reserved[3];
+} acpi_rsdp_structure_t;
+
 int guid_equal(efi_guid_t a, efi_guid_t b)
 {
   return a.Data1 == b.Data1 &&

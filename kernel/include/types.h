@@ -6,6 +6,7 @@
 #define KERNEL_START 0xFFFF800000000000
 extern int kernel_initialization;
 
+#define VIRTUAL(phys) (phys + KERNEL_START)
 typedef struct
 {
   uint16_t c_magic;
@@ -54,17 +55,6 @@ typedef struct
 	uint8_t* bitmap;
 } kernel_bootinfo_t;
 
-typedef struct
-{
-  char signature[8];
-  uint8_t checksum;
-  char oemid[6];
-  uint8_t revision;
-  uint32_t rsdt_address;
-  uint32_t length;
-  uint64_t xsdt_address;
-  uint8_t extended_checksum;
-  char reserved[3];
-} acpi_rsdp_structure_t;
+
 
 #endif

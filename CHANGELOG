@@ -1,4 +1,7 @@
 current:
+	Added precision specifier to printf
+	started parsing ACPI tables
+91affd7:
 	NOTE: multiple source files were removed and had to be recreated so previous changelogs may be inaccurate (oopsie :3)
 	changed project layout
 	added liballoc
