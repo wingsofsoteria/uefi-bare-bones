@@ -34,10 +34,6 @@ static bool print(const char* data, size_t length)
   return true;
 }
 
-int process_args(const char* restrict format, va_list parameters)
-{
-}
-
 int qemu_printf(const char* restrict format, ...)
 {
   va_list parameters;
