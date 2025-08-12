@@ -1,5 +1,5 @@
-#include "tty.h"
-#include "pixel.h"
+#include "graphics/pixel.h"
+#include <stdint.h>
 uint8_t* font_address;
 int cursor = 0;
 int line   = 0;

@@ -1,4 +1,4 @@
-#include "pixel.h"
+#include "graphics/pixel.h"
 uint64_t fb_base;
 uint32_t fb_pitch;
 int fb_yres;

@@ -1,39 +1,8 @@
-#include <string.h>
-#include <types.h>
-#include <debug.h>
-#include <stddef.h>
-#include <stdint.h>
-#include "idt.h"
-#include <kernel.h>
-#include "stdlib.h"
-
-extern void* isr_stub_table[256];
-
-typedef struct
-{
-  uint16_t size;
-  uint64_t offset;
-} __attribute__((packed)) idt_ptr_t;
-
-typedef struct
-{
-  uint16_t offset_low;
-  uint16_t segment_selector;
-  uint8_t ist;
-  uint8_t flags;
-  uint16_t offset_mid;
-  uint32_t offset_high;
-  uint32_t reserved_high;
-} __attribute__((packed)) idt_entry_t;
-
-typedef struct
-{
-  idt_entry_t entries[256];
-} __attribute__((packed)) idt_t;
+#include "cpu/idt.h"
+#include <stdbool.h>
+#include <stdio.h>
 
 __attribute__((aligned(4096))) static idt_t idt;
-
-extern void set_idt(idt_ptr_t*);
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
 {
@@ -49,7 +18,7 @@ void set_idt_entry_simple(uint8_t vector, void* handler)
 
 void exception_handler(void* stack)
 {
-  debug_empty("Exception");
+  printf("Exception");
   while (true)
   {
     asm volatile("hlt");

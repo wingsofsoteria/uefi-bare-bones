@@ -5,18 +5,34 @@
 #include <stdio.h>
 #include <string.h>
 #if defined(__is_libk)
-  #include <kernel.h>
+  #include <graphics/tty.h>
 #endif
 int puts(const char* string)
 {
   return printf("%s", string);
 }
-
+static int outb(uint16_t port, uint8_t val)
+{
+  __asm__ volatile("outb %b0, %1"
+    :
+    : "a"(val), "Nd"(port)
+    : "memory");
+  /* There's an outb %al, $imm8 encoding, for compile-time constant port
+   * numbers that fit in 8b. (N constraint). Wider immediate constants would be
+   * truncated at assemble-time (e.g. "i" constraint). The  outb  %al, %dx
+   * encoding is the only option for all other cases. %1 expands to %dx because
+   * port  is a uint16_t.  %w1 could be used if we had the port number a wider
+   * C type */
+  return (int)val;
+}
 int putchar(int ic)
 {
   // #if defined(__is_libk)
   char c = (char)ic;
   tty_putc(c);
+#if defined(QEMU_DEBUG)
+  outb(0xE9, c);
+#endif
   // #else
   // TODO: Implement stdio and the write system call.
   // #endif

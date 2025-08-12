@@ -1,8 +1,7 @@
 CC=clang
 EXEC=bootx64.efi
 
-CFLAGS=-ffreestanding -fshort-wchar -mno-red-zone
-LDFLAGS=-ffreestanding -nostdlib
+
 all: $(EXEC) test
 	clang -g scratch.c
 .PHONY: kernel test libc initfs

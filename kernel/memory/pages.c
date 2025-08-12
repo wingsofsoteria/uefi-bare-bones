@@ -1,10 +1,7 @@
-#include <memory.h>
-#include <debug.h>
+#include "memory/pages.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <types.h>
-#include <stdint.h>
-#include <stdbool.h>
 #define ADDR_TO_ENTRY(ADDR, FLAG) (((uint64_t)ADDR >> 12) & 0xFFFFFFFFFF) << 12 | (0b1 | FLAG);
 typedef struct
 {
@@ -26,7 +23,7 @@ page_table_t* new_page_table()
   memset(page, 0, 4096);
   if (page == NULL)
   {
-    debug_empty("FAILED TO ALLOCATE PAGE TABLE\n");
+    printf("FAILED TO ALLOCATE PAGE TABLE\n");
     return NULL;
   }
   return page;
@@ -98,7 +95,7 @@ void map_pages(void* v_addr, void* p_addr, uint64_t pages, uint16_t flags)
 void copy_existing_pages()
 {
   p4_table = new_page_table();
-  debug("%x\n", p4_table);
+  printf("%x\n", p4_table);
   page_table_t* cr3;
   asm volatile("mov %%cr3, %0"
     : "=r"(cr3));
@@ -109,10 +106,10 @@ void copy_existing_pages()
   int res = memcmp(p4_table->pages, cr3->pages, 512);
   if (res != 0)
   {
-    debug_empty("Failed to copy pages\n");
+    printf("Failed to copy pages\n");
     for (;;);
   }
-  debug_empty("Copied tables\n");
+  printf("Copied tables\n");
 }
 
 void setup_page_table()

@@ -1,34 +1,4 @@
-#include "gdt.h"
-#include <kernel.h>
-#include <stdint.h>
-
-typedef struct
-{
-  uint16_t limit_low;
-  uint16_t base_low;
-  uint8_t base_mid;
-  uint8_t access;
-  uint8_t flags_and_limit_high;
-  uint8_t base_high;
-} __attribute__((packed)) gdt_entry_t;
-
-typedef struct
-{
-  gdt_entry_t null;
-  gdt_entry_t kernel_code;
-  gdt_entry_t kernel_data;
-  gdt_entry_t user_data;
-  gdt_entry_t user_code;
-} __attribute__((packed)) gdt_t;
-
-typedef struct
-{
-  uint16_t size;
-  uint64_t offset;
-} __attribute__((packed)) gdt_ptr_t;
-
-extern void set_gdt(gdt_ptr_t*);
-
+#include "cpu/gdt.h"
 __attribute__((aligned(4096))) static gdt_t gdt;
 
 static gdt_entry_t gdt_set_gate_simple(uint8_t access, uint8_t flags)

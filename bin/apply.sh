@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 if ! test -b /dev/sda1; then
-	QEMU_DEBUG=1 make
+	make
     echo "using fat.img"
     if ! test -f fat.img; then
         echo "creating fat.img"

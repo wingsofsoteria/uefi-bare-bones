@@ -1,7 +1,9 @@
 CC=clang
 AR=llvm-ar
-CFLAGS=-Iinclude -I../kernel/include -ffreestanding -mgeneral-regs-only  -Wall -Wextra -fno-stack-protector -D__is_libk
-
+CFLAGS=-Iinclude -I../kernel/include -ffreestanding -fno-stack-protector -D__is_libk
+ifneq ($(QEMU_DEBUG),)
+CFLAGS += -DQEMU_DEBUG
+endif
 all: libk.a
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)

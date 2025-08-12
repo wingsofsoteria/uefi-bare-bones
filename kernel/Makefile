@@ -1,5 +1,6 @@
 CC=clang
-CFLAGS=-Iinclude -I../libc/include -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=large -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fno-PIC -fno-PIE
+WARNINGS=-Wno-pointer-to-int-cast -Wno-void-pointer-to-int-cast -Wno-tautological-pointer-compare
+CFLAGS=-Iinclude -I../libc/include $(WARNINGS) -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=large -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fno-PIC -fno-PIE
 CPPFLAGS=-mno-mmx -mno-sse -mno-sse2
 LDFLAGS=-T linker.lds -nostdlib --static -z max-page-size=0x1000
 SRC=$(wildcard *.c */*.c *.s */*.s)

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export QEMU_DEBUG=1
 make clean
 bin/apply.sh
 # ./elf_tester

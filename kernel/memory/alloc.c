@@ -1,36 +1,5 @@
-#include <debug.h>
-#include <types.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stddef.h>
-enum
-{
-  EfiReservedMemoryType      = 0,  // unusable
-  EfiLoaderCode              = 1,  // usable
-  EfiLoaderData              = 2,  // usable after kernel init
-  EfiBootServicesCode        = 3,  // usable
-  EfiBootServicesData        = 4,  // usable
-  EfiRuntimeServicesCode     = 5,  // maybe usable (runtime services aren't needed)
-  EfiRuntimeServicesData     = 6,  // maybe usable (runtime services aren't needed)
-  EfiConventionalMemory      = 7,  // usable
-  EfiUnusableMemory          = 8,  // unusable
-  EfiACPIReclaimMemory       = 9,  // usable after init
-  EfiACPIMemoryNVS           = 10, // unusable
-  EfiMemoryMappedIO          = 11, // unusable
-  EfiMemoryMappedIOPortSpace = 12, // unusable
-  EfiPalCode                 = 13, // unusable
-  EfiPersistentMemory        = 14, // usable
-  EfiUnacceptedMemoryType    = 15, // unusable
-  EfiMaxMemoryType           = 16, // undefined
-};
-
-typedef struct
-{
-  uint64_t start;
-
-  bool free;
-
-} kernel_page_table_t;
+#include "memory/alloc.h"
+#include <stdio.h>
 
 kernel_page_table_t* page_table = (void*)-1;
 
@@ -60,11 +29,11 @@ void dummy_alloc(mmap_t* mmap)
     }
     if (desc->type == EfiLoaderData && is_usable(desc->type))
     {
-      debug("Failed sanity check, init flag set to: %d", kernel_initialization);
+      printf("Failed sanity check, init flag set to: %d", kernel_initialization);
       for (;;);
     }
   }
-  debug("Max memory: %x\n", total_pages * 4096);
+  printf("Max memory: %x\n", total_pages * 4096);
   int size_in_pages = (total_pages * sizeof(kernel_page_table_t)) / 4096;
 
   for (int i = 0; i < (mmap->size / mmap->desc_size); i++)
@@ -154,7 +123,7 @@ void setup_allocator(mmap_t* mmap)
 
   if (page_table == (void*)-1)
   {
-    debug_empty("failed to allocate page table\n");
+    printf("failed to allocate page table\n");
   }
 
   int current_page = 0;
@@ -175,4 +144,5 @@ void setup_allocator(mmap_t* mmap)
       page_table->free = is_usable(desc->type);
     }
   }
+  printf("Finished Loading Memory\n");
 }
