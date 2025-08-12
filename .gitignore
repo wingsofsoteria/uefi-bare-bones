@@ -16,3 +16,4 @@ scratch.c
 *.o
 *.a
 log
+compile_commands.json
