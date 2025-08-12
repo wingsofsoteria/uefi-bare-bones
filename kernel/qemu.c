@@ -1,10 +1,11 @@
-#include <qemu.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <limits.h>
-#include <string.h>
+#ifdef QEMU_DEBUG
+  #include <debug.h>
+  #include <stdint.h>
+  #include <stdbool.h>
+  #include <stddef.h>
+  #include <stdarg.h>
+  #include <limits.h>
+  #include <string.h>
 
 static int outb(uint16_t port, uint8_t val)
 {
@@ -20,7 +21,6 @@ static int outb(uint16_t port, uint8_t val)
    * C type */
   return (int)val;
 }
-
 static bool print(const char* data, size_t length)
 {
   const unsigned char* bytes = (const unsigned char*)data;
@@ -228,3 +228,10 @@ int qemu_printf(const char* restrict format, ...)
   va_end(parameters);
   return written;
 }
+
+#else
+int qemu_printf(const char* restrict format, ...)
+{
+  return 0;
+}
+#endif

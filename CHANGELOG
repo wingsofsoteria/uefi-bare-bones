@@ -1,4 +1,13 @@
 current:
+	paused parsing acpi tables (had to properly do interrupts)
+	properly implemented gdt and idt
+	did a LOT of refactoring (rewrote the kernel makefile to allow for files in subdirectories and files with the same name but different extensions)
+	added a hack to the kernel to let me implement interrupts (linker.lds setting the kernel to KERNEL_START instead of relying on the loader to do it (this lets me put the interrupt functions in one big array in assembly), 
+		I don't like it but i can't think of a better way right now)
+	added a macro to halt the cpu
+	moved the liballoc stdlib functions into libk (they just wrap liballoc right now)
+	added temporary code to test interrupts (divide by zero at the end of the _start function)
+52ab40a:
 	Added precision specifier to printf
 	started parsing ACPI tables
 91affd7:

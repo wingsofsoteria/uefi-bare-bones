@@ -1,18 +1,22 @@
+#include "qemu.h"
 #include <kernel.h>
 #include <string.h>
 #include <stdlib.h>
 int kernel_initialization;
+// TODO rewrite idt and gdt in assembly
 void finish_init()
 {
   kernel_initialization = 0;
 }
 int _start(kernel_bootinfo_t* bootinfo)
 {
-  asm volatile("cli");
-  load_gdt();
-  load_idt();
-
+  __asm__ volatile("cli");
   kernel_initialization = -255;
+  if (strncmp(bootinfo->magic, "OS649", 5) != 0)
+  {
+    qemu_printf("got incorrect magic value %s, aborting...", bootinfo->magic);
+    return 1;
+  }
 
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution, bootinfo->vertical_resolution);
 
@@ -22,10 +26,10 @@ int _start(kernel_bootinfo_t* bootinfo)
   init_text(font);
 
   test_pixels();
-  // clear_screen();
   debug("Kernel Start %d\n", -1);
   debug_empty("Starting Kernel\n");
   debug("Got magic value: %s\n", bootinfo->magic);
+  // clear_screen();
   debug("Framebuffer Base: %x\nFramebuffer Size: %x\n", bootinfo->base, bootinfo->size);
   setup_allocator(bootinfo->mmap);
   int* test = malloc(257);
@@ -37,15 +41,18 @@ int _start(kernel_bootinfo_t* bootinfo)
   debug("Malloc test pointer: %x = %d\n", test2, *test2);
   free(test);
 
+  load_gdt();
+  load_idt();
+
   debug_empty("Setting up ACPI\n");
   if (bootinfo->xsdt_address != 0)
   {
     xsdt(bootinfo->xsdt_address);
   }
-  int a     = 0;
-  int b     = 100;
-  int value = b / a;
-  a--;
-  printf("%d\n", value);
-  halt_cpu
+  // int a     = 0;
+  // int b     = 100;
+  // int value = b / a;
+  // a--;
+  // printf("%d\n", value);
+  for (;;);
 }

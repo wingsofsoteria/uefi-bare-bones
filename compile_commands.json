@@ -6,6 +6,7 @@
       "-Iinclude",
       "-I../kernel/include",
       "-ffreestanding",
+      "-mgeneral-regs-only",
       "-Wall",
       "-Wextra",
       "-fno-stack-protector",
@@ -25,6 +26,7 @@
       "-Iinclude",
       "-I../kernel/include",
       "-ffreestanding",
+      "-mgeneral-regs-only",
       "-Wall",
       "-Wextra",
       "-fno-stack-protector",
@@ -44,17 +46,18 @@
       "-Iinclude",
       "-I../kernel/include",
       "-ffreestanding",
+      "-mgeneral-regs-only",
       "-Wall",
       "-Wextra",
       "-fno-stack-protector",
       "-D__is_libk",
       "-o",
-      "stdlib/abort.o",
-      "stdlib/abort.c"
+      "stdlib.o",
+      "stdlib.c"
     ],
     "directory": "/home/lust/projects/state-mandated-os-attempt/libc",
-    "file": "/home/lust/projects/state-mandated-os-attempt/libc/stdlib/abort.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/libc/stdlib/abort.o"
+    "file": "/home/lust/projects/state-mandated-os-attempt/libc/stdlib.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/libc/stdlib.o"
   },
   {
     "arguments": [
@@ -65,19 +68,20 @@
       "-ffreestanding",
       "-fshort-wchar",
       "-mno-red-zone",
-      "-mcmodel=kernel",
+      "-mcmodel=large",
       "-fno-stack-protector",
       "-mno-mmx",
       "-mno-sse",
       "-mno-sse2",
-      "-fPIC",
+      "-fno-PIC",
+      "-fno-PIE",
       "-o",
-      "objs/acpi.o",
+      "objs/acpi.c.o",
       "acpi.c"
     ],
     "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
     "file": "/home/lust/projects/state-mandated-os-attempt/kernel/acpi.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/acpi.o"
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/acpi.c.o"
   },
   {
     "arguments": [
@@ -88,111 +92,20 @@
       "-ffreestanding",
       "-fshort-wchar",
       "-mno-red-zone",
-      "-mcmodel=kernel",
+      "-mcmodel=large",
       "-fno-stack-protector",
       "-mno-mmx",
       "-mno-sse",
       "-mno-sse2",
-      "-fPIC",
+      "-fno-PIC",
+      "-fno-PIE",
       "-o",
-      "objs/alloc.o",
-      "alloc.c"
-    ],
-    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/alloc.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/alloc.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-c",
-      "-Iinclude",
-      "-I../libc/include",
-      "-ffreestanding",
-      "-fshort-wchar",
-      "-mno-red-zone",
-      "-mcmodel=kernel",
-      "-fno-stack-protector",
-      "-mno-mmx",
-      "-mno-sse",
-      "-mno-sse2",
-      "-fPIC",
-      "-o",
-      "objs/cpio.o",
-      "cpio.c"
-    ],
-    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/cpio.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/cpio.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-c",
-      "-Iinclude",
-      "-I../libc/include",
-      "-ffreestanding",
-      "-fshort-wchar",
-      "-mno-red-zone",
-      "-mcmodel=kernel",
-      "-fno-stack-protector",
-      "-mno-mmx",
-      "-mno-sse",
-      "-mno-sse2",
-      "-fPIC",
-      "-o",
-      "objs/gdt.o",
-      "gdt.c"
-    ],
-    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/gdt.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/gdt.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-c",
-      "-Iinclude",
-      "-I../libc/include",
-      "-ffreestanding",
-      "-fshort-wchar",
-      "-mno-red-zone",
-      "-mcmodel=kernel",
-      "-fno-stack-protector",
-      "-mno-mmx",
-      "-mno-sse",
-      "-mno-sse2",
-      "-fPIC",
-      "-o",
-      "objs/idt.o",
-      "idt.c"
-    ],
-    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/idt.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/idt.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-c",
-      "-Iinclude",
-      "-I../libc/include",
-      "-ffreestanding",
-      "-fshort-wchar",
-      "-mno-red-zone",
-      "-mcmodel=kernel",
-      "-fno-stack-protector",
-      "-mno-mmx",
-      "-mno-sse",
-      "-mno-sse2",
-      "-fPIC",
-      "-o",
-      "objs/kernel.o",
+      "objs/kernel.c.o",
       "kernel.c"
     ],
     "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
     "file": "/home/lust/projects/state-mandated-os-attempt/kernel/kernel.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/kernel.o"
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/kernel.c.o"
   },
   {
     "arguments": [
@@ -203,88 +116,20 @@
       "-ffreestanding",
       "-fshort-wchar",
       "-mno-red-zone",
-      "-mcmodel=kernel",
+      "-mcmodel=large",
       "-fno-stack-protector",
       "-mno-mmx",
       "-mno-sse",
       "-mno-sse2",
-      "-fPIC",
+      "-fno-PIC",
+      "-fno-PIE",
       "-o",
-      "objs/liballoc.o",
-      "liballoc.c"
-    ],
-    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/liballoc.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/liballoc.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-c",
-      "-Iinclude",
-      "-I../libc/include",
-      "-ffreestanding",
-      "-fshort-wchar",
-      "-mno-red-zone",
-      "-mcmodel=kernel",
-      "-fno-stack-protector",
-      "-mno-mmx",
-      "-mno-sse",
-      "-mno-sse2",
-      "-fPIC",
-      "-o",
-      "objs/pages.o",
-      "pages.c"
-    ],
-    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/pages.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/pages.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-c",
-      "-Iinclude",
-      "-I../libc/include",
-      "-ffreestanding",
-      "-fshort-wchar",
-      "-mno-red-zone",
-      "-mcmodel=kernel",
-      "-fno-stack-protector",
-      "-mno-mmx",
-      "-mno-sse",
-      "-mno-sse2",
-      "-fPIC",
-      "-o",
-      "objs/pixel.o",
-      "pixel.c"
-    ],
-    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/pixel.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/pixel.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-c",
-      "-Iinclude",
-      "-I../libc/include",
-      "-ffreestanding",
-      "-fshort-wchar",
-      "-mno-red-zone",
-      "-mcmodel=kernel",
-      "-fno-stack-protector",
-      "-mno-mmx",
-      "-mno-sse",
-      "-mno-sse2",
-      "-fPIC",
-      "-o",
-      "objs/qemu.o",
+      "objs/qemu.c.o",
       "qemu.c"
     ],
     "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
     "file": "/home/lust/projects/state-mandated-os-attempt/kernel/qemu.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/qemu.o"
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/qemu.c.o"
   },
   {
     "arguments": [
@@ -295,19 +140,188 @@
       "-ffreestanding",
       "-fshort-wchar",
       "-mno-red-zone",
-      "-mcmodel=kernel",
+      "-mcmodel=large",
       "-fno-stack-protector",
       "-mno-mmx",
       "-mno-sse",
       "-mno-sse2",
-      "-fPIC",
+      "-fno-PIC",
+      "-fno-PIE",
       "-o",
-      "objs/tty.o",
-      "tty.c"
+      "objs/cpu/gdt.c.o",
+      "cpu/gdt.c"
     ],
     "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
-    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/tty.c",
-    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/tty.o"
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/cpu/gdt.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/cpu/gdt.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-Iinclude",
+      "-I../libc/include",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-mcmodel=large",
+      "-fno-stack-protector",
+      "-mno-mmx",
+      "-mno-sse",
+      "-mno-sse2",
+      "-fno-PIC",
+      "-fno-PIE",
+      "-o",
+      "objs/cpu/idt.c.o",
+      "cpu/idt.c"
+    ],
+    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/cpu/idt.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/cpu/idt.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-Iinclude",
+      "-I../libc/include",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-mcmodel=large",
+      "-fno-stack-protector",
+      "-mno-mmx",
+      "-mno-sse",
+      "-mno-sse2",
+      "-fno-PIC",
+      "-fno-PIE",
+      "-o",
+      "objs/graphics/pixel.c.o",
+      "graphics/pixel.c"
+    ],
+    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/graphics/pixel.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/graphics/pixel.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-Iinclude",
+      "-I../libc/include",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-mcmodel=large",
+      "-fno-stack-protector",
+      "-mno-mmx",
+      "-mno-sse",
+      "-mno-sse2",
+      "-fno-PIC",
+      "-fno-PIE",
+      "-o",
+      "objs/graphics/tty.c.o",
+      "graphics/tty.c"
+    ],
+    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/graphics/tty.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/graphics/tty.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-Iinclude",
+      "-I../libc/include",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-mcmodel=large",
+      "-fno-stack-protector",
+      "-mno-mmx",
+      "-mno-sse",
+      "-mno-sse2",
+      "-fno-PIC",
+      "-fno-PIE",
+      "-o",
+      "objs/memory/alloc.c.o",
+      "memory/alloc.c"
+    ],
+    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/memory/alloc.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/memory/alloc.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-Iinclude",
+      "-I../libc/include",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-mcmodel=large",
+      "-fno-stack-protector",
+      "-mno-mmx",
+      "-mno-sse",
+      "-mno-sse2",
+      "-fno-PIC",
+      "-fno-PIE",
+      "-o",
+      "objs/memory/cpio.c.o",
+      "memory/cpio.c"
+    ],
+    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/memory/cpio.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/memory/cpio.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-Iinclude",
+      "-I../libc/include",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-mcmodel=large",
+      "-fno-stack-protector",
+      "-mno-mmx",
+      "-mno-sse",
+      "-mno-sse2",
+      "-fno-PIC",
+      "-fno-PIE",
+      "-o",
+      "objs/memory/liballoc.c.o",
+      "memory/liballoc.c"
+    ],
+    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/memory/liballoc.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/memory/liballoc.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-Iinclude",
+      "-I../libc/include",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-mcmodel=large",
+      "-fno-stack-protector",
+      "-mno-mmx",
+      "-mno-sse",
+      "-mno-sse2",
+      "-fno-PIC",
+      "-fno-PIE",
+      "-o",
+      "objs/memory/pages.c.o",
+      "memory/pages.c"
+    ],
+    "directory": "/home/lust/projects/state-mandated-os-attempt/kernel",
+    "file": "/home/lust/projects/state-mandated-os-attempt/kernel/memory/pages.c",
+    "output": "/home/lust/projects/state-mandated-os-attempt/kernel/objs/memory/pages.c.o"
   },
   {
     "arguments": [
@@ -819,12 +833,12 @@
       "-x",
       "c",
       "-o",
-      "/tmp/loader-808b43.o",
+      "/tmp/loader-eca255.o",
       "loader.c"
     ],
     "directory": "/home/lust/projects/state-mandated-os-attempt/test",
     "file": "/home/lust/projects/state-mandated-os-attempt/test/loader.c",
-    "output": "/tmp/loader-808b43.o"
+    "output": "/tmp/loader-eca255.o"
   },
   {
     "arguments": [
@@ -894,11 +908,11 @@
       "-x",
       "c",
       "-o",
-      "/tmp/scratch-46e54b.o",
+      "/tmp/scratch-8517ba.o",
       "scratch.c"
     ],
     "directory": "/home/lust/projects/state-mandated-os-attempt",
     "file": "/home/lust/projects/state-mandated-os-attempt/scratch.c",
-    "output": "/tmp/scratch-46e54b.o"
+    "output": "/tmp/scratch-8517ba.o"
   }
 ]

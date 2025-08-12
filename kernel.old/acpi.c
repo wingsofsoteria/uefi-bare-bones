@@ -1,5 +1,5 @@
 #include <types.h>
-#include <debug.h>
+#include <qemu.h>
 #include <stdbool.h>
 #include <stdint.h>
 

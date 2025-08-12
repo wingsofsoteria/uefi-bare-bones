@@ -1,11 +1,13 @@
 CC=clang
 AR=llvm-ar
-CFLAGS=-Iinclude -I../kernel/include -ffreestanding -Wall -Wextra -fno-stack-protector -D__is_libk
+CFLAGS=-Iinclude -I../kernel/include -ffreestanding -mgeneral-regs-only  -Wall -Wextra -fno-stack-protector -D__is_libk
 
 all: libk.a
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
-libk.a: stdio.o string.o stdlib/abort.o
+%.o: %.s
+	nasm -felf64 $< -o $@
+libk.a: stdio.o string.o stdlib.o
 	$(AR) rc $@ $^
 
 clean: 

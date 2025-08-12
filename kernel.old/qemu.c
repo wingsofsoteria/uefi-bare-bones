@@ -1,26 +1,24 @@
-#include <limits.h>
-#include <stdarg.h>
+#include <qemu.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
+#include <stdarg.h>
+#include <limits.h>
 #include <string.h>
-#if defined(__is_libk)
-  #include <kernel.h>
-#endif
-int puts(const char* string)
-{
-  return printf("%s", string);
-}
 
-int putchar(int ic)
+static int outb(uint16_t port, uint8_t val)
 {
-  // #if defined(__is_libk)
-  char c = (char)ic;
-  tty_putc(c);
-  // #else
-  // TODO: Implement stdio and the write system call.
-  // #endif
-  return ic;
+  __asm__ volatile("outb %b0, %1"
+    :
+    : "a"(val), "Nd"(port)
+    : "memory");
+  /* There's an outb %al, $imm8 encoding, for compile-time constant port
+   * numbers that fit in 8b. (N constraint). Wider immediate constants would be
+   * truncated at assemble-time (e.g. "i" constraint). The  outb  %al, %dx
+   * encoding is the only option for all other cases. %1 expands to %dx because
+   * port  is a uint16_t.  %w1 could be used if we had the port number a wider
+   * C type */
+  return (int)val;
 }
 
 static bool print(const char* data, size_t length)
@@ -28,7 +26,7 @@ static bool print(const char* data, size_t length)
   const unsigned char* bytes = (const unsigned char*)data;
   for (size_t i = 0; i < length; i++)
   {
-    if (putchar(bytes[i]) == EOF)
+    if (outb(0xE9, bytes[i]) == -1)
     {
       return false;
     }
@@ -36,7 +34,7 @@ static bool print(const char* data, size_t length)
   return true;
 }
 
-int printf(const char* restrict format, ...)
+int qemu_printf(const char* restrict format, ...)
 {
   va_list parameters;
   va_start(parameters, format);

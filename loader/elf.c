@@ -67,11 +67,11 @@ void* load(char* buf, unsigned int size)
   }
   void* entry_addr = (void*)addr + hdr->e_entry - begin;
   printf("%x\n", entry_addr);
-  if ((uint64_t)entry_addr > (uint64_t)addr + size)
-  {
-    printf("Failed to get correct address\n");
-    return NULL;
-  }
+  // if ((uint64_t)entry_addr > (uint64_t)addr + size)
+  // {
+  //   printf("Failed to get correct address\n");
+  //   return NULL;
+  // }
   return entry_addr;
 }
 void* load_kernel()
