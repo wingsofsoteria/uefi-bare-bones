@@ -1,3 +1,4 @@
+// clang-format Language: C
 #ifndef __KERNEL_MEMORY_ALLOC_H__
 #define __KERNEL_MEMORY_ALLOC_H__
 

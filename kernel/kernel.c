@@ -41,10 +41,7 @@ int _start(kernel_bootinfo_t* bootinfo)
   // free(test);
 
   printf("Setting up ACPI\n");
-  if (bootinfo->xsdt_address != 0)
-  {
-    xsdt(bootinfo->xsdt_address);
-  }
+  setup_acpi(bootinfo->xsdt_address);
   // int a     = 0;
   // int b     = 100;
   // int value = b / a;

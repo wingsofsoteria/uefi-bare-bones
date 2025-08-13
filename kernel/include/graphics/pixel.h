@@ -1,7 +1,7 @@
+// clang-format Language: C
 #ifndef __KERNEL_GRAPHICS_PIXEL_H__
 #define __KERNEL_GRAPHICS_PIXEL_H__
 #include <stdint.h>
-
 
 void test_pixels();
 void init_fb(uint64_t, uint32_t, int, int);

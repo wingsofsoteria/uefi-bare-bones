@@ -1,3 +1,4 @@
+// clang-format Language: C
 #ifndef __KERNEL_TYPES_H__
 #define __KERNEL_TYPES_H__
 #include <stdbool.h>
@@ -49,12 +50,10 @@ typedef struct
   uint32_t vertical_resolution;
   void* initfs;
   int initfs_size;
-	mmap_t* mmap;
+  mmap_t* mmap;
   uint32_t rsdt_address;
   uint64_t xsdt_address;
-	uint8_t* bitmap;
+  uint8_t* bitmap;
 } kernel_bootinfo_t;
-
-
 
 #endif
