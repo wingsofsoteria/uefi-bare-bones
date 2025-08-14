@@ -1,4 +1,5 @@
 #include "cpu/idt.h"
+#include "stdlib.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -16,13 +17,28 @@ void set_idt_entry_simple(uint8_t vector, void* handler)
   entry->reserved_high    = 0;
 }
 
-void exception_handler(void* stack)
+void exception_handler(isr_stack_t* stack)
 {
-  printf("Exception");
-  while (true)
+  printf("Interrupt: %d\n", stack->isr);
+  switch (stack->isr)
   {
-    asm volatile("hlt");
+    case 2:
+      {
+        printf("GOT NMI\n");
+        return;
+      }
+    case 14:
+      {
+        printf("PAGE FAULT:\n\tErr: %b", stack->err);
+        halt_cpu
+      }
+
+    default:
+      {
+        halt_cpu
+      }
   }
+
 } // TODO stack data type + proper per exception handling
 
 void load_idt()

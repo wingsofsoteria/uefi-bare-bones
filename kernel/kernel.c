@@ -1,4 +1,4 @@
-#include "acpi.h"
+#include "acpi/acpi.h"
 #include "cpu/gdt.h"
 #include "cpu/idt.h"
 #include "graphics/pixel.h"

@@ -11,7 +11,7 @@ int puts(const char* string)
 {
   return printf("%s", string);
 }
-static int outb(uint16_t port, uint8_t val)
+int outb(uint16_t port, uint8_t val)
 {
   __asm__ volatile("outb %b0, %1"
     :

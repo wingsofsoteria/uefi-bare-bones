@@ -18,4 +18,4 @@ kernel:$(OBJS) ../libc/libk.a
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
 
 clean: 
-	rm -f $(OBJS)
+	rm -f $(OBJS) kernel

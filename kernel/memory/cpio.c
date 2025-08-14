@@ -2,7 +2,7 @@
 #include "types.h"
 #include <stdio.h>
 #include <string.h>
-uint8_t* cpio_address;
+static uint8_t* cpio_address;
 
 bool cpio_eof = false;
 uint32_t file_size();

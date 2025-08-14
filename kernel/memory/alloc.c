@@ -1,9 +1,9 @@
 #include "memory/alloc.h"
 #include <stdio.h>
 
-kernel_page_table_t* page_table = (void*)-1;
+static kernel_page_table_t* page_table = (void*)-1;
 
-int page_table_len = 0;
+static int page_table_len = 0;
 
 bool never_usable(int type)
 {

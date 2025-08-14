@@ -1,6 +1,6 @@
 #include "graphics/pixel.h"
 #include <stdint.h>
-uint8_t* font_address;
+static uint8_t* font_address;
 int cursor = 0;
 int line   = 0;
 void init_text(uint8_t* addr)
