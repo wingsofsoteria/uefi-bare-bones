@@ -56,3 +56,29 @@ void tty_putc(char ch)
   }
   cursor++;
 }
+
+void tty_delc()
+{
+  if (cursor == 0)
+  {
+    if (line == 0)
+    {
+      tty_putc(' ');
+      cursor--;
+      return;
+    }
+    else
+    {
+      cursor = 79;
+      line--;
+      tty_putc(' ');
+      cursor--;
+    }
+  }
+  else
+  {
+    cursor--;
+    tty_putc(' ');
+    cursor--;
+  }
+}

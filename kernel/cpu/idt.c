@@ -2,7 +2,8 @@
 #include "stdlib.h"
 #include <stdbool.h>
 #include <stdio.h>
-
+#include "../acpi/lapic.h"
+#include "graphics/tty.h"
 __attribute__((aligned(4096))) static idt_t idt;
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
@@ -17,8 +18,109 @@ void set_idt_entry_simple(uint8_t vector, void* handler)
   entry->reserved_high    = 0;
 }
 
+char scancodes[58] = {
+  0,
+  0,
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '0',
+  '-',
+  '=',
+  0,
+  '\t',
+  'Q',
+  'W',
+  'E',
+  'R',
+  'T',
+  'Y',
+  'U',
+  'I',
+  'O',
+  'P',
+  '[',
+  ']',
+  '\n',
+  0,
+  'A',
+  'S',
+  'D',
+  'F',
+  'G',
+  'H',
+  'J',
+  'K',
+  'L',
+  ';',
+  '\'',
+  '`',
+  0,
+  '\\',
+  'Z',
+  'X',
+  'C',
+  'V',
+  'B',
+  'N',
+  'M',
+  ',',
+  '.',
+  '/',
+  0,
+  '*',
+  0,
+  ' ',
+};
+char scancode_to_char(uint8_t byte)
+{
+  char value = 0;
+  if (byte < 58)
+  {
+    value = scancodes[byte];
+  }
+  switch (byte)
+  {
+    case 0x0E:
+      {
+        tty_delc();
+      }
+  }
+
+  return value;
+}
+
+void interrupt_handler(uint64_t isr)
+{
+  switch (isr)
+  {
+    case 33:
+      {
+        uint8_t byte = inb(0x60);
+        char ch      = scancode_to_char(byte);
+        if (ch != 0)
+        {
+          printf("%c", ch);
+        }
+      }
+  }
+
+  send_eoi();
+}
+
 void exception_handler(isr_stack_t* stack)
 {
+  if (stack->isr >= 32)
+  {
+    interrupt_handler(stack->isr);
+    return;
+  }
   printf("Interrupt: %d\n", stack->isr);
   switch (stack->isr)
   {

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+trap "exit 1" SIGINT
 export QEMU_DEBUG=1
 make clean
 bin/apply.sh

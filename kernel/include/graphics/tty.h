@@ -5,4 +5,5 @@
 #include <stdint.h>
 void init_text(uint8_t*);
 void tty_putc(char);
+void tty_delc();
 #endif

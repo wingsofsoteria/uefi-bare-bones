@@ -3,6 +3,7 @@
 #include "acpi/pic.h"
 #include "types.h"
 #include "ioapic.h"
+#include "lapic.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -66,35 +67,17 @@ void parse_madt(uint64_t address)
   }
   int i = 0;
 
-  *(volatile uint32_t*)((uint64_t)madt->local_interrupt_controller_address + 0xF0)  |= 0x100;
-  *(volatile uint32_t*)((uint64_t)madt->local_interrupt_controller_address + 0x320) &= ~0x00010000;
-
   while (i < length_in_byte)
   {
     uint8_t type   = (uint8_t)madt->interrupt_controller_structure[i];
     uint8_t length = (uint8_t)madt->interrupt_controller_structure[i + 1];
     switch (type)
     {
-      case 0:
-        {
-          uint32_t flags = MADT_ADDR32(i + 4);
-          printf("LAPIC FLAGS: %b\n", flags);
-          break;
-        }
       case 1:
         {
-          uint32_t addr = MADT_ADDR32(i + 4);
+          uint32_t addr = MADT_ADDR32(i + 4); // INCORRECT
           uint32_t gsi  = MADT_ADDR32(i + 8);
-          program_ioapic(addr, gsi);
-          break;
-        }
-      case 2:
-        {
-          uint8_t bus = madt->interrupt_controller_structure[i + 2];
-          uint8_t irq = madt->interrupt_controller_structure[i + 3];
-
-          uint32_t gsi = MADT_ADDR32(i + 4);
-          printf("BUS: %d, IRQ: %d, GSI: %d\n", bus, irq, gsi);
+          program_ioapic(0xFEC00000, gsi);
           break;
         }
       default:
@@ -103,6 +86,7 @@ void parse_madt(uint64_t address)
     }
     i += length;
   }
+  lapic_enable(madt->local_interrupt_controller_address);
 }
 
 void setup_acpi(uint64_t xsdt_address)
