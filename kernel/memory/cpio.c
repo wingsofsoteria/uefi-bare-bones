@@ -1,25 +1,21 @@
 #include "memory/cpio.h"
+#include "stdlib.h"
 #include "types.h"
-#include <stdio.h>
 #include <string.h>
 static uint8_t* cpio_address;
 
 bool cpio_eof = false;
 uint32_t file_size();
-void debug_cpio();
+bool check_header();
 void init_cpio(uint8_t* addr)
 {
   cpio_address = addr;
 
-  // debug_cpio();
+  if (!check_header())
+  {
+    halt_cpu;
+  }
 }
-
-void debug_cpio()
-{
-  printf("CPIO HEADER MAGIC %x\n", ((cpio_header_t*)cpio_address)->c_magic);
-  printf("CPIO HEADER FILENAME %s\n", (uint8_t*)(cpio_address + CPIO_HEADER_SIZE));
-}
-
 bool check_header()
 {
   return ((cpio_header_t*)cpio_address)->c_magic == 0070707;
@@ -38,7 +34,7 @@ uint8_t* get_file()
   cpio_header_t* header = (cpio_header_t*)cpio_address;
   if (!check_header())
   {
-    return NULL;
+    halt_cpu
   }
   next_header();
   return (uint8_t*)(header) + CPIO_HEADER_SIZE + header->c_namesize + 1;

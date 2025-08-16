@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 trap "exit 1" SIGINT
+make clean
 if ! test -b /dev/sda1; then
 	make
     echo "using fat.img"
