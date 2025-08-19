@@ -1,4 +1,8 @@
 current:
+	Some refactoring
+	changed tty code to be able to use any psf font (specifically NOT psfu) that is 8x16 (you will have to provide the psf file and rename it to font.psf in the kernel folder)
+	changed the linker script to use separate physical and virtual addresses, modified the loader to handle this
+prev:
 	paused parsing acpi tables (had to properly do interrupts)
 	properly implemented gdt and idt
 	did a LOT of refactoring (rewrote the kernel makefile to allow for files in subdirectories and files with the same name but different extensions)

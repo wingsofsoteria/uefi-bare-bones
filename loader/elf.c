@@ -61,11 +61,11 @@ void* load(char* buf, unsigned int size)
     {
       continue;
     }
-    uint64_t p_addr = (uint64_t)addr + current.p_vaddr - begin;
+    uint64_t p_addr = (uint64_t)addr + current.p_paddr - begin;
     void* res       = memmove((void*)p_addr, buf + current.p_offset, current.p_filesz);
     printf("memmove result %x, p_addr %x\n", res, p_addr);
   }
-  void* entry_addr = (void*)addr + hdr->e_entry - begin;
+  void* entry_addr = (void*)addr + hdr->e_entry - begin - KERNEL_START;
   printf("%x\n", entry_addr);
   // if ((uint64_t)entry_addr > (uint64_t)addr + size)
   // {

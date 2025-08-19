@@ -1,6 +1,6 @@
 #include "graphics/pixel.h"
-static uint64_t fb_base;
-static uint32_t fb_pitch;
+uint64_t fb_base;
+uint32_t fb_pitch;
 static int fb_yres;
 static int fb_xres;
 void init_fb(uint64_t base, uint32_t pitch, int x, int y)

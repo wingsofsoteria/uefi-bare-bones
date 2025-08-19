@@ -9,9 +9,8 @@ test/loader
 test/test
 a.out
 fat.img
-font
 fs.dmp
-gen_font.c
+font.psf
 scratch.c
 *.o
 *.a

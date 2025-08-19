@@ -4,8 +4,8 @@
 #include "graphics/pixel.h"
 #include "graphics/tty.h"
 #include "memory/alloc.h"
-#include "memory/cpio.h"
 #include "stdlib.h"
+#include "types.h"
 #include <stdio.h>
 
 int kernel_initialization;
@@ -21,11 +21,8 @@ int _start(kernel_bootinfo_t* bootinfo)
 
   kernel_initialization = -255;
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution, bootinfo->vertical_resolution);
-  init_cpio(bootinfo->initfs);
-  uint8_t* font = get_file();
-  init_text(font);
-  test_pixels();
-  // clear_screen();
+  clear_screen();
+  tty_putc(1);
   printf("Kernel Start %d\n", -1);
   printf("Starting Kernel\n");
   printf("Got magic value: %s\n", bootinfo->magic);

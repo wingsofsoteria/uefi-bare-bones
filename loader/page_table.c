@@ -1,5 +1,4 @@
 #include "uefi/uefi.h"
-#include "../kernel/include/types.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "loader.h"
@@ -32,7 +31,6 @@ page_table_t* new_page_table()
 
 void map_pages(void* v_addr, void* p_addr, uint64_t pages, uint16_t flags)
 {
-  // printf("Mapping %x to %x\n", v_addr, p_addr);
   for (int j = 0; j < pages; j++)
   {
     if ((uint64_t)v_addr % EFI_PAGE_SIZE != 0)
@@ -94,7 +92,6 @@ void map_pages(void* v_addr, void* p_addr, uint64_t pages, uint16_t flags)
 void copy_existing_pages()
 {
   p4_table = new_page_table();
-  printf("%x\n", p4_table);
   page_table_t* cr3;
   asm volatile("mov %%cr3, %0"
     : "=r"(cr3));
@@ -114,18 +111,17 @@ mmap_t quick_memory_map()
   {
     status = BS->GetMemoryMap(&mmap_size, memory_map, &map_key, &desc_size, &desc_version);
     if (status == EFI_SUCCESS)
-      break;
+      return (mmap_t){
+        (loader_memory_descriptor_t*)memory_map,
+        mmap_size,
+        desc_size,
+        desc_version,
+        map_key};
     status = BS->AllocatePool(EfiLoaderData, mmap_size, (void**)&memory_map);
   }
-
-  return (mmap_t){
-    (loader_memory_descriptor_t*)memory_map,
-    mmap_size,
-    desc_size,
-    desc_version,
-    map_key};
 }
-static inline void load_page_table()
+
+void load_page_table()
 {
   asm volatile("mov %0, %%cr3"
     :
@@ -136,7 +132,6 @@ void setup_page_table()
 {
   copy_existing_pages();
   mmap_t mmap = quick_memory_map();
-  printf("%x %d", mmap.addr, mmap.size);
   for (int i = 0; i < (mmap.size / mmap.desc_size); i++)
   {
     efi_memory_descriptor_t* desc = (efi_memory_descriptor_t*)((uint64_t)mmap.addr + (i * mmap.desc_size));

@@ -124,7 +124,7 @@ efi_status_t get_initfs(kernel_bootinfo_t* bootinfo)
   fclose(initfs);
   map_pages(initfs_buffer + KERNEL_START, initfs_buffer, initfs_size / EFI_PAGE_SIZE, 0b10);
   bootinfo->initfs_size = initfs_size;
-  bootinfo->initfs      = initfs_buffer + KERNEL_START;
+  bootinfo->initfs      = initfs_buffer;
   return EFI_SUCCESS;
 }
 
@@ -139,7 +139,7 @@ efi_status_t get_gop(kernel_bootinfo_t* bootinfo)
     return status;
   }
   map_pages((void*)gop->Mode->FrameBufferBase + KERNEL_START, (void*)gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize / EFI_PAGE_SIZE, 0b10);
-  bootinfo->base                  = gop->Mode->FrameBufferBase + KERNEL_START;
+  bootinfo->base                  = gop->Mode->FrameBufferBase;
   bootinfo->pitch                 = gop->Mode->Information->PixelsPerScanLine * 4;
   bootinfo->horizontal_resolution = gop->Mode->Information->HorizontalResolution;
   bootinfo->vertical_resolution   = gop->Mode->Information->VerticalResolution;
@@ -151,7 +151,7 @@ kernel_bootinfo_t* get_bootinfo()
 {
   void* p_addr;
   BS->AllocatePool(EfiLoaderData, sizeof(kernel_bootinfo_t), (void**)&p_addr);
-  kernel_bootinfo_t* bootinfo = p_addr + KERNEL_START;
+  kernel_bootinfo_t* bootinfo = p_addr;
   memset(bootinfo, 0, sizeof(kernel_bootinfo_t));
   get_rsdp(bootinfo);
 
@@ -160,19 +160,9 @@ kernel_bootinfo_t* get_bootinfo()
   strncpy(bootinfo->magic, "OS649", 5);
 
   get_initfs(bootinfo);
-  printf("%x", ((kernel_bootinfo_t*)p_addr)->base);
   BS->AllocatePool(EfiLoaderData, sizeof(mmap_t), (void**)&bootinfo->mmap);
-  mmap_t dummy        = quick_memory_map();
-  uint64_t page_count = 0;
-  for (int i = 0; i < (dummy.size / dummy.desc_size); i++)
-  {
-    efi_memory_descriptor_t* desc  = (efi_memory_descriptor_t*)((uint8_t*)dummy.addr + (i * dummy.desc_size));
-    page_count                    += desc->NumberOfPages;
-  }
-  BS->AllocatePool(EfiLoaderData, (page_count / 8) * sizeof(uint8_t), (void**)&bootinfo->bitmap);
-
   mmap_t mmap = quick_memory_map();
-  mmap.addr   = (void*)((uint64_t)mmap.addr + KERNEL_START);
+  mmap.addr   = (void*)((uint64_t)mmap.addr);
   for (int i = 0; i < (mmap.size / mmap.desc_size); i++)
   {
     efi_memory_descriptor_t* desc = (efi_memory_descriptor_t*)((uint8_t*)mmap.addr + (i * mmap.desc_size));
