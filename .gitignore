@@ -5,14 +5,11 @@ OVMF*
 kernel/kernel
 loader/uefi
 loader/bootx64.efi
-test/loader
-test/test
-a.out
 fat.img
 fs.dmp
 font.psf
-scratch.c
 *.o
 *.a
-log
 compile_commands.json
+hidden/
+log

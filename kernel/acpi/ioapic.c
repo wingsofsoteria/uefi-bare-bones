@@ -1,38 +1,50 @@
+#include "ioapic.h"
+#include "madt.h"
+#include "stdlib.h"
+
 #include <stdint.h>
-#include <stdio.h>
-static uint64_t ioregsel;
-void write_ioapic(const uint8_t offset, const uint32_t value);
-uint32_t read_ioapic(const uint8_t offset);
 
-void set_redtbl(uint8_t base, uint8_t vector)
+// TODO better helper functions / properly configure each IO APIC
+// TODO store addresses of other IO APICs and configure them separately (right now it unmasks IOREDTBL1 on EVERY IO)
+
+void set_redtbl(uint64_t ioregsel, ioapic_redtbl_t redtbl)
 {
-  uint32_t redtbl00 = read_ioapic(base);
-  uint32_t redtbl01 = read_ioapic(base + 1);
-
-  redtbl00 &= ~(0xFF);
-  redtbl00 |= vector;
-  redtbl00 &= ~(1 << 16);
-
-  write_ioapic(base, redtbl00 & 0b10000000000000 | vector + 32);
-  write_ioapic(base + 1, redtbl01);
+  write_ioapic(ioregsel, redtbl.pin, redtbl.trigger_mode << 15 | redtbl.pin_polarity << 13 | redtbl.destination_mode << 11 | redtbl.delivery_mode << 8 | redtbl.vector);
+  write_ioapic(ioregsel, redtbl.pin + 1, (uint64_t)redtbl.destination << 56);
 }
 
-void program_ioapic(uint32_t p_addr, uint32_t gsi_base)
+void enable_ps2_keyboard()
 {
-  printf("IO APIC ADDR: %x, GSI: %d\n", p_addr, gsi_base);
-  ioregsel            = p_addr;
-  uint32_t io_apic_id = read_ioapic(0x10);
-  printf("IO APIC ID: %b\n", io_apic_id);
-  set_redtbl(0x12, 1);
+  uint32_t ioregsel                          = madt_get_ioapic(0);
+  madt_interrupt_source_override_t* override = madt_get_override_for_irq(1);
+  ioapic_redtbl_t redtbl;
+  redtbl.vector           = 33;
+  redtbl.delivery_mode    = 0;
+  redtbl.destination_mode = 0;
+  redtbl.mask             = 0;
+  redtbl.destination      = 0;
+  if (override != NULL)
+  {
+    redtbl.pin_polarity = override->polarity;
+    redtbl.trigger_mode = override->trigger_mode;
+    redtbl.pin          = override->global_system_interrupt + 0x10;
+  }
+  else
+  {
+    redtbl.pin_polarity = 0;
+    redtbl.trigger_mode = 0;
+    redtbl.pin          = 0x12;
+  }
+  set_redtbl(ioregsel, redtbl);
 }
 
-void write_ioapic(const uint8_t offset, const uint32_t value)
+void write_ioapic(uint64_t ioregsel, const uint8_t offset, const uint32_t value)
 {
   *(volatile uint32_t*)(ioregsel)        = offset;
   *(volatile uint32_t*)(ioregsel + 0x10) = value;
 }
 
-uint32_t read_ioapic(const uint8_t offset)
+uint32_t read_ioapic(uint64_t ioregsel, const uint8_t offset)
 {
   *(volatile uint32_t*)(ioregsel) = offset;
   return *(volatile uint32_t*)(ioregsel + 0x10);

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "../acpi/lapic.h"
 #include "keyboard.h"
+#include "cpu/tasking.h"
 __attribute__((aligned(4096))) static idt_t idt;
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
@@ -18,10 +19,24 @@ void set_idt_entry_simple(uint8_t vector, void* handler)
   entry->reserved_high    = 0;
 }
 
+int task_value = 0;
+
+void keyboard_task() {
+  while(true) {
+    printf("Task 0: %x", inb(0x60));
+  }
+
+}
+
 void interrupt_handler(uint64_t isr)
 {
   switch (isr)
   {
+    case 32:
+    {
+      //switch_task(~task_value);
+      break;
+    }
     case 33:
       {
         uint8_t byte = inb(0x60);

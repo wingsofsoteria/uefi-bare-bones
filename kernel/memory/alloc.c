@@ -5,17 +5,14 @@ static kernel_page_table_t* page_table = (void*)-1;
 
 static int page_table_len = 0;
 
-bool never_usable(int type)
-{
-  return type == EfiReservedMemoryType || type == EfiUnusableMemory || type == EfiACPIMemoryNVS || type == EfiUnacceptedMemoryType || type == EfiPalCode || type == EfiMemoryMappedIO || type == EfiMemoryMappedIOPortSpace;
+bool is_usable(int type) {
+  return (type > 0 && type < 8) || type == EfiACPIReclaimMemory || type == EfiACPIMemoryNVS;
 }
-bool is_usable(int type)
-{
-  bool usable           = !never_usable(type);
-  bool initially_usable = usable && type != EfiLoaderData && type != EfiACPIReclaimMemory;
 
-  return kernel_initialization == -255 ? initially_usable : usable;
+bool is_available(int type) {
+  return type == EfiConventionalMemory || type == EfiLoaderCode || type == EfiBootServicesCode || type == EfiBootServicesData;
 }
+
 void dummy_alloc(mmap_t* mmap)
 {
   uint64_t total_pages = 0;
@@ -23,14 +20,9 @@ void dummy_alloc(mmap_t* mmap)
   {
     loader_memory_descriptor_t* desc = (loader_memory_descriptor_t*)((uint8_t*)mmap->addr + (i * mmap->desc_size));
 
-    if (!never_usable(desc->type))
+    if (is_usable(desc->type))
     {
       total_pages += desc->page_count;
-    }
-    if (desc->type == EfiLoaderData && is_usable(desc->type))
-    {
-      printf("Failed sanity check, init flag set to: %d", kernel_initialization);
-      for (;;);
     }
   }
   printf("Max memory: %x\n", total_pages * 4096);
@@ -40,7 +32,7 @@ void dummy_alloc(mmap_t* mmap)
   {
     loader_memory_descriptor_t* desc = (loader_memory_descriptor_t*)((uint8_t*)mmap->addr + (i * mmap->desc_size));
 
-    if (!is_usable(desc->type))
+    if (!is_available(desc->type))
     {
       continue;
     }
@@ -132,7 +124,7 @@ void setup_allocator(mmap_t* mmap)
   {
     loader_memory_descriptor_t* desc = (loader_memory_descriptor_t*)((uint8_t*)mmap->addr + (i * mmap->desc_size));
 
-    if (never_usable(desc->type))
+    if (!is_usable(desc->type))
     {
       continue;
     }
@@ -141,7 +133,7 @@ void setup_allocator(mmap_t* mmap)
     {
       page_table[current_page].start = desc->v_addr + (4096 * j);
 
-      page_table->free = is_usable(desc->type);
+      page_table->free = is_available(desc->type);
     }
   }
   printf("Finished Loading Memory\n");

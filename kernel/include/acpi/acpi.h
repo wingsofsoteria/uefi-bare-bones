@@ -23,7 +23,7 @@ typedef struct
   uint8_t processor_uid;
   uint8_t apic_id;
   uint32_t flags;
-} acpi_local_apic_structure_t;
+} __attribute__((packed)) acpi_local_apic_structure_t;
 
 typedef struct
 {
@@ -33,27 +33,7 @@ typedef struct
   uint8_t reserved;
   uint32_t io_apic_addr;
   uint32_t global_system_interrupt_base;
-} acpi_io_apic_structure_t;
-
-// typedef struct
-// {
-//   uint8_t type;
-//   uint8_t length;
-//   union
-//   {
-//     acpi_local_apic_structure_t local_apic_structure;
-//     acpi_io_apic_structure_t io_apic_structure;
-//   };
-// } __attribute__((packed)) acpi_interrupt_controller_structure_t;
-
-typedef struct
-{
-  acpi_sdt_header_t header;
-  uint32_t local_interrupt_controller_address;
-  uint32_t flags;
-  // acpi_interrupt_controller_structure_t* interrupt_controller_structure[];
-  char interrupt_controller_structure[];
-} __attribute__((packed)) acpi_madt_t;
+} __attribute__((packed)) acpi_io_apic_structure_t;
 
 typedef struct
 {

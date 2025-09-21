@@ -12,7 +12,7 @@ all:font kernel
 font:
 	objcopy -O elf64-x86-64 -B i386 -I binary font.psf objs/font.o 
 objs/%.s.o: %.s
-	nasm -felf64 $< -o $@
+	nasm -felf64 -i include $< -o $@
 objs/%.c.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 kernel:$(OBJS) ../libc/libk.a objs/font.o
