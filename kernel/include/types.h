@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #define KERNEL_START 0xFFFF800000000000
+extern uint64_t kernel_ptr;
 extern int kernel_initialization;
 
 #define VIRTUAL(phys) (phys + KERNEL_START)

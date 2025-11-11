@@ -1,8 +1,9 @@
 #ifndef __LOADER_LOADER_H__
 #define __LOADER_LOADER_H__
 #include "../kernel/include/types.h"
+#include <stdint.h>
 
-
+extern void* base_address;
 mmap_t quick_memory_map();
 kernel_bootinfo_t* get_bootinfo();
 void* load_kernel();

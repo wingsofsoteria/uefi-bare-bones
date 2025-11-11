@@ -1,5 +1,13 @@
 #include <string.h>
+void* memcpy(void* dest, const void* src, size_t size) {
+  char* destp = dest;
+  char* srcp = srcp;
+  for (int i = 0; i < size; i++) {
+    destp[i] = srcp[i];
+  }
 
+  return dest;
+}
 int memcmp(const void* aptr, const void* bptr, size_t size)
 {
   const unsigned char* a = (const unsigned char*)aptr;

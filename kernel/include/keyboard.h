@@ -3,6 +3,5 @@
 #define __KERNEL_KEYBOARD_H__
 
 #include <stdint.h>
-char scancode_to_char(uint8_t byte);
-
+void kb_handle_key(uint8_t byte);
 #endif

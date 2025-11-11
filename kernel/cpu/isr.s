@@ -23,9 +23,9 @@ extern exception_handler
 section .text
 interrupt_common:
 	push_x64_regs
-	mov rbp, rsp
 	mov rdi, rsp
 	call exception_handler
+	mov rsp, rax
 	pop_x64_regs
 	add rsp, 16
 	iretq

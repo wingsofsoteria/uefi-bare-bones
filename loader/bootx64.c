@@ -5,7 +5,7 @@
 int main()
 {
   setup_page_table();
-  __attribute__((sysv_abi)) int (*ptr)(kernel_bootinfo_t*);
+  __attribute__((sysv_abi)) int (*ptr)(kernel_bootinfo_t*, void*);
 
   ptr = load_kernel();
   if (ptr == NULL)
@@ -23,5 +23,5 @@ int main()
   }
 
   load_page_table();
-  ptr(bootinfo);
+  ptr(bootinfo, base_address);
 }

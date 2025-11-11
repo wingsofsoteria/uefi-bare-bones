@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <stdio.h>
+#include "../hidden/tasking.h"
 #include "graphics/tty.h"
 char scancodes[58] = {
   0,
@@ -60,6 +62,17 @@ char scancodes[58] = {
   0,
   ' ',
 };
+
+char scancode_to_char(uint8_t);
+
+void kb_handle_key(uint8_t byte) {
+  char ch = scancode_to_char(byte);
+  if (ch != 0)
+  {
+    putchar(ch);
+  }
+}
+
 char scancode_to_char(uint8_t byte)
 {
   char value = 0;

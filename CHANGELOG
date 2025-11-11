@@ -1,8 +1,11 @@
 current:
+	Implement multitasking (tasks crash when calling any libc function because I never thought I would get this far and decided to make nothing thread safe)
+	Started tinkering with the keyboard implementation
+prev:
 	Some refactoring
 	changed tty code to be able to use any psf font (specifically NOT psfu) that is 8x16 (you will have to provide the psf file and rename it to font.psf in the kernel folder)
 	changed the linker script to use separate physical and virtual addresses, modified the loader to handle this
-prev:
+
 	paused parsing acpi tables (had to properly do interrupts)
 	properly implemented gdt and idt
 	did a LOT of refactoring (rewrote the kernel makefile to allow for files in subdirectories and files with the same name but different extensions)
@@ -11,10 +14,10 @@ prev:
 	added a macro to halt the cpu
 	moved the liballoc stdlib functions into libk (they just wrap liballoc right now)
 	added temporary code to test interrupts (divide by zero at the end of the _start function)
-52ab40a:
+
 	Added precision specifier to printf
 	started parsing ACPI tables
-91affd7:
+
 	NOTE: multiple source files were removed and had to be recreated so previous changelogs may be inaccurate (oopsie :3)
 	changed project layout
 	added liballoc
@@ -25,14 +28,14 @@ prev:
 	rewrote gdt and idt
 	remapped kernel to use the same address space as the linux kernel
 	paging now works correctly (deferencing virtual addresses now actually returns correct information instead of page faulting)
-7413cd4:
+
 	even more refactoring
 	moved cpio parsing to separate file
 	added strncmp
 	increased memory allocated to initfs for future use (8KB to 1MB)
 	added separate archive list for cpio (easier to add new files)
 	updated makefile to not clean initfs and added it to .PHONY to force it to get rebuilt each time (easier for git)
-c3176f9:
+
 	changed clang format
 	made clang format ignore posix-uefi
 	created basic libc + printf
@@ -41,7 +44,6 @@ c3176f9:
 	added crt{i,n}.s
 	removed posix-uefi from repository
 
-993ffe8:
 	added compile_commands and .clang-format
 	Fixed apply.sh to correctly use QEMU_DEBUG flag ONLY when running on qemu (wildly sending bytes to a theoretical serial port is NOT a good idea)
 	Manually specified qemu ram size (it was causing a weird issue with allocations)

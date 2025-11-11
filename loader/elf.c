@@ -2,6 +2,7 @@
 #include "loader.h"
 #include "elf.h"
 #include <stdbool.h>
+void* base_address;
 bool is_image_valid(Elf64_Ehdr* hdr)
 {
   if (hdr->e_ident[EI_MAG0] != 0x7F)
@@ -52,6 +53,7 @@ void* load(char* buf, unsigned int size)
   uint64_t page_count = (end - begin) / EFI_PAGE_SIZE;
   BS->AllocatePages(AllocateAnyPages, EfiLoaderData, page_count, (void*)&addr);
   printf("Address %x, %d, %x, %x\n", addr, page_count, begin, end);
+  base_address = (void*)addr;
   map_pages((void*)KERNEL_START, (void*)addr, page_count, 0b10);
   for (int i = 0; i < hdr->e_phnum; i++)
   {

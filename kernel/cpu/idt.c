@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "../acpi/lapic.h"
 #include "keyboard.h"
-#include "cpu/tasking.h"
+#include "cpu/task.h"
 __attribute__((aligned(4096))) static idt_t idt;
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
@@ -19,57 +19,52 @@ void set_idt_entry_simple(uint8_t vector, void* handler)
   entry->reserved_high    = 0;
 }
 
-int task_value = 0;
-
-void keyboard_task() {
-  while(true) {
-    printf("Task 0: %x", inb(0x60));
-  }
-
-}
-
-void interrupt_handler(uint64_t isr)
+isr_stack_t* interrupt_handler(isr_stack_t* stack)
 {
-  switch (isr)
+  switch (stack->isr)
   {
     case 32:
-    {
-      //switch_task(~task_value);
-      break;
-    }
+      {
+        switch_task(stack);
+        break;
+      }
     case 33:
       {
         uint8_t byte = inb(0x60);
-        char ch      = scancode_to_char(byte);
-        if (ch != 0)
-        {
-          printf("%c", ch);
-        }
+        kb_handle_key(byte);
         break;
       }
     default:
       {
-        printf("%d ", isr);
+        printf("%d ", stack->isr);
+        abort();
       }
   }
-
   send_eoi();
+  return stack;
 }
 
-void exception_handler(isr_stack_t* stack)
+isr_stack_t* exception_handler(isr_stack_t* stack)
 {
   if (stack->isr >= 32)
   {
-    interrupt_handler(stack->isr);
-    return;
+    return interrupt_handler(stack);
   }
-  printf("Interrupt: %d\n", stack->isr);
   switch (stack->isr)
   {
     case 2:
       {
         printf("GOT NMI\n");
-        return;
+        break;
+      }
+    case 6:
+      {
+        break;
+      }
+    case 13:
+      {
+        printf("===GENERAL PROTECTION FAULT===\n\tError Code: %d", stack->err);
+        halt_cpu
       }
     case 14:
       {
@@ -79,9 +74,12 @@ void exception_handler(isr_stack_t* stack)
 
     default:
       {
+        printf("Interrupt: %d\n", stack->isr);
         halt_cpu
       }
   }
+
+  return stack;
 
 } // TODO stack data type + proper per exception handling
 
