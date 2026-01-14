@@ -3,9 +3,7 @@
 #define __KERNEL_GRAPHICS_TTY_H__
 
 #include <stdint.h>
-void init_text(uint8_t*);
-void tty_putc(char);
-void tty_delc();
+
 typedef struct
 {
   uint32_t magic;         /* magic bytes to identify PSF */
@@ -17,4 +15,12 @@ typedef struct
   uint32_t height;        /* height in pixels */
   uint32_t width;         /* width in pixels */
 } psf_font_t;
+
+void init_text(uint8_t*);
+void tty_putc(char);
+void tty_delc();
+void set_cursor(uint32_t, uint32_t);
+uint64_t get_cursor();
+extern char _binary_font_psf_start;
+
 #endif

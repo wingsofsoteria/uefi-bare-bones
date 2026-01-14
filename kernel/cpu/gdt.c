@@ -1,4 +1,5 @@
 #include "cpu/gdt.h"
+
 __attribute__((aligned(4096))) static gdt_t gdt;
 
 static gdt_entry_t gdt_set_gate_simple(uint8_t access, uint8_t flags)

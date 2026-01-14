@@ -3,6 +3,7 @@
 #define __KERNEL_ACPI_H__
 
 #include <stdint.h>
+
 typedef struct
 {
   char signature[4];
@@ -41,6 +42,10 @@ typedef struct
   uint64_t entry[];
 } __attribute__((packed)) acpi_xsdt_t;
 
-void setup_acpi(uint64_t);
+void acpi_init(uint64_t);
+void madt_init();
+void lapic_init();
+acpi_sdt_header_t* acpi_get_table(char id[4]);
+void enable_irq(int irq, int vector);
 
 #endif

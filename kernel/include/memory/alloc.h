@@ -2,8 +2,7 @@
 #ifndef __KERNEL_MEMORY_ALLOC_H__
 #define __KERNEL_MEMORY_ALLOC_H__
 
-#include "types.h"
-void setup_allocator(mmap_t* mmap);
+#include <types.h>
 
 enum
 {
@@ -33,5 +32,7 @@ typedef struct
   bool free;
 
 } kernel_page_table_t;
+
+void setup_allocator(mmap_t* mmap);
 
 #endif

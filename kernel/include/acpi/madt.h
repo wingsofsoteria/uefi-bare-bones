@@ -2,7 +2,7 @@
 #ifndef __KERNEL_ACPI_MADT_H__
 #define __KERNEL_ACPI_MADT_H__
 
-#include "acpi/acpi.h"
+#include <acpi/acpi.h>
 #include <stdint.h>
 
 typedef struct
@@ -38,7 +38,12 @@ typedef struct
   uint8_t trigger_mode : 2;
   uint16_t reserved : 12;
 } __attribute__((packed)) madt_interrupt_source_override_t;
-void set_madt(uint64_t address);
+
 uint32_t madt_get_ioapic(uint32_t gsi);
+uint32_t madt_get_lapic_addr();
 madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq);
+
+#define MADT_ADDR32(index) (madt->interrupt_controller_structure[index + 3] & 0xFF) << 24 | (madt->interrupt_controller_structure[index + 2] & 0xFF) << 16 | (madt->interrupt_controller_structure[index + 1] & 0xFF) << 8 | madt->interrupt_controller_structure[index] & 0xFF;
+#define MADT_LOOP          for (uint64_t i = 0; i < madt->header.length - 44; i += madt->interrupt_controller_structure[i + 1])
+
 #endif

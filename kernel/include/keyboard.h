@@ -2,6 +2,7 @@
 #ifndef __KERNEL_KEYBOARD_H__
 #define __KERNEL_KEYBOARD_H__
 
-#include <stdint.h>
-void kb_handle_key(uint8_t byte);
+void kb_handle_key();
+void init_kb_status();
+
 #endif

@@ -1,8 +1,10 @@
 // clang-format Language: C
 #ifndef _STDLIB_H
 #define _STDLIB_H
+
 #include <stddef.h>
 #include <sys/cdefs.h>
+
 #define halt_cpu         \
   for (;;)               \
   {                      \

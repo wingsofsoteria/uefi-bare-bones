@@ -9,4 +9,5 @@
 void init_cpio(uint8_t*);
 uint8_t* get_file();
 bool next_header();
+
 #endif

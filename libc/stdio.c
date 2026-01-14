@@ -7,6 +7,9 @@
 #if defined(__is_libk)
   #include <graphics/tty.h>
 #endif
+
+// TODO: Implement stdio and the write system call.
+
 int puts(const char* string)
 {
   return printf("%s", string);
@@ -21,7 +24,6 @@ int putchar(int ic)
   outb(0xE9, c);
 #endif
   // #else
-  // TODO: Implement stdio and the write system call.
   // #endif
   return ic;
 }

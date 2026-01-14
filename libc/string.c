@@ -1,8 +1,11 @@
 #include <string.h>
-void* memcpy(void* dest, const void* src, size_t size) {
+
+void* memcpy(void* dest, const void* src, size_t size)
+{
   char* destp = dest;
-  char* srcp = srcp;
-  for (int i = 0; i < size; i++) {
+  char* srcp  = srcp;
+  for (int i = 0; i < size; i++)
+  {
     destp[i] = srcp[i];
   }
 

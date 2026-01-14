@@ -1,14 +1,14 @@
 // clang-format Language: C
 #ifndef __KERNEL_TYPES_H__
 #define __KERNEL_TYPES_H__
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#define KERNEL_START 0xFFFF800000000000
-extern uint64_t kernel_ptr;
-extern int kernel_initialization;
 
+#define KERNEL_START  0xFFFF800000000000
 #define VIRTUAL(phys) (phys + KERNEL_START)
+
 typedef struct
 {
   uint16_t c_magic;
@@ -56,5 +56,8 @@ typedef struct
   uint64_t xsdt_address;
   uint8_t* bitmap;
 } kernel_bootinfo_t;
+
+extern uint64_t kernel_ptr;
+extern int kernel_initialization;
 
 #endif

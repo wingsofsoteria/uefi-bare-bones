@@ -1,10 +1,14 @@
 #include "cpu/idt.h"
-#include "stdlib.h"
+#include "cpu/task.h"
+
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "../acpi/lapic.h"
-#include "keyboard.h"
-#include "cpu/task.h"
+#include <acpi/lapic.h>
+#include <keyboard.h>
+
+// TODO stack data type + proper per exception handling
+
 __attribute__((aligned(4096))) static idt_t idt;
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
@@ -30,8 +34,7 @@ isr_stack_t* interrupt_handler(isr_stack_t* stack)
       }
     case 33:
       {
-        uint8_t byte = inb(0x60);
-        kb_handle_key(byte);
+        kb_handle_key();
         break;
       }
     default:
@@ -40,7 +43,7 @@ isr_stack_t* interrupt_handler(isr_stack_t* stack)
         abort();
       }
   }
-  send_eoi();
+  lapic_send_eoi();
   return stack;
 }
 
@@ -80,8 +83,7 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
   }
 
   return stack;
-
-} // TODO stack data type + proper per exception handling
+}
 
 void load_idt()
 {

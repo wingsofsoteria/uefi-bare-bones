@@ -1,7 +1,9 @@
 #include "memory/cpio.h"
-#include "stdlib.h"
-#include "types.h"
+
+#include <stdlib.h>
+#include <types.h>
 #include <string.h>
+
 static uint8_t* cpio_address;
 
 bool cpio_eof = false;

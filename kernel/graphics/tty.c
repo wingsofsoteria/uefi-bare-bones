@@ -1,12 +1,21 @@
 #include "graphics/tty.h"
 #include "graphics/pixel.h"
-#include <stdint.h>
-extern char _binary_font_psf_start;
 
-int cursor = 1;
-int line   = 1;
+#include <stdint.h>
+
+uint32_t cursor = 1;
+uint32_t line   = 1;
+
 void init_text(uint8_t* addr)
 {
+}
+
+void set_cursor(uint32_t cursor, uint32_t line)
+{
+}
+uint64_t get_cursor()
+{
+  return ((uint64_t)cursor << 32) & line;
 }
 
 void tty_putc(char ch)

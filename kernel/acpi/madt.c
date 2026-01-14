@@ -1,21 +1,15 @@
-#include "madt.h"
+#include "acpi/acpi.h"
 #include "acpi/pic.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "lapic.h"
-#define MADT_ADDR32(index) (madt->interrupt_controller_structure[index + 3] & 0xFF) << 24 | (madt->interrupt_controller_structure[index + 2] & 0xFF) << 16 | (madt->interrupt_controller_structure[index + 1] & 0xFF) << 8 | madt->interrupt_controller_structure[index] & 0xFF;
-#define MADT_LOOP          for (uint64_t i = 0; i < madt->header.length - 44; i += madt->interrupt_controller_structure[i + 1])
+#include "acpi/madt.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
 // TODO better helper functions (for each of the interrupt controller structures, etc)
 // TODO better data structures
 // TODO properly support old PIC
 
 static acpi_madt_t* madt = NULL;
-void parse_madt();
-void set_madt(uint64_t address)
-{
-  madt = (void*)address;
-  parse_madt();
-}
 
 static inline void io_wait(void)
 {
@@ -51,9 +45,14 @@ void mask_pic()
   outb(PIC2_DATA, 0xFF);
 }
 
-void parse_madt()
+uint32_t madt_get_lapic_addr()
 {
-  set_lapic_addr(madt->local_interrupt_controller_address);
+  return madt->local_interrupt_controller_address;
+}
+
+void madt_init()
+{
+  madt = (void*)acpi_get_table("APIC");
   printf("MADT\n\tSignature: %.4s\n\tLength: %d\n\tPIC Compat: %d\n", madt->header.signature, madt->header.length - 44, madt->flags & 0b1);
   if ((madt->flags & 0b1) == 1)
   {

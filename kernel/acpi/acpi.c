@@ -1,15 +1,16 @@
 #include "acpi/acpi.h"
-#include "graphics/pixel.h"
-#include "madt.h"
-#include "types.h"
+
+#include <stdlib.h>
+#include <types.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 // TODO write parsers for some other tables (HPET SSDT/DSDT* BGRT* etc)
 // SSDT and DSDT require an AML parser which I am putting off as long as possible
 // BGRT is purely for cosmetic reasons
+
+static acpi_xsdt_t* XSDT = NULL;
 
 bool sdt_checksum(acpi_sdt_header_t* sdt)
 {
@@ -23,30 +24,31 @@ bool sdt_checksum(acpi_sdt_header_t* sdt)
   return sum == 0;
 }
 
-void setup_acpi(uint64_t xsdt_address)
+acpi_sdt_header_t* acpi_get_table(char id[4])
 {
-  clear_screen();
-  acpi_xsdt_t* description_table = (void*)VIRTUAL(xsdt_address);
-  if (!sdt_checksum(&description_table->header))
+  int entries = (XSDT->header.length - sizeof(acpi_sdt_header_t)) / 8;
+  for (int i = 0; i < entries; i++)
+  {
+    acpi_sdt_header_t* sdt = (void*)XSDT->entry[i];
+    if (id[0] != sdt->signature[0] || id[1] != sdt->signature[1] || id[2] != sdt->signature[2] || id[3] != sdt->signature[3])
+    {
+      continue;
+    }
+    return sdt;
+  }
+
+  return NULL;
+}
+
+void acpi_init(uint64_t xsdt_address)
+{
+  XSDT = (void*)VIRTUAL(xsdt_address);
+  if (!sdt_checksum(&XSDT->header))
   {
     printf("Failed to parse ACPI tables\n");
+    abort();
   }
-
-  uint64_t entry_count = (description_table->header.length - 36) / 8;
-
-  for (int i = 0; i < entry_count; i++)
-  {
-    acpi_sdt_header_t* header = (void*)VIRTUAL(description_table->entry[i]);
-    if (!sdt_checksum(header))
-    {
-      printf("Invalid ACPI Table\n");
-      return;
-    }
-
-    if (strncmp(header->signature, "APIC", 4) == 0)
-    {
-      set_madt(description_table->entry[i]);
-    }
-  }
+  madt_init();
+  lapic_init();
   printf("Finished parsing ACPI tables\n");
 }

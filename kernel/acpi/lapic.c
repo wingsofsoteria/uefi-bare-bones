@@ -1,9 +1,13 @@
+#include "acpi/acpi.h"
+#include "acpi/madt.h"
+#include "acpi/lapic.h"
+
 #include <stdint.h>
-#include "lapic.h"
 
 // TODO properly configure LAPIC
 
 static uint32_t lapic_addr;
+
 void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
 {
   asm volatile("rdmsr"
@@ -18,9 +22,9 @@ void write_msr(uint32_t msr, uint32_t low, uint32_t high)
     : "a"(low), "d"(high), "c"(msr));
 }
 
-void set_lapic_addr(uint32_t addr)
+void lapic_init()
 {
-  lapic_addr = addr;
+  lapic_addr = madt_get_lapic_addr();
 }
 
 void lapic_enable()
@@ -32,16 +36,17 @@ void lapic_enable()
   write_msr(0x1B, (lapic_low | 0x800) & ~(0x100), lapic_high);
 
   lapic_write(0xF0, lapic_read(0xF0) | 0x100);
-  lapic_write(0x320, lapic_read(0x320) & ~(0x10000)); 
+  // lapic_write(0x320, lapic_read(0x320) & ~(0x10000));
   asm volatile("sti");
 }
 
-void lapic_disable() {
+void lapic_disable()
+{
   asm volatile("cli");
   lapic_write(0xF0, lapic_read(0xF0) & ~(0x100));
 }
 
-void send_eoi()
+void lapic_send_eoi()
 {
   lapic_write(0xB0, 0);
 }

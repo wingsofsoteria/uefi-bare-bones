@@ -3,6 +3,7 @@
 #define __KERNEL_CPU_GDT_H__
 
 #include <types.h>
+
 typedef struct
 {
   uint16_t limit_low;

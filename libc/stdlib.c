@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "memory/liballoc.h"
+#include <memory/liballoc.h>
 
 __attribute__((__noreturn__)) void abort(void)
 {
+  asm("cli");
   printf("kernel panicked\n");
   halt_cpu;
   __builtin_unreachable();

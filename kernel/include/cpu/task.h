@@ -1,8 +1,9 @@
 #ifndef __KERNEL_CPU_TASK_H__
 #define __KERNEL_CPU_TASK_H__
 
-#include "cpu/idt.h"
+#include <cpu/idt.h>
 #include <stdbool.h>
+
 typedef void (*task_function)(void*);
 
 typedef struct task
@@ -16,4 +17,7 @@ void create_task(task_function);
 
 void switch_task(isr_stack_t*);
 void init_tasks();
+
+extern void idle(void);
+
 #endif

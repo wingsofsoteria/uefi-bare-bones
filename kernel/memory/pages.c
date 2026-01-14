@@ -1,8 +1,9 @@
 #include "memory/pages.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define ADDR_TO_ENTRY(ADDR, FLAG) (((uint64_t)ADDR >> 12) & 0xFFFFFFFFFF) << 12 | (0b1 | FLAG);
+
 typedef struct
 {
   uint64_t pages[512];
