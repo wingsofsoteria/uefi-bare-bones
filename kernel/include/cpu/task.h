@@ -18,6 +18,6 @@ void create_task(task_function);
 void switch_task(isr_stack_t*);
 void init_tasks();
 
-extern void idle(void);
+extern void idle(void*);
 
 #endif

@@ -28,7 +28,6 @@ void dummy_alloc(mmap_t* mmap)
       total_pages += desc->page_count;
     }
   }
-  printf("Max memory: %x\n", total_pages * 4096);
   int size_in_pages = (total_pages * sizeof(kernel_page_table_t)) / 4096;
 
   for (int i = 0; i < (mmap->size / mmap->desc_size); i++)
@@ -139,5 +138,4 @@ void setup_allocator(mmap_t* mmap)
       page_table->free = is_available(desc->type);
     }
   }
-  printf("Finished Loading Memory\n");
 }

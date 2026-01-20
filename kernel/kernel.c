@@ -17,14 +17,14 @@
 // TODO finish handling keyboard tasks + basic shell
 // TODO move lapic code out of start function
 
-void idle()
+void idle(void* _inner)
 {
   printf("KERNEL IDLE");
   for (;;)
   {
   }
 }
-void task_1()
+void task_1(void* _inner)
 {
   printf("TASK 1");
   for (;;)
@@ -39,14 +39,7 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   load_idt();
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution, bootinfo->vertical_resolution);
   clear_screen();
-  tty_putc(1);
-  printf("Kernel Start %d\n", -1);
-  printf("Starting Kernel\n");
-  printf("Got magic value: %s\n", bootinfo->magic);
-  printf("Framebuffer Base: %x\nFramebuffer Size: %x\n", bootinfo->base, bootinfo->size);
   setup_allocator(bootinfo->mmap);
-  printf("%x\n", ptr);
-  printf("Setting up ACPI\n");
   acpi_init(bootinfo->xsdt_address);
   clear_screen();
   enable_irq(1, 33);

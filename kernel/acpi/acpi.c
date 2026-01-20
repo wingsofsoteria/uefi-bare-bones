@@ -50,5 +50,4 @@ void acpi_init(uint64_t xsdt_address)
   }
   madt_init();
   lapic_init();
-  printf("Finished parsing ACPI tables\n");
 }

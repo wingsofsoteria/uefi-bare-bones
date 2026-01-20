@@ -53,7 +53,6 @@ uint32_t madt_get_lapic_addr()
 void madt_init()
 {
   madt = (void*)acpi_get_table("APIC");
-  printf("MADT\n\tSignature: %.4s\n\tLength: %d\n\tPIC Compat: %d\n", madt->header.signature, madt->header.length - 44, madt->flags & 0b1);
   if ((madt->flags & 0b1) == 1)
   {
     mask_pic();
