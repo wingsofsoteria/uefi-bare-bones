@@ -9,6 +9,8 @@
 
 // TODO stack data type + proper per exception handling
 
+volatile int timer_count = 0;
+
 __attribute__((aligned(4096))) static idt_t idt;
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
@@ -37,10 +39,18 @@ isr_stack_t* interrupt_handler(isr_stack_t* stack)
         kb_handle_key();
         break;
       }
+    case 34:
+      {
+        timer_count++;
+        if (timer_count % 100 == 0)
+        {
+          printf("1 second has passed\n");
+        }
+        break;
+      }
     default:
       {
         printf("%d ", stack->isr);
-        abort();
       }
   }
   lapic_send_eoi();

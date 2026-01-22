@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+
+// TODO (priority) real time clock
 // TODO syscalls, porting a c library, better interrupt handling, actually support framebuffer formats instead of assuming 32bpp
 
 // TODO have abort dump the task stack data structures
@@ -46,11 +48,13 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   // init_tasks();
   // create_task(idle);
   // create_task(task_1);
+  uint16_t reload_value = 1193182 / 100;
+  outb(0x43, 0x34);
+  outb(0x40, reload_value & 0xFF);
+  outb(0x40, reload_value >> 8);
+
+  enable_irq(0, 34);
   init_kb_status();
-  outb(0x70, 0x8B);
-  char value = inb(0x71);
-  outb(0x70, 0x8B);
-  outb(0x71, value | 0x40);
   lapic_enable();
   halt_cpu
 }
