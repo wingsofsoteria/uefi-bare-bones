@@ -1,5 +1,6 @@
 #include "cpu/idt.h"
 #include "cpu/task.h"
+#include "cpu/pit.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -7,9 +8,7 @@
 #include <acpi/lapic.h>
 #include <keyboard.h>
 
-// TODO stack data type + proper per exception handling
 
-volatile int timer_count = 0;
 
 __attribute__((aligned(4096))) static idt_t idt;
 
@@ -41,11 +40,7 @@ isr_stack_t* interrupt_handler(isr_stack_t* stack)
       }
     case 34:
       {
-        timer_count++;
-        if (timer_count % 100 == 0)
-        {
-          printf("1 second has passed\n");
-        }
+       if (ticks > 0) ticks--; 
         break;
       }
     default:

@@ -1,3 +1,4 @@
+#include <cpu/pit.h>
 #include <acpi/acpi.h>
 #include <acpi/lapic.h>
 #include <cpu/gdt.h>
@@ -48,12 +49,10 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   // init_tasks();
   // create_task(idle);
   // create_task(task_1);
-  uint16_t reload_value = 1193182 / 100;
-  outb(0x43, 0x34);
-  outb(0x40, reload_value & 0xFF);
-  outb(0x40, reload_value >> 8);
-
+  pit_init();
   enable_irq(0, 34);
+  pit_sleep(100000);
+  printf("Woken up from sleep");
   init_kb_status();
   lapic_enable();
   halt_cpu
