@@ -47,5 +47,5 @@ void madt_init();
 void lapic_init();
 acpi_sdt_header_t* acpi_get_table(char id[4]);
 void enable_irq(int irq, int vector);
-
+void disable_irq(int irq);
 #endif

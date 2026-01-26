@@ -26,6 +26,18 @@ void set_redirection_table_entry(uint64_t ioregsel, ioapic_redtbl_t redtbl)
   write_ioapic(ioregsel, redtbl.pin + 1, (uint64_t)redtbl.destination << 56);
 }
 
+void disable_irq(int irq)
+{
+  uint32_t register_selector                            = madt_get_ioapic(0);
+  madt_interrupt_source_override_t* interrupt_overrides = madt_get_override_for_irq(irq);
+  uint32_t pin                                          = 0x10 + (irq * 2);
+  if (interrupt_overrides != NULL)
+  {
+    pin = 0x10 + (interrupt_overrides->global_system_interrupt * 2);
+  }
+  write_ioapic(register_selector, pin, 1 << 16); // set interrupt mask bit
+}
+
 void enable_irq(int irq, int vector)
 {
   uint32_t register_selector                            = madt_get_ioapic(0);

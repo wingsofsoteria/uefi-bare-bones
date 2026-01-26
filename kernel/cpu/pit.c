@@ -1,12 +1,10 @@
-#include "stdio.h"
-#include "stdlib.h"
+#include "cpu/idt.h"
+#include <stdio.h>
 #include <stdint.h>
 #define FREQ             1193182
 #define HZ               1000
 #define MODE_COMMAND_REG 0x43
 #define DATA0            0x40
-
-volatile uint64_t ticks;
 
 // Init PIT with about 1000hz (~1ms per irq) freq
 void pit_init()

@@ -4,6 +4,5 @@
 #include <stdint.h>
 void pit_init();
 void pit_sleep(uint64_t);
-extern volatile uint16_t ticks;
 
 #endif

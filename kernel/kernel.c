@@ -1,6 +1,7 @@
 #include <cpu/pit.h>
 #include <acpi/acpi.h>
 #include <acpi/lapic.h>
+#include <acpi/timer.h>
 #include <cpu/gdt.h>
 #include <cpu/idt.h>
 #include <cpu/task.h>
@@ -19,7 +20,8 @@
 // TODO have abort dump the task stack data structures
 // TODO finish handling keyboard tasks + basic shell
 // TODO move lapic code out of start function
-
+// TODO hotswapping interrupt handlers (sounds cursed because it is cursed)
+// TODO generic sleep function
 void idle(void* _inner)
 {
   printf("KERNEL IDLE");
@@ -51,9 +53,11 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   // create_task(task_1);
   pit_init();
   enable_irq(0, 34);
-  pit_sleep(100000);
-  printf("Woken up from sleep");
+  // pit_sleep(100000);
+  // printf("Woken up from sleep");
   init_kb_status();
   lapic_enable();
+  apic_enable_timer();
+  disable_irq(0);
   halt_cpu
 }

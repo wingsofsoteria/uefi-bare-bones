@@ -8,8 +8,7 @@
 #include <acpi/lapic.h>
 #include <keyboard.h>
 
-
-
+volatile uint64_t ticks;
 __attribute__((aligned(4096))) static idt_t idt;
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
@@ -30,7 +29,7 @@ isr_stack_t* interrupt_handler(isr_stack_t* stack)
   {
     case 32:
       {
-        switch_task(stack);
+        //        switch_task(stack);
         break;
       }
     case 33:
@@ -40,7 +39,7 @@ isr_stack_t* interrupt_handler(isr_stack_t* stack)
       }
     case 34:
       {
-       if (ticks > 0) ticks--; 
+        if (ticks > 0) ticks--;
         break;
       }
     default:

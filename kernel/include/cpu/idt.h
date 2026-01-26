@@ -37,4 +37,5 @@ extern void* isr_stub_table[256];
 
 void load_idt();
 
+extern volatile uint64_t ticks;
 #endif
