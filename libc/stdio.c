@@ -116,8 +116,7 @@ int printf(const char* restrict format, ...)
         // TODO: Set errno to EOVERFLOW.
         return -1;
       }
-      if (!print(str, len))
-        return -1;
+      if (!print(str, len)) return -1;
       written += len;
     }
     else if (*format == 'x')
@@ -227,8 +226,7 @@ int printf(const char* restrict format, ...)
         // TODO: Set errno to EOVERFLOW.
         return -1;
       }
-      if (!print(format, len))
-        return -1;
+      if (!print(format, len)) return -1;
       written += len;
       format  += len;
     }

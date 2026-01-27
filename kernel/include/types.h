@@ -57,7 +57,4 @@ typedef struct
   uint8_t* bitmap;
 } kernel_bootinfo_t;
 
-extern uint64_t kernel_ptr;
-extern int kernel_initialization;
-
 #endif

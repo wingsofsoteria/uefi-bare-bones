@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// TODO better helper functions (for each of the interrupt controller structures, etc)
+// TODO better helper functions (for each of the interrupt controller
+// structures, etc)
 // TODO better data structures
 // TODO properly support old PIC
 

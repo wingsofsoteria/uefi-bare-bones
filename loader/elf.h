@@ -1,6 +1,6 @@
 #ifndef _ELF_H
-#define _ELF_H 1
-#include <stdint.h>
+  #define _ELF_H 1
+  #include <stdint.h>
 typedef uint16_t Elf64_Half;
 typedef uint32_t Elf64_Word;
 typedef int32_t Elf64_Sword;
@@ -11,12 +11,12 @@ typedef uint64_t Elf64_Off;
 typedef uint16_t Elf64_Section;
 typedef Elf64_Half Elf64_Versym;
 
-#define EI_NIDENT (16)
-#define EI_MAG0   0
-#define EI_MAG1   1
-#define EI_MAG2   2
-#define EI_MAG3   3
-#define PT_LOAD   1
+  #define EI_NIDENT (16)
+  #define EI_MAG0   0
+  #define EI_MAG1   1
+  #define EI_MAG2   2
+  #define EI_MAG3   3
+  #define PT_LOAD   1
 
 typedef struct
 {
@@ -47,6 +47,5 @@ typedef struct
   Elf64_Xword p_memsz;
   Elf64_Xword p_align;
 } Elf64_Phdr;
-
 
 #endif

@@ -19,17 +19,11 @@ typedef struct
 
 int guid_equal(efi_guid_t a, efi_guid_t b)
 {
-  return a.Data1 == b.Data1 &&
-    a.Data2 == b.Data2 &&
-    a.Data3 == b.Data3 &&
-    a.Data4[0] == b.Data4[0] &&
-    a.Data4[1] == b.Data4[1] &&
-    a.Data4[2] == b.Data4[2] &&
-    a.Data4[3] == b.Data4[3] &&
-    a.Data4[4] == b.Data4[4] &&
-    a.Data4[5] == b.Data4[5] &&
-    a.Data4[6] == b.Data4[6] &&
-    a.Data4[7] == b.Data4[7];
+  return a.Data1 == b.Data1 && a.Data2 == b.Data2 && a.Data3 == b.Data3 &&
+    a.Data4[0] == b.Data4[0] && a.Data4[1] == b.Data4[1] &&
+    a.Data4[2] == b.Data4[2] && a.Data4[3] == b.Data4[3] &&
+    a.Data4[4] == b.Data4[4] && a.Data4[5] == b.Data4[5] &&
+    a.Data4[6] == b.Data4[6] && a.Data4[7] == b.Data4[7];
 }
 
 void* get_configuration_table(efi_guid_t guid)
@@ -87,8 +81,11 @@ efi_status_t get_rsdp(kernel_bootinfo_t* bootinfo)
     }
   }
   acpi_rsdp_structure_t* rsdp_structure = (acpi_rsdp_structure_t*)acpi_table;
-  printf("RSDP_STRUCTURE: %x, %d, %x, %d, %x\n", rsdp_structure->signature, rsdp_structure->checksum, rsdp_structure->oemid, rsdp_structure->revision, rsdp_structure->rsdt_address);
-  if (!strcmp(rsdp_structure->signature, "RSD PTR ") || !rsdp_checksum(rsdp_structure))
+  printf("RSDP_STRUCTURE: %x, %d, %x, %d, %x\n", rsdp_structure->signature,
+    rsdp_structure->checksum, rsdp_structure->oemid, rsdp_structure->revision,
+    rsdp_structure->rsdt_address);
+  if (!strcmp(rsdp_structure->signature, "RSD PTR ") ||
+    !rsdp_checksum(rsdp_structure))
   {
     return EFI_NOT_FOUND;
   }
@@ -122,7 +119,8 @@ efi_status_t get_initfs(kernel_bootinfo_t* bootinfo)
   }
   fread(initfs_buffer, initfs_size, 1, initfs);
   fclose(initfs);
-  map_pages(initfs_buffer + KERNEL_START, initfs_buffer, initfs_size / EFI_PAGE_SIZE, 0b10);
+  map_pages(initfs_buffer + KERNEL_START, initfs_buffer,
+    initfs_size / EFI_PAGE_SIZE, 0b10);
   bootinfo->initfs_size = initfs_size;
   bootinfo->initfs      = initfs_buffer;
   return EFI_SUCCESS;
@@ -138,12 +136,15 @@ efi_status_t get_gop(kernel_bootinfo_t* bootinfo)
   {
     return status;
   }
-  map_pages((void*)gop->Mode->FrameBufferBase + KERNEL_START, (void*)gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize / EFI_PAGE_SIZE, 0b10);
-  bootinfo->base                  = gop->Mode->FrameBufferBase;
-  bootinfo->pitch                 = gop->Mode->Information->PixelsPerScanLine * 4;
-  bootinfo->horizontal_resolution = gop->Mode->Information->HorizontalResolution;
-  bootinfo->vertical_resolution   = gop->Mode->Information->VerticalResolution;
-  bootinfo->size                  = gop->Mode->FrameBufferSize;
+  map_pages((void*)gop->Mode->FrameBufferBase + KERNEL_START,
+    (void*)gop->Mode->FrameBufferBase,
+    gop->Mode->FrameBufferSize / EFI_PAGE_SIZE, 0b10);
+  bootinfo->base  = gop->Mode->FrameBufferBase;
+  bootinfo->pitch = gop->Mode->Information->PixelsPerScanLine * 4;
+  bootinfo->horizontal_resolution =
+    gop->Mode->Information->HorizontalResolution;
+  bootinfo->vertical_resolution = gop->Mode->Information->VerticalResolution;
+  bootinfo->size                = gop->Mode->FrameBufferSize;
   return EFI_SUCCESS;
 }
 
@@ -165,8 +166,9 @@ kernel_bootinfo_t* get_bootinfo()
   mmap.addr   = (void*)((uint64_t)mmap.addr);
   for (int i = 0; i < (mmap.size / mmap.desc_size); i++)
   {
-    efi_memory_descriptor_t* desc = (efi_memory_descriptor_t*)((uint8_t*)mmap.addr + (i * mmap.desc_size));
-    desc->VirtualStart            = KERNEL_START + desc->PhysicalStart;
+    efi_memory_descriptor_t* desc =
+      (efi_memory_descriptor_t*)((uint8_t*)mmap.addr + (i * mmap.desc_size));
+    desc->VirtualStart = KERNEL_START + desc->PhysicalStart;
   }
   memcpy(bootinfo->mmap, &mmap, sizeof(mmap_t));
   return bootinfo;

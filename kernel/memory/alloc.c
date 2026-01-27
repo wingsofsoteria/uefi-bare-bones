@@ -8,12 +8,14 @@ static int page_table_len = 0;
 
 bool is_usable(int type)
 {
-  return (type > 0 && type < 8) || type == EfiACPIReclaimMemory || type == EfiACPIMemoryNVS;
+  return (type > 0 && type < 8) || type == EfiACPIReclaimMemory ||
+    type == EfiACPIMemoryNVS;
 }
 
 bool is_available(int type)
 {
-  return type == EfiConventionalMemory || type == EfiLoaderCode || type == EfiBootServicesCode || type == EfiBootServicesData;
+  return type == EfiConventionalMemory || type == EfiLoaderCode ||
+    type == EfiBootServicesCode || type == EfiBootServicesData;
 }
 
 void dummy_alloc(mmap_t* mmap)
@@ -21,7 +23,9 @@ void dummy_alloc(mmap_t* mmap)
   uint64_t total_pages = 0;
   for (int i = 0; i < (mmap->size / mmap->desc_size); i++)
   {
-    loader_memory_descriptor_t* desc = (loader_memory_descriptor_t*)((uint8_t*)mmap->addr + (i * mmap->desc_size));
+    loader_memory_descriptor_t* desc =
+      (loader_memory_descriptor_t*)((uint8_t*)mmap->addr +
+        (i * mmap->desc_size));
 
     if (is_usable(desc->type))
     {
@@ -32,7 +36,9 @@ void dummy_alloc(mmap_t* mmap)
 
   for (int i = 0; i < (mmap->size / mmap->desc_size); i++)
   {
-    loader_memory_descriptor_t* desc = (loader_memory_descriptor_t*)((uint8_t*)mmap->addr + (i * mmap->desc_size));
+    loader_memory_descriptor_t* desc =
+      (loader_memory_descriptor_t*)((uint8_t*)mmap->addr +
+        (i * mmap->desc_size));
 
     if (!is_available(desc->type))
     {
@@ -109,7 +115,9 @@ int liballoc_free(void* addr, int pages)
   return 0;
 }
 
-//! I'm choosing to keep track of everything but the EfiReserved memory type because it contains so many pages that we'd run out of memory trying to track them all (and we can't even use them)
+//! I'm choosing to keep track of everything but the EfiReserved memory type
+//! because it contains so many pages that we'd run out of memory trying to
+//! track them all (and we can't even use them)
 
 void setup_allocator(mmap_t* mmap)
 {
@@ -124,7 +132,9 @@ void setup_allocator(mmap_t* mmap)
 
   for (int i = 0; i < (mmap->size / mmap->desc_size); i++)
   {
-    loader_memory_descriptor_t* desc = (loader_memory_descriptor_t*)((uint8_t*)mmap->addr + (i * mmap->desc_size));
+    loader_memory_descriptor_t* desc =
+      (loader_memory_descriptor_t*)((uint8_t*)mmap->addr +
+        (i * mmap->desc_size));
 
     if (!is_usable(desc->type))
     {

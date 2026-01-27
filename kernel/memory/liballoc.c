@@ -55,7 +55,8 @@ static inline int getexp(unsigned int size)
   }
 
 #ifdef DEBUG
-  printf("getexp returns %d (%d bytes) for %d size\n", shift - 1, (1 << (shift - 1)), size);
+  printf("getexp returns %d (%d bytes) for %d size\n", shift - 1,
+    (1 << (shift - 1)), size);
 #endif
 
   return shift - 1;
@@ -64,8 +65,7 @@ static inline int getexp(unsigned int size)
 static void* liballoc_memset(void* s, int c, size_t n)
 {
   int i;
-  for (i = 0; i < n; i++)
-    ((char*)s)[i] = c;
+  for (i = 0; i < n; i++) ((char*)s)[i] = c;
 
   return s;
 }
@@ -183,18 +183,18 @@ static inline struct boundary_tag* absorb_right(struct boundary_tag* tag)
   tag->real_size += right->real_size;
 
   tag->split_right = right->split_right;
-  if (right->split_right != NULL)
-    right->split_right->split_left = tag;
+  if (right->split_right != NULL) right->split_right->split_left = tag;
 
   return tag;
 }
 
 static inline struct boundary_tag* split_tag(struct boundary_tag* tag)
 {
-  unsigned int remainder = tag->real_size - sizeof(struct boundary_tag) - tag->size;
+  unsigned int remainder =
+    tag->real_size - sizeof(struct boundary_tag) - tag->size;
 
-  struct boundary_tag* new_tag =
-    (struct boundary_tag*)((unsigned int)tag + sizeof(struct boundary_tag) + tag->size);
+  struct boundary_tag* new_tag = (struct boundary_tag*)((unsigned int)tag +
+    sizeof(struct boundary_tag) + tag->size);
 
   new_tag->magic     = LIBALLOC_MAGIC;
   new_tag->real_size = remainder;
@@ -248,7 +248,8 @@ static struct boundary_tag* allocate_new_tag(unsigned int size)
   tag->split_right = NULL;
 
 #ifdef DEBUG
-  printf("Resource allocated %x of %d pages (%d bytes) for %d size.\n", tag, pages, pages * l_pageSize, size);
+  printf("Resource allocated %x of %d pages (%d bytes) for %d size.\n", tag,
+    pages, pages * l_pageSize, size);
 
   l_allocated += pages * l_pageSize;
 
@@ -286,10 +287,13 @@ void* kernel_malloc(size_t size)
   while (tag != NULL)
   {
     // If there's enough space in this tag.
-    if ((tag->real_size - sizeof(struct boundary_tag)) >= (size + sizeof(struct boundary_tag)))
+    if ((tag->real_size - sizeof(struct boundary_tag)) >=
+      (size + sizeof(struct boundary_tag)))
     {
 #ifdef DEBUG
-      printf("Tag search found %d >= %d\n", (tag->real_size - sizeof(struct boundary_tag)), (size + sizeof(struct boundary_tag)));
+      printf("Tag search found %d >= %d\n",
+        (tag->real_size - sizeof(struct boundary_tag)),
+        (size + sizeof(struct boundary_tag)));
 #endif
       break;
     }
@@ -323,27 +327,35 @@ void* kernel_malloc(size_t size)
   // Removed... see if we can re-use the excess space.
 
 #ifdef DEBUG
-  printf("Found tag with %d bytes available (requested %d bytes, leaving %d), which has exponent: %d (%d bytes)\n", tag->real_size - sizeof(struct boundary_tag), size, tag->real_size - size - sizeof(struct boundary_tag), index, 1 << index);
+  printf(
+    "Found tag with %d bytes available (requested %d bytes, leaving %d), which has exponent: %d (%d bytes)\n",
+    tag->real_size - sizeof(struct boundary_tag), size,
+    tag->real_size - size - sizeof(struct boundary_tag), index, 1 << index);
 #endif
 
-  unsigned int remainder = tag->real_size - size - sizeof(struct boundary_tag) * 2; // Support a new tag + remainder
+  unsigned int remainder = tag->real_size - size -
+    sizeof(struct boundary_tag) * 2; // Support a new tag + remainder
 
-  if (((int)(remainder) > 0) /*&& ( (tag->real_size - remainder) >= (1<<MINEXP))*/)
+  if (((int)(remainder) >
+        0) /*&& ( (tag->real_size - remainder) >= (1<<MINEXP))*/)
   {
     int childIndex = getexp(remainder);
 
     if (childIndex >= 0)
     {
 #ifdef DEBUG
-      printf("Seems to be splittable: %d >= 2^%d .. %d\n", remainder, childIndex, (1 << childIndex));
+      printf("Seems to be splittable: %d >= 2^%d .. %d\n", remainder,
+        childIndex, (1 << childIndex));
 #endif
 
       struct boundary_tag* new_tag = split_tag(tag);
 
-      new_tag = new_tag; // Get around the compiler warning about unused variables.
+      new_tag =
+        new_tag; // Get around the compiler warning about unused variables.
 
 #ifdef DEBUG
-      printf("Old tag has become %d bytes, new tag is now %d bytes (%d exp)\n", tag->real_size, new_tag->real_size, new_tag->index);
+      printf("Old tag has become %d bytes, new tag is now %d bytes (%d exp)\n",
+        tag->real_size, new_tag->real_size, new_tag->index);
 #endif
     }
   }
@@ -352,7 +364,8 @@ void* kernel_malloc(size_t size)
 
 #ifdef DEBUG
   l_inuse += size;
-  printf("malloc: %x,  %d, %d\n", ptr, (int)l_inuse / 1024, (int)l_allocated / 1024);
+  printf(
+    "malloc: %x,  %d, %d\n", ptr, (int)l_inuse / 1024, (int)l_allocated / 1024);
   dump_array();
 #endif
 
@@ -379,14 +392,18 @@ void kernel_free(void* ptr)
 
 #ifdef DEBUG
   l_inuse -= tag->size;
-  printf("free: %x, %d, %d\n", ptr, (int)l_inuse / 1024, (int)l_allocated / 1024);
+  printf(
+    "free: %x, %d, %d\n", ptr, (int)l_inuse / 1024, (int)l_allocated / 1024);
 #endif
 
   // MELT LEFT...
   while ((tag->split_left != NULL) && (tag->split_left->index >= 0))
   {
 #ifdef DEBUG
-    printf("Melting tag left into available memory. Left was %d, becomes %d (%d)\n", tag->split_left->real_size, tag->split_left->real_size + tag->real_size, tag->split_left->real_size);
+    printf(
+      "Melting tag left into available memory. Left was %d, becomes %d (%d)\n",
+      tag->split_left->real_size, tag->split_left->real_size + tag->real_size,
+      tag->split_left->real_size);
 #endif
     tag = melt_left(tag);
     remove_tag(tag);
@@ -396,7 +413,10 @@ void kernel_free(void* ptr)
   while ((tag->split_right != NULL) && (tag->split_right->index >= 0))
   {
 #ifdef DEBUG
-    printf("Melting tag right into available memory. This was was %d, becomes %d (%d)\n", tag->real_size, tag->split_right->real_size + tag->real_size, tag->split_right->real_size);
+    printf(
+      "Melting tag right into available memory. This was was %d, becomes %d (%d)\n",
+      tag->real_size, tag->split_right->real_size + tag->real_size,
+      tag->split_right->real_size);
 #endif
     tag = absorb_right(tag);
   }
@@ -436,7 +456,9 @@ void kernel_free(void* ptr)
   insert_tag(tag, index);
 
 #ifdef DEBUG
-  printf("Returning tag with %d bytes (requested %d bytes), which has exponent: %d\n", tag->real_size, tag->size, index);
+  printf(
+    "Returning tag with %d bytes (requested %d bytes), which has exponent: %d\n",
+    tag->real_size, tag->size, index);
   dump_array();
 #endif
 
@@ -471,7 +493,7 @@ void* kernel_realloc(void* p, size_t size)
   if (p == NULL) return kernel_malloc(size);
 
   if (liballoc_lock != NULL) liballoc_lock(); // lockit
-  tag       = (struct boundary_tag*)((unsigned int)p - sizeof(struct boundary_tag));
+  tag = (struct boundary_tag*)((unsigned int)p - sizeof(struct boundary_tag));
   real_size = tag->size;
   if (liballoc_unlock != NULL) liballoc_unlock();
 

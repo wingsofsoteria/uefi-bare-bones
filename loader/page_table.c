@@ -2,7 +2,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "loader.h"
-#define ADDR_TO_ENTRY(ADDR, FLAG) (((uint64_t)ADDR >> 12) & 0xFFFFFFFFFF) << 12 | (0b1 | FLAG);
+#define ADDR_TO_ENTRY(ADDR, FLAG)                               \
+  (((uint64_t)ADDR >> 12) & 0xFFFFFFFFFF) << 12 | (0b1 | FLAG);
 typedef struct
 {
   uint64_t pages[512];
@@ -109,14 +110,11 @@ mmap_t quick_memory_map()
   efi_memory_descriptor_t* memory_map = NULL;
   while (1)
   {
-    status = BS->GetMemoryMap(&mmap_size, memory_map, &map_key, &desc_size, &desc_version);
+    status = BS->GetMemoryMap(
+      &mmap_size, memory_map, &map_key, &desc_size, &desc_version);
     if (status == EFI_SUCCESS)
-      return (mmap_t){
-        (loader_memory_descriptor_t*)memory_map,
-        mmap_size,
-        desc_size,
-        desc_version,
-        map_key};
+      return (mmap_t){(loader_memory_descriptor_t*)memory_map, mmap_size,
+        desc_size, desc_version, map_key};
     status = BS->AllocatePool(EfiLoaderData, mmap_size, (void**)&memory_map);
   }
 }
@@ -134,9 +132,11 @@ void setup_page_table()
   mmap_t mmap = quick_memory_map();
   for (int i = 0; i < (mmap.size / mmap.desc_size); i++)
   {
-    efi_memory_descriptor_t* desc = (efi_memory_descriptor_t*)((uint64_t)mmap.addr + (i * mmap.desc_size));
-    uint64_t v_addr               = KERNEL_START + desc->PhysicalStart;
-    map_pages((void*)v_addr, (void*)desc->PhysicalStart, desc->NumberOfPages, 0b10);
+    efi_memory_descriptor_t* desc =
+      (efi_memory_descriptor_t*)((uint64_t)mmap.addr + (i * mmap.desc_size));
+    uint64_t v_addr = KERNEL_START + desc->PhysicalStart;
+    map_pages(
+      (void*)v_addr, (void*)desc->PhysicalStart, desc->NumberOfPages, 0b10);
   }
 
   BS->FreePool(mmap.addr);

@@ -6,7 +6,8 @@
 
 typedef struct
 {
-  uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rbp, rdi, rsi, rdx, rcx, rbx, rax, isr, err, rip, cs, rflags;
+  uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rbp, rdi, rsi, rdx, rcx, rbx,
+    rax, isr, err, rip, cs, rflags;
 } __attribute__((packed)) isr_stack_t;
 
 typedef struct
@@ -31,11 +32,14 @@ typedef struct
   idt_entry_t entries[256];
 } __attribute__((packed)) idt_t;
 
+typedef isr_stack_t* (*interrupt)(isr_stack_t*);
+
 extern void set_idt(idt_ptr_t*);
 
 extern void* isr_stub_table[256];
 
 void load_idt();
-
+void disable_irq(int irq, int vector);
+void enable_irq(int irq, int vector, interrupt handler);
 extern volatile uint64_t ticks;
 #endif

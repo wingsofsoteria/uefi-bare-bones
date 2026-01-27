@@ -2,6 +2,7 @@
 #ifndef __KERNEL_ACPI_H__
 #define __KERNEL_ACPI_H__
 
+#include "cpu/isr.h"
 #include <stdint.h>
 
 typedef struct
@@ -46,6 +47,6 @@ void acpi_init(uint64_t);
 void madt_init();
 void lapic_init();
 acpi_sdt_header_t* acpi_get_table(char id[4]);
-void enable_irq(int irq, int vector);
-void disable_irq(int irq);
+void ioapic_enable_irq(int irq, int vector);
+void ioapic_disable_irq(int irq);
 #endif

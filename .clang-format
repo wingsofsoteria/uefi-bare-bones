@@ -51,7 +51,7 @@ BreakBeforeTernaryOperators: true
 BreakBinaryOperations: Never
 BreakFunctionDefinitionParameters: false
 BreakStringLiterals: false
-ColumnLimit:     0
+ColumnLimit:     80
 ContinuationIndentWidth: 2
 DerivePointerAlignment: false
 IncludeBlocks:   Preserve

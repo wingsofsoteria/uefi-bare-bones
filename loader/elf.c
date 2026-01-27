@@ -5,20 +5,17 @@
 void* base_address;
 bool is_image_valid(Elf64_Ehdr* hdr)
 {
-  if (hdr->e_ident[EI_MAG0] != 0x7F)
-    return false;
-  if (hdr->e_ident[EI_MAG1] != 0x45)
-    return false;
-  if (hdr->e_ident[EI_MAG2] != 0x4C)
-    return false;
-  if (hdr->e_ident[EI_MAG3] != 0x46)
-    return false;
+  if (hdr->e_ident[EI_MAG0] != 0x7F) return false;
+  if (hdr->e_ident[EI_MAG1] != 0x45) return false;
+  if (hdr->e_ident[EI_MAG2] != 0x4C) return false;
+  if (hdr->e_ident[EI_MAG3] != 0x46) return false;
   return true;
 }
 void* load(char* buf, unsigned int size)
 {
   Elf64_Ehdr* hdr = (Elf64_Ehdr*)buf;
-  printf("%s, %d, %x, %x, %d, %d\n", hdr->e_ident, hdr->e_type, hdr->e_entry, hdr->e_phoff, hdr->e_phentsize, hdr->e_phnum);
+  printf("%s, %d, %x, %x, %d, %d\n", hdr->e_ident, hdr->e_type, hdr->e_entry,
+    hdr->e_phoff, hdr->e_phentsize, hdr->e_phnum);
   if (!is_image_valid(hdr))
   {
     return NULL;
@@ -58,13 +55,16 @@ void* load(char* buf, unsigned int size)
   for (int i = 0; i < hdr->e_phnum; i++)
   {
     Elf64_Phdr current = phdr[i];
-    printf("%x, %x, %x, %x, %x, %d, %x\n", current.p_align, current.p_filesz, current.p_memsz, current.p_offset, current.p_paddr, current.p_type, current.p_vaddr);
+    printf("%x, %x, %x, %x, %x, %d, %x\n", current.p_align, current.p_filesz,
+      current.p_memsz, current.p_offset, current.p_paddr, current.p_type,
+      current.p_vaddr);
     if (current.p_type != PT_LOAD)
     {
       continue;
     }
     uint64_t p_addr = (uint64_t)addr + current.p_paddr - begin;
-    void* res       = memmove((void*)p_addr, buf + current.p_offset, current.p_filesz);
+    void* res =
+      memmove((void*)p_addr, buf + current.p_offset, current.p_filesz);
     printf("memmove result %x, p_addr %x\n", res, p_addr);
   }
   void* entry_addr = (void*)addr + hdr->e_entry - begin - KERNEL_START;

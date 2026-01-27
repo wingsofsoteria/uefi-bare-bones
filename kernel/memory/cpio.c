@@ -44,13 +44,15 @@ uint8_t* get_file()
 
 uint32_t file_size()
 {
-  return (((cpio_header_t*)cpio_address)->c_filesize[0] << 16) + ((cpio_header_t*)cpio_address)->c_filesize[1];
+  return (((cpio_header_t*)cpio_address)->c_filesize[0] << 16) +
+    ((cpio_header_t*)cpio_address)->c_filesize[1];
 }
 
 bool next_header()
 {
   if (cpio_eof) return false;
-  cpio_address = cpio_address + CPIO_HEADER_SIZE + ((cpio_header_t*)cpio_address)->c_namesize + 1 + file_size();
+  cpio_address = cpio_address + CPIO_HEADER_SIZE +
+    ((cpio_header_t*)cpio_address)->c_namesize + 1 + file_size();
   check_eof();
   // debug_cpio();
   return check_header();

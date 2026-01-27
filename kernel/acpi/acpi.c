@@ -7,8 +7,8 @@
 #include <stdio.h>
 
 // TODO write parsers for some other tables (HPET SSDT/DSDT* BGRT* etc)
-// SSDT and DSDT require an AML parser which I am putting off as long as possible
-// BGRT is purely for cosmetic reasons
+// SSDT and DSDT require an AML parser which I am putting off as long as
+// possible BGRT is purely for cosmetic reasons
 
 static acpi_xsdt_t* XSDT = NULL;
 
@@ -30,7 +30,8 @@ acpi_sdt_header_t* acpi_get_table(char id[4])
   for (int i = 0; i < entries; i++)
   {
     acpi_sdt_header_t* sdt = (void*)XSDT->entry[i];
-    if (id[0] != sdt->signature[0] || id[1] != sdt->signature[1] || id[2] != sdt->signature[2] || id[3] != sdt->signature[3])
+    if (id[0] != sdt->signature[0] || id[1] != sdt->signature[1] ||
+      id[2] != sdt->signature[2] || id[3] != sdt->signature[3])
     {
       continue;
     }

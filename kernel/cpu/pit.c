@@ -10,7 +10,9 @@
 void pit_init()
 {
   uint16_t reload_value = FREQ / HZ;
-  outb(MODE_COMMAND_REG, 0b00110100); // Select channel 0 with access mode lobyte/hibyte and operating mode rate generator and use 16-bit binary mode
+  outb(MODE_COMMAND_REG,
+    0b00110100); // Select channel 0 with access mode lobyte/hibyte and
+                 // operating mode rate generator and use 16-bit binary mode
   outb(DATA0, reload_value & 0xFF);
   outb(DATA0, reload_value >> 8);
 }
