@@ -31,4 +31,4 @@ fat.img:
 	umount /mnt
 	losetup -d /dev/loop100
 qemu: fat.img
-	qemu-system-x86_64 -m 4G -drive if=pflash,format=raw,readonly,file=bin/OVMF_CODE.4m.fd -drive file=fat.img -d int -no-reboot -monitor stdio 2> >(tee log >&2)
+	qemu-system-x86_64 -enable-kvm -cpu host -m 4G -drive if=pflash,format=raw,readonly,file=bin/OVMF_CODE.4m.fd -drive file=fat.img -d int -no-reboot -monitor stdio 2> >(tee log >&2)

@@ -2,7 +2,6 @@
 #ifndef __KERNEL_ACPI_H__
 #define __KERNEL_ACPI_H__
 
-#include "cpu/isr.h"
 #include <stdint.h>
 
 typedef struct

@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <config.h>
 // TODO better helper functions (for each of the interrupt controller
 // structures, etc)
 // TODO better data structures
@@ -54,6 +54,15 @@ uint32_t madt_get_lapic_addr()
 void madt_init()
 {
   madt = (void*)acpi_get_table("APIC");
+  if (madt == NULL)
+  {
+    // Configure PIC
+    kernel_config |= INTERRUPT_CONFIG_PIC;
+  }
+  else
+  {
+    kernel_config |= INTERRUPT_CONFIG_APIC; // used for enable_irq
+  }
   if ((madt->flags & 0b1) == 1)
   {
     mask_pic();

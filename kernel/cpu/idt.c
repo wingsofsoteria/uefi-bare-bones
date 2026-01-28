@@ -19,22 +19,22 @@ isr_stack_t* blank_handler(isr_stack_t* stack)
 
 void disable_irq(int irq, int vector)
 {
-  if (interrupt_config & INTERRUPT_CONFIG_APIC)
+  if (kernel_config & INTERRUPT_CONFIG_APIC)
   {
     ioapic_disable_irq(irq);
   }
 
-  isr_handler_table[vector] = blank_handler;
+  unregister_handler(vector);
 }
 
 void enable_irq(int irq, int vector, interrupt handler)
 {
-  if (interrupt_config & INTERRUPT_CONFIG_APIC)
+  if (kernel_config & INTERRUPT_CONFIG_APIC)
   {
     ioapic_enable_irq(irq, vector);
   }
 
-  isr_handler_table[vector] = handler;
+  register_handler(vector, handler);
 }
 
 void set_idt_entry_simple(uint8_t vector, void* handler)
@@ -52,28 +52,6 @@ void set_idt_entry_simple(uint8_t vector, void* handler)
 isr_stack_t* interrupt_handler(isr_stack_t* stack)
 {
   isr_stack_t* modified_stack = isr_handler_table[stack->isr](stack);
-  // switch (stack->isr)
-  //{
-  //   case 32:
-  //     {
-  //       //        switch_task(stack);
-  //       break;
-  //     }
-  //   case 33:
-  //     {
-  //       kb_handle_key();
-  //       break;
-  //     }
-  //   case 34:
-  //    {
-  //       if (ticks > 0) ticks--;
-  //       break;
-  //     }
-  //   default:
-  //     {
-  //       printf("%d ", stack->isr);
-  //     }
-  // }
   lapic_send_eoi();
   return modified_stack;
 }
@@ -118,7 +96,6 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
 
 void load_idt()
 {
-  isr_handler_table[32] = apic_timer_isr;
   for (int i = 0; i < 256; i++)
   {
     set_idt_entry_simple(i, isr_stub_table[i]);

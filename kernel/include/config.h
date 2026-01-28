@@ -2,10 +2,12 @@
 #define __KERNEL_CONFIG_H__
 
 #include <stdint.h>
-extern uint8_t interrupt_config;
+extern uint16_t kernel_config;
 
-#define INTERRUPT_CONFIG_APIC    0b10
-#define INTERRUPT_CONFIG_PIC     0b01
-#define INTERRUPT_CONFIG_INVALID 0b11
+#define INTERRUPT_CONFIG_PIC            0b00000001
+#define INTERRUPT_CONFIG_APIC           0b00000010
+#define INTERRUPT_CONFIG_ENABLE_TASKING 0b00000100
+#define TIMER_CONFIG_PIT_ENABLED        0b0000000100000000
+#define TIMER_CONFIG_APIC_TIMER_ENABLED 0b0000001000000000
 
 #endif
