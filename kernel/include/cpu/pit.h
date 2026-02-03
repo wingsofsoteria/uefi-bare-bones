@@ -4,10 +4,10 @@
 #include <stdint.h>
 void pit_init();
 void pit_sleep(uint64_t);
-
-#define FREQ             1193182
-#define HZ               1000
-#define MODE_COMMAND_REG 0x43
-#define DATA0            0x40
+uint16_t pit_count();
+#define PIT_FREQ             1193182
+#define PIT_HZ               1000
+#define PIT_MODE_COMMAND_REG 0x43
+#define PIT_DATA0            0x40
 
 #endif

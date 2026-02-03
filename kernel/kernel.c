@@ -1,5 +1,6 @@
 #include "config.h"
 #include "cpu/isr.h"
+#include "cpu/tsc.h"
 #include <cpu/pit.h>
 #include <acpi/acpi.h>
 #include <acpi/lapic.h>
@@ -20,7 +21,7 @@
 // TODO (priority) real time clock
 // TODO syscalls, porting a c library, better interrupt handling, actually
 // support framebuffer formats instead of assuming 32bpp
-
+// TODO use cpuid to calibrate TSC if available
 // TODO have abort dump the task stack data structures
 // TODO finish handling keyboard tasks + basic shell
 // TODO generic sleep function
@@ -73,7 +74,7 @@ void print_cpu_flags()
 
   if (eax != 0)
   {
-    printf("TSC Freq Ratio: %d/%d\nCore Crystal Clock: %d", ebx, eax, ecx);
+    printf("TSC Freq Ratio: %x/%x\nCore Crystal Clock: %x", ebx, eax, ecx);
   }
   else
   {
@@ -96,10 +97,9 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   // init_tasks();
   // create_task(idle);
   // create_task(task_1);
+  calibrate_tsc_slow();
   pit_init();
   enable_irq(0, 34, pic_timer_isr);
-  // pit_sleep(100000);
-  //  printf("Woken up from sleep");
   init_kb_status();
   lapic_enable();
   register_handler(32, apic_timer_isr);
@@ -107,34 +107,5 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   disable_irq(0, 34);
 
   print_cpu_flags();
-  //  uint64_t average   = 0;
-  //  uint64_t first_eax = 0, first_edx = 0, first_ecx = 0;
-  //  uint64_t second_eax = 0, second_edx = 0, second_ecx = 0;
-  //  for (int i = 0; i <= 10; i++)
-  //  {
-  //    asm volatile("rdtscp\n"
-  //                 "mov %%eax, %0\n"
-  //                 "mov %%edx, %1\n"
-  //                 "mov %%ecx, %2\n"
-  //      : "=m"(first_eax), "=m"(first_edx), "=m"(first_ecx)
-  //      :
-  //      : "eax", "edx", "ecx", "memory");
-  //
-  //    ksleep(1000);
-  //    asm volatile("rdtscp\n"
-  //                 "mov %%eax, %0\n"
-  //                 "mov %%edx, %1\n"
-  //                 "mov %%ecx, %2\n"
-  //      : "=m"(second_eax), "=m"(second_edx), "=m"(second_ecx)
-  //      :
-  //      : "eax", "edx", "ecx", "memory");
-  //    uint64_t initial_count = (first_edx << 32) + first_eax;
-  //    uint64_t final_count   = (second_edx << 32) + second_eax;
-  //    uint64_t difference    = (final_count - initial_count) / 1000;
-  //    printf("Cycle Count %d: %d\n", i, difference);
-  //    average += difference;
-  //  }
-  //  average /= 10;
-  //  printf("Average over 10 samples: %d\n", average);
   halt_cpu
 }
