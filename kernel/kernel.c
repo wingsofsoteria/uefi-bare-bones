@@ -91,7 +91,6 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   clear_screen();
   setup_allocator(bootinfo->mmap);
   acpi_init(bootinfo->xsdt_address);
-  abort();
   clear_screen();
   enable_irq(1, 33, keyboard_isr);
   // init_tasks();

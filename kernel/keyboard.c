@@ -1,13 +1,32 @@
 #include "keyboard.h"
+#include "stdlib.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <graphics/tty.h>
 #include <scancodes.h>
-
+// TODO find a way to use the loop_print_definition_blocks function without
+// hanging the entire system (possible use for tasking?)
 char scancode_to_char(uint8_t);
 uint8_t KB_STATUS[88] = {0};
+
+void test_ascii_table(char ch, uint8_t byte)
+{
+  if (ch < 32 || ch > 96) return;
+  if (ASCII_SCANCODE_1[ch] != byte)
+  {
+    printf("character mismatch: %d vs %x\n", ch, ASCII_SCANCODE_1[ch]);
+    abort();
+  }
+}
+
+int is_key_pressed(char ascii_key)
+{
+  if (ascii_key < 32 || ascii_key > 96) return 0;
+  uint8_t scancode = ASCII_SCANCODE_1[ascii_key];
+  return KB_STATUS[scancode];
+}
 
 void kb_handle_key()
 {
@@ -24,7 +43,6 @@ void kb_handle_key()
     KB_STATUS[byte - 0x80] = 0;
   }
   char ch = scancode_to_char(byte);
-
   if (ch != 0)
   {
     putchar(ch);

@@ -8,5 +8,5 @@ void ioapic_enable_irq(int irq, int vector);
 void ioapic_disable_irq(int irq);
 void lapic_send_eoi();
 void lapic_enable();
-
+void loop_print_definition_blocks();
 #endif

@@ -1,15 +1,10 @@
-#include "acpi.h"
-
-#include <stdlib.h>
-#include <types.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-
-// TODO write parsers for some other tables (HPET SSDT/DSDT* BGRT* etc)
 // SSDT and DSDT require an AML parser which I am putting off as long as
 // possible BGRT is purely for cosmetic reasons
 
+#include "acpi.h"
+#include "stdlib.h"
+#include "types.h"
+#include <stdio.h>
 static acpi_xsdt_t* XSDT = NULL;
 
 bool sdt_checksum(acpi_sdt_header_t* sdt)
@@ -51,6 +46,5 @@ void acpi_init(uint64_t xsdt_address)
   }
   madt_init();
   lapic_init();
-  get_definition_block_count();
   // TODO finish parsing FADT
 }
