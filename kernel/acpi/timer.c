@@ -1,5 +1,5 @@
-#include "acpi/lapic.h"
-#include "acpi/timer.h"
+#include "acpi.h"
+#include "acpi/pic.h"
 
 #include <cpu/pit.h>
 #include <config.h>

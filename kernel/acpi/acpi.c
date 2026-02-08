@@ -1,4 +1,4 @@
-#include "acpi/acpi.h"
+#include "acpi.h"
 
 #include <stdlib.h>
 #include <types.h>
@@ -51,4 +51,6 @@ void acpi_init(uint64_t xsdt_address)
   }
   madt_init();
   lapic_init();
+  get_definition_block_count();
+  // TODO finish parsing FADT
 }

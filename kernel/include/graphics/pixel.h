@@ -1,4 +1,3 @@
-// clang-format Language: C
 #ifndef __KERNEL_GRAPHICS_PIXEL_H__
 #define __KERNEL_GRAPHICS_PIXEL_H__
 

@@ -1,10 +1,9 @@
-#include "config.h"
-#include "cpu/isr.h"
-#include "cpu/tsc.h"
+#include <acpi/pic.h>
+#include <config.h>
+#include <cpu/isr.h>
+#include <cpu/tsc.h>
 #include <cpu/pit.h>
 #include <acpi/acpi.h>
-#include <acpi/lapic.h>
-#include <acpi/timer.h>
 #include <cpu/gdt.h>
 #include <cpu/idt.h>
 #include <cpu/task.h>
@@ -92,6 +91,7 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   clear_screen();
   setup_allocator(bootinfo->mmap);
   acpi_init(bootinfo->xsdt_address);
+  abort();
   clear_screen();
   enable_irq(1, 33, keyboard_isr);
   // init_tasks();

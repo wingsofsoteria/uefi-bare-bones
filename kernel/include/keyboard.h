@@ -1,4 +1,3 @@
-// clang-format Language: C
 #ifndef __KERNEL_KEYBOARD_H__
 #define __KERNEL_KEYBOARD_H__
 

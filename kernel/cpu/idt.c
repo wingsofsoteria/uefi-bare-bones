@@ -6,7 +6,6 @@
 #include <config.h>
 #include <acpi/acpi.h>
 #include <stdio.h>
-#include <acpi/lapic.h>
 #include <keyboard.h>
 
 volatile uint64_t ticks;

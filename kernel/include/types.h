@@ -1,4 +1,3 @@
-// clang-format Language: C
 #ifndef __KERNEL_TYPES_H__
 #define __KERNEL_TYPES_H__
 

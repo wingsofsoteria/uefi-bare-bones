@@ -1,4 +1,3 @@
-// clang-format Language: C
 #ifndef __KERNEL_MEMORY_CPIO_H__
 #define __KERNEL_MEMORY_CPIO_H__
 

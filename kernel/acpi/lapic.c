@@ -1,12 +1,20 @@
-#include "acpi/acpi.h"
-#include "acpi/madt.h"
-#include "acpi/lapic.h"
+#include "acpi.h"
 
 #include <stdint.h>
 
 // TODO properly configure LAPIC
 
 static uint32_t lapic_addr;
+
+void lapic_write(uint16_t offset, uint32_t value)
+{
+  *(volatile uint32_t*)((uint64_t)lapic_addr + offset) = value;
+}
+
+uint32_t lapic_read(uint16_t offset)
+{
+  return *(volatile uint32_t*)((uint64_t)lapic_addr + offset);
+}
 
 void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
 {
@@ -49,14 +57,4 @@ void lapic_disable()
 void lapic_send_eoi()
 {
   lapic_write(0xB0, 0);
-}
-
-void lapic_write(uint16_t offset, uint32_t value)
-{
-  *(volatile uint32_t*)((uint64_t)lapic_addr + offset) = value;
-}
-
-uint32_t lapic_read(uint16_t offset)
-{
-  return *(volatile uint32_t*)((uint64_t)lapic_addr + offset);
 }

@@ -1,6 +1,5 @@
-#include "acpi/acpi.h"
-#include "acpi/madt.h"
-#include "acpi/ioapic.h"
+#include "acpi.h"
+#include "acpi/pic.h"
 
 #include <stdlib.h>
 #include <stdint.h>
