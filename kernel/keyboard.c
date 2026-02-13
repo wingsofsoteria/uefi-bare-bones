@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "cpu/pit.h"
 #include "stdlib.h"
 
 #include <stdint.h>
@@ -8,6 +9,7 @@
 #include <scancodes.h>
 // TODO find a way to use the loop_print_definition_blocks function without
 // hanging the entire system (possible use for tasking?)
+// | I just stuck it in the main function for now
 char scancode_to_char(uint8_t);
 uint8_t KB_STATUS[88] = {0};
 
@@ -21,6 +23,29 @@ void test_ascii_table(char ch, uint8_t byte)
   }
 }
 
+/* theres gotta be a better way to do this than just waiting
+ * basically we just read the keyboard the first time and fail early if the key
+ * isn't actually pressed then we wait for up to 500 ms (TODO change the
+ * pit_sleep call once we figure out APIC tsc deadline mode) and while waiting
+ * we check if the key was released every 10ms */
+int naive_key_released(char ascii_key)
+{
+  if (ascii_key < 32 || ascii_key > 96) return 0;
+  uint8_t scancode   = ASCII_SCANCODE_1[ascii_key];
+  uint8_t first_read = KB_STATUS[scancode];
+  if (!first_read) return 0;
+  for (int sleep_counter = 0; sleep_counter < 50; sleep_counter++)
+  {
+    pit_sleep(10);
+    uint8_t second_read = KB_STATUS[scancode];
+    if (!second_read) return 1;
+  }
+  return 0;
+}
+
+// the difference between checking if a key was released and if it was pressed
+// is downright laughable (hence why I am under the opinion that there must be a
+// better way)
 int is_key_pressed(char ascii_key)
 {
   if (ascii_key < 32 || ascii_key > 96) return 0;

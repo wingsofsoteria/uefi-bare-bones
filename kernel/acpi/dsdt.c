@@ -2,6 +2,9 @@
 #include "graphics/pixel.h"
 #include "keyboard.h"
 #include <stdio.h>
+
+// TODO actually print each definition block
+
 void print_next_definition_block()
 {
   clear_screen();
@@ -13,16 +16,14 @@ void loop_print_definition_blocks()
   // Print N blocks
   // wait until specific character is pressed - I'll use N for 'next block' and
   // S for 'stop' to keep things simple
-  while (!is_key_pressed('S'))
+  int stopped = 0;
+  while (!stopped)
   {
-    if (is_key_pressed('N'))
+    if (naive_key_released('N'))
     {
       print_next_definition_block(); // clear screen and print
     }
-    else
-    {
-      continue; // TODO maybe add sleep here for delay if needed
-    }
+    stopped = is_key_pressed('S');
   }
 }
 

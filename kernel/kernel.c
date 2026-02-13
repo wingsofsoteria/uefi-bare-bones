@@ -17,6 +17,14 @@
 #include <stdint.h>
 #include <stdio.h>
 
+// BTW if anyone ever actually tries to read this code, it might be some of the
+// worst code I have ever or will ever write
+// my methodology for actually writing this damn thing was (random burst of
+// inspiration at like 2 am) ' man that would be a great thing to add, let me
+// just whip up something quick and I'll fix it later ' (queue 10 years of this
+// thing in one form or another and this is what was born of it)
+// I also only ever comment things after the fact so that doesn't help either
+
 // TODO (priority) real time clock
 // TODO syscalls, porting a c library, better interrupt handling, actually
 // support framebuffer formats instead of assuming 32bpp
@@ -106,5 +114,6 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   disable_irq(0, 34);
 
   print_cpu_flags();
+  loop_print_definition_blocks();
   halt_cpu
 }
