@@ -114,6 +114,6 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   disable_irq(0, 34);
 
   print_cpu_flags();
-  loop_print_definition_blocks();
+  dsdt_parse();
   halt_cpu
 }

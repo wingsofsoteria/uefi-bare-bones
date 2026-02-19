@@ -46,5 +46,6 @@ void acpi_init(uint64_t xsdt_address)
   }
   madt_init();
   lapic_init();
+  dsdt_init();
   // TODO finish parsing FADT
 }

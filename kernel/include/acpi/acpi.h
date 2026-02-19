@@ -9,4 +9,5 @@ void ioapic_disable_irq(int irq);
 void lapic_send_eoi();
 void lapic_enable();
 void loop_print_definition_blocks();
+void dsdt_parse();
 #endif

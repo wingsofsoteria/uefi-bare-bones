@@ -22,5 +22,5 @@ madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq);
 acpi_sdt_header_t* acpi_get_table(char id[4]);
 uint32_t lapic_read(uint16_t offset);
 void lapic_write(uint16_t offset, uint32_t value);
-void get_definition_block_count();
+void dsdt_init();
 #endif

@@ -10,8 +10,10 @@ void init_text(uint8_t* addr)
 {
 }
 
-void set_cursor(uint32_t cursor, uint32_t line)
+void set_cursor(uint32_t new_cursor, uint32_t new_line)
 {
+  cursor = new_cursor;
+  line   = new_line;
 }
 uint64_t get_cursor()
 {

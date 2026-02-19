@@ -1,4 +1,5 @@
 #include "graphics/pixel.h"
+#include "graphics/tty.h"
 
 uint64_t fb_base;
 uint32_t fb_pitch;
@@ -44,6 +45,7 @@ void fill(int start_x, int start_y, int width, int height, uint32_t color)
 void clear_screen()
 {
   fill(0, 0, fb_xres, fb_yres, 0x0);
+  set_cursor(1, 1);
 }
 
 void put_pixel(int x, int y, uint32_t color)
