@@ -1,6 +1,7 @@
 #ifndef __KERNEL_ACPI_AML_INTERNAL_H__
 #define __KERNEL_ACPI_AML_INTERNAL_H__
 
+#include <stdint.h>
 #define EXT_OP_PREFIX     0x5B
 #define ROOT_CHAR         0x5C
 #define PREFIX_CHAR       0x5E
@@ -21,4 +22,24 @@
 #define SCOPE_OP          0x10
 #define ACQUIRE_OP        0x23
 #define ADD_OP            0x72
+#define OP_REGION_OP      0x80
+#define FIELD_OP          0x81
+
+void parse_term_list();
+uint32_t get_next_dword();
+void* parse_buffer_definition();
+
+typedef struct
+{
+  char lead_char;
+  char name_char_1;
+  char name_char_2;
+  char name_char_3;
+} aml_name_segment_t;
+
+typedef struct
+{
+  char prefix_byte;
+  void* __ptr;
+} __attribute__((packed)) aml_cursed_ptr_t;
 #endif

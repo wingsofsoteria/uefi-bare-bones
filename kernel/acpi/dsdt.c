@@ -4,7 +4,9 @@
 #include "graphics/pixel.h"
 #include "keyboard.h"
 #include "stdlib.h"
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 acpi_dsdt_t* DSDT = NULL;
 int MAX_BLOCKS    = 0;
@@ -25,6 +27,7 @@ void print_next_definition_block()
     }
     printf("%x ", DSDT->definition_blocks[pointer++]);
   }
+  printf("\n");
 }
 
 void loop_print_definition_blocks()
@@ -83,61 +86,81 @@ uint32_t parse_pkg_length()
   return pkg_length;
 }
 
-char* parse_name_path(int num_segments, char prefix)
+aml_name_segment_t parse_name_seg()
 {
-  int size        = num_segments * 4;
-  int start_point = 0;
+  uint32_t name_segment = get_next_dword();
+  return (aml_name_segment_t){name_segment & 0xFF, (name_segment >> 8) & 0xFF,
+    (name_segment >> 16) & 0xFF, name_segment >> 24};
+}
 
-  if (prefix)
+char* parse_name_path()
+{
+  char lead_byte = peek_next_byte(0);
+  if (lead_byte == DUAL_NAME_PREFIX)
   {
-    size++;
-    start_point = 1;
+    get_next_byte();
+    aml_name_segment_t first_half  = parse_name_seg();
+    aml_name_segment_t second_half = parse_name_seg();
+    char* name_string              = calloc(8, sizeof(char));
+
+    name_string[0] = first_half.lead_char;
+    name_string[1] = first_half.name_char_1;
+    name_string[2] = first_half.name_char_2;
+    name_string[3] = first_half.name_char_3;
+
+    name_string[4] = second_half.lead_char;
+    name_string[5] = second_half.name_char_1;
+    name_string[6] = second_half.name_char_2;
+    name_string[7] = second_half.name_char_3;
+    return name_string;
   }
-  char* name_segment = calloc(size, sizeof(char));
-  name_segment[0]    = prefix;
-  for (int i = 0; i < num_segments; i++)
+  else if (lead_byte == MULTI_NAME_PREFIX)
   {
-    name_segment[start_point]      = get_next_byte();
-    name_segment[start_point + 1]  = get_next_byte();
-    name_segment[start_point + 2]  = get_next_byte();
-    name_segment[start_point + 3]  = get_next_byte();
-    start_point                   += 4;
+    get_next_byte();
+    uint8_t seg_count = get_next_byte();
+    char* name_string = calloc(seg_count * 4, sizeof(char));
+    for (int i = 0; i < seg_count; i++)
+    {
+      aml_name_segment_t segment = parse_name_seg();
+      name_string[(i * 4)]       = segment.lead_char;
+      name_string[(i * 4) + 1]   = segment.name_char_1;
+      name_string[(i * 4) + 2]   = segment.name_char_2;
+      name_string[(i * 4) + 3]   = segment.name_char_3;
+    }
+    return name_string;
   }
-  return name_segment;
+  else if (lead_byte == NULL_NAME)
+  {
+    get_next_byte();
+    return NULL;
+  }
+  else
+  {
+    aml_name_segment_t segment = parse_name_seg();
+    char* name_string          = calloc(4, sizeof(char));
+    name_string[0]             = segment.lead_char;
+    name_string[1]             = segment.name_char_1;
+    name_string[2]             = segment.name_char_2;
+    name_string[3]             = segment.name_char_3;
+    return name_string;
+  }
 }
 
 char* parse_name_string()
 {
-  char first_byte  = get_next_byte();
-  char prefix_byte = 0;
-  int num_segments = 1;
+  char first_byte = peek_next_byte(0);
   if (first_byte == ROOT_CHAR || first_byte == PREFIX_CHAR)
   {
-    prefix_byte = first_byte;
-    first_byte  = get_next_byte();
+    get_next_byte();
   }
-  if (first_byte == NULL_NAME)
-  {
-    char* name_segment = calloc(2, sizeof(char));
-    name_segment[0]    = prefix_byte;
-    name_segment[1]    = NULL_NAME;
-    return name_segment;
-  }
-  if (first_byte == DUAL_NAME_PREFIX)
-  {
-    num_segments = 2;
-  }
-  if (first_byte == MULTI_NAME_PREFIX)
-  {
-    num_segments = get_next_byte();
-  }
-  return parse_name_path(num_segments, prefix_byte);
+  return parse_name_path();
 }
 
 void parse_scope_definition()
 {
   uint32_t pkg_length = parse_pkg_length();
   char* name_string   = parse_name_string();
+  parse_term_list();
   printf("SCOPE DEFINITION: %d, %s\n", pkg_length, name_string);
 }
 
@@ -228,50 +251,7 @@ void* parse_computational_data()
   return const_obj;
 }
 
-void parse_add_definition()
-{
-}
-
-/*
- * based on my understanding of AML so far
- * a TermArg is an expression that evaluates to a value
- * so eventually parse_term_arg should be returning a function that returns a
- * void pointer that represents some other type determined by context
- */
-
-void parse_term_arg()
-{
-  uint8_t next_byte = get_next_byte();
-  switch (next_byte)
-  {
-    case EXT_OP_PREFIX:
-      {
-        uint8_t extended_byte = get_next_byte();
-        switch (extended_byte)
-        {
-          case ACQUIRE_OP:
-            {
-              // return parse_acquire_definition();
-              abort();
-            }
-        }
-      }
-    case ADD_OP:
-      {
-        parse_add_definition();
-        break;
-      }
-  }
-}
-
-void* parse_buffer_definition()
-{
-  uint32_t pkg_length = parse_pkg_length();
-
-  return NULL;
-}
-
-void* parse_data_ref_object()
+void* parse_data_object()
 {
   uint8_t next_byte = get_next_byte();
   switch (next_byte)
@@ -302,6 +282,48 @@ void* parse_data_ref_object()
         return parse_buffer_definition();
       }
   }
+  return NULL;
+}
+aml_cursed_ptr_t parse_term_arg()
+{
+  // TODO expressions
+  // TODO args
+  // TODO Local objects
+  uint8_t next_byte = peek_next_byte(0);
+  if (next_byte >= 0x60 && next_byte <= 0x6E) // local and arg objects
+  {
+    char value = get_next_byte();
+    return (aml_cursed_ptr_t){next_byte, NULL};
+  }
+  printf("NEXT BYTE %x\n", next_byte);
+  if ((next_byte >= BYTE_PREFIX && next_byte <= QWORD_PREFIX) ||
+    next_byte == ZERO_OP || next_byte == ONE_OP || next_byte == ONES_OP ||
+    next_byte == EXT_OP_PREFIX)
+  {
+    void* value = parse_data_object();
+    return (aml_cursed_ptr_t){next_byte, value};
+  }
+  return (aml_cursed_ptr_t){NULL_NAME, NULL};
+}
+
+void* parse_buffer_definition()
+{
+  uint32_t pkg_length          = parse_pkg_length();
+  aml_cursed_ptr_t buffer_size = parse_term_arg();
+  abort();
+  return NULL;
+}
+
+void* parse_data_ref_object()
+{
+  uint8_t next_byte = get_next_byte();
+
+  if ((next_byte >= BYTE_PREFIX && next_byte <= QWORD_PREFIX) ||
+    next_byte == ZERO_OP || next_byte == ONE_OP || next_byte == ONES_OP ||
+    next_byte == EXT_OP_PREFIX)
+  {
+    return parse_data_object();
+  }
 
   return NULL;
 }
@@ -310,6 +332,17 @@ void parse_name_definition()
 {
   char* string = parse_name_string();
   parse_data_ref_object();
+}
+
+void parse_region_op_definition()
+{
+  char* name_string              = parse_name_string();
+  char region_space              = get_next_byte();
+  aml_cursed_ptr_t region_offset = parse_term_arg();
+  aml_cursed_ptr_t region_len    = parse_term_arg();
+  printf("%.4s: %x, %x %x, %x %x\n", name_string, region_space,
+    region_offset.prefix_byte, *(char*)region_offset.__ptr,
+    region_len.prefix_byte, *(char*)region_len.__ptr);
 }
 
 void parse_term_list()
@@ -332,6 +365,31 @@ void parse_term_list()
       {
         parse_scope_definition();
         break;
+      }
+    case EXT_OP_PREFIX:
+      {
+        uint8_t extended_byte = get_next_byte();
+        switch (extended_byte)
+        {
+          case OP_REGION_OP:
+            {
+              parse_region_op_definition();
+              break;
+            }
+          case FIELD_OP:
+            {
+              // TODO FIELD OP
+            }
+          default:
+            {
+              abort();
+            }
+        }
+        break;
+      }
+    default:
+      {
+        abort();
       }
   }
 }
