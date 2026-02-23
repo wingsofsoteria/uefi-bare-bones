@@ -1,6 +1,7 @@
 #ifndef __KERNEL_ACPI_AML_INTERNAL_H__
 #define __KERNEL_ACPI_AML_INTERNAL_H__
 
+#include "stdlib.h"
 #include <stdint.h>
 #define EXT_OP_PREFIX     0x5B
 #define ROOT_CHAR         0x5C
@@ -24,7 +25,10 @@
 #define ADD_OP            0x72
 #define OP_REGION_OP      0x80
 #define FIELD_OP          0x81
+#define AML_PREFIX_ERROR  0xFA
 
+#define LEAD_CHAR_OOB(x) x < 0x41 || x > 0x5A || x != 0x5F
+#define NAME_CHAR_OOB(x) x < 0x30 || x > 0x39 || LEAD_CHAR_OOB(x)
 void parse_term_list();
 uint32_t get_next_dword();
 void* parse_buffer_definition();
@@ -35,11 +39,21 @@ typedef struct
   char name_char_1;
   char name_char_2;
   char name_char_3;
-} aml_name_segment_t;
+} __attribute__((packed)) aml_name_segment_t;
 
 typedef struct
 {
-  char prefix_byte;
+  uint8_t prefix_byte;
   void* __ptr;
-} __attribute__((packed)) aml_cursed_ptr_t;
+} __attribute__((packed)) aml_ptr_t;
+
+typedef struct
+{
+  aml_ptr_t source;
+  aml_ptr_t alias;
+} aml_alias_t;
+
+const aml_ptr_t AML_ERROR = (aml_ptr_t){AML_PREFIX_ERROR, NULL};
+
+typedef aml_ptr_t (*aml_parser_fn)(void);
 #endif

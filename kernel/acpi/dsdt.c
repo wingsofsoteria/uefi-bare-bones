@@ -4,6 +4,7 @@
 #include "graphics/pixel.h"
 #include "keyboard.h"
 #include "stdlib.h"
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -60,350 +61,191 @@ void dsdt_init()
   pointer    = 0;
 }
 
-char get_next_byte()
+aml_ptr_t one_of(int parser_count, ...)
 {
+  va_list parsers;
+  va_start(parsers, parser_count);
+  int current_pointer = pointer;
+
+  for (int i = 0; i < parser_count; i++)
+  {
+    pointer = current_pointer;
+
+    aml_parser_fn parser = va_arg(parsers, aml_parser_fn);
+
+    aml_ptr_t return_value = parser();
+
+    if (return_value.prefix_byte != AML_PREFIX_ERROR)
+    {
+      va_end(parsers);
+      return return_value;
+    }
+  }
+  pointer = current_pointer;
+  va_end(parsers);
+  return AML_ERROR;
+}
+
+uint8_t next_byte()
+{
+  if (pointer >= MAX_BLOCKS) abort();
   return DSDT->definition_blocks[pointer++];
 }
 
-char peek_next_byte(int peek_point)
+// returns aml_ptr UNUSED, name_segments(1)
+aml_ptr_t parse_name_seg()
 {
-  return DSDT->definition_blocks[pointer + peek_point];
+  uint8_t lead_char       = next_byte();
+  uint8_t first_namechar  = next_byte();
+  uint8_t second_namechar = next_byte();
+  uint8_t third_namechar  = next_byte();
+  if (LEAD_CHAR_OOB(lead_char) || NAME_CHAR_OOB(first_namechar) ||
+    NAME_CHAR_OOB(second_namechar) || NAME_CHAR_OOB(third_namechar))
+    return AML_ERROR;
+  aml_name_segment_t* name_segment_ptr = calloc(1, sizeof(aml_name_segment_t));
+  aml_name_segment_t name_segment      = (aml_name_segment_t){
+    lead_char, first_namechar, second_namechar, third_namechar};
+  *name_segment_ptr = name_segment;
+  return (aml_ptr_t){
+    NULL_NAME, name_segment_ptr}; // we don't care about the prefix unless its
+                                  // AML_PREFIX_ERROR
 }
 
-uint32_t parse_pkg_length()
+// returns aml_ptr DUAL_NAME_PREFIX, name_segments(2)
+aml_ptr_t parse_dual_name_path()
 {
-  char pkg_lead_byte    = get_next_byte();
-  char byte_data_count  = pkg_lead_byte >> 6;
-  char pkg_length_upper = (pkg_lead_byte >> 4) & 0x03;
-  char pkg_length_lower = (pkg_lead_byte & 0x0F);
-  uint32_t pkg_length   = (pkg_length_upper << 4) | pkg_length_lower;
-  while (byte_data_count > 0)
-  {
-    char next_lsb = get_next_byte();
-    pkg_length    = (pkg_length << 8) | next_lsb;
-    byte_data_count--;
-  }
-  return pkg_length;
+  uint8_t token = next_byte();
+  if (token != DUAL_NAME_PREFIX) return AML_ERROR;
+  aml_ptr_t first_seg = parse_name_seg();
+  if (first_seg.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
+  aml_ptr_t second_seg = parse_name_seg();
+  if (second_seg.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
+
+  aml_name_segment_t* name_path = calloc(2, sizeof(aml_name_segment_t));
+  name_path[0] =
+    *(aml_name_segment_t*)
+       first_seg.__ptr; // TODO same possible errors as multi_name_path
+  name_path[1] = *(aml_name_segment_t*)second_seg.__ptr;
+  free(first_seg.__ptr);
+  free(second_seg.__ptr);
+  return (aml_ptr_t){DUAL_NAME_PREFIX, name_path};
 }
 
-aml_name_segment_t parse_name_seg()
+// returns aml_ptr MULTI_NAME_PREFIX, name_segment(n) where n is an arbitrary
+// number of name segments
+aml_ptr_t parse_multi_name_path()
 {
-  uint32_t name_segment = get_next_dword();
-  return (aml_name_segment_t){name_segment & 0xFF, (name_segment >> 8) & 0xFF,
-    (name_segment >> 16) & 0xFF, name_segment >> 24};
+  uint8_t token = next_byte();
+  if (token != MULTI_NAME_PREFIX) return AML_ERROR;
+  uint8_t num_name_segs = next_byte();
+  aml_name_segment_t* name_path =
+    calloc(num_name_segs, sizeof(aml_name_segment_t));
+  for (int i = 0; i < num_name_segs; i++)
+  {
+    aml_ptr_t name_segment = parse_name_seg();
+    if (name_segment.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
+    aml_name_segment_t* name_seg_ptr = name_segment.__ptr;
+    name_path[i] = *name_seg_ptr; // TODO possible error, might need to memcpy
+    free(name_seg_ptr);           // TODO unlikely error based on previous TODO
+  }
+
+  return (aml_ptr_t){MULTI_NAME_PREFIX, name_path};
 }
 
-char* parse_name_path()
+aml_ptr_t parse_null_name()
 {
-  char lead_byte = peek_next_byte(0);
-  if (lead_byte == DUAL_NAME_PREFIX)
-  {
-    get_next_byte();
-    aml_name_segment_t first_half  = parse_name_seg();
-    aml_name_segment_t second_half = parse_name_seg();
-    char* name_string              = calloc(8, sizeof(char));
+  uint8_t token = next_byte();
+  if (token != NULL_NAME) return AML_ERROR;
+  return (aml_ptr_t){NULL_NAME, NULL};
+}
 
-    name_string[0] = first_half.lead_char;
-    name_string[1] = first_half.name_char_1;
-    name_string[2] = first_half.name_char_2;
-    name_string[3] = first_half.name_char_3;
+aml_ptr_t parse_name_path()
+{
+  return one_of(4, parse_null_name, parse_multi_name_path, parse_dual_name_path,
+    parse_name_seg);
+}
 
-    name_string[4] = second_half.lead_char;
-    name_string[5] = second_half.name_char_1;
-    name_string[6] = second_half.name_char_2;
-    name_string[7] = second_half.name_char_3;
-    return name_string;
-  }
-  else if (lead_byte == MULTI_NAME_PREFIX)
+aml_ptr_t parse_name_string()
+{
+  uint8_t token = next_byte();
+  if (token == ROOT_CHAR)
   {
-    get_next_byte();
-    uint8_t seg_count = get_next_byte();
-    char* name_string = calloc(seg_count * 4, sizeof(char));
-    for (int i = 0; i < seg_count; i++)
-    {
-      aml_name_segment_t segment = parse_name_seg();
-      name_string[(i * 4)]       = segment.lead_char;
-      name_string[(i * 4) + 1]   = segment.name_char_1;
-      name_string[(i * 4) + 2]   = segment.name_char_2;
-      name_string[(i * 4) + 3]   = segment.name_char_3;
-    }
-    return name_string;
-  }
-  else if (lead_byte == NULL_NAME)
-  {
-    get_next_byte();
-    return NULL;
+    aml_ptr_t name_path = parse_name_path();
+    return (aml_ptr_t){ROOT_CHAR, name_path.__ptr};
   }
   else
   {
-    aml_name_segment_t segment = parse_name_seg();
-    char* name_string          = calloc(4, sizeof(char));
-    name_string[0]             = segment.lead_char;
-    name_string[1]             = segment.name_char_1;
-    name_string[2]             = segment.name_char_2;
-    name_string[3]             = segment.name_char_3;
-    return name_string;
-  }
-}
-
-char* parse_name_string()
-{
-  char first_byte = peek_next_byte(0);
-  if (first_byte == ROOT_CHAR || first_byte == PREFIX_CHAR)
-  {
-    get_next_byte();
-  }
-  return parse_name_path();
-}
-
-void parse_scope_definition()
-{
-  uint32_t pkg_length = parse_pkg_length();
-  char* name_string   = parse_name_string();
-  parse_term_list();
-  printf("SCOPE DEFINITION: %d, %s\n", pkg_length, name_string);
-}
-
-void parse_alias_definition()
-{
-  char* first_string  = parse_name_string();
-  char* second_string = parse_name_string();
-  printf("ALIAS DEFINITION: %s == %s\n", first_string, second_string);
-}
-
-uint16_t get_next_word()
-{
-  char lsb_data = get_next_byte();
-  char msb_data = get_next_byte();
-  return ((uint16_t)msb_data << 8) | lsb_data;
-}
-
-uint32_t get_next_dword()
-{
-  uint16_t lsb_data = get_next_word();
-  uint16_t msb_data = get_next_word();
-  return ((uint32_t)msb_data << 16) | lsb_data;
-}
-
-uint64_t get_next_qword()
-{
-  uint32_t lsb_data = get_next_dword();
-  uint32_t msb_data = get_next_dword();
-  return ((uint64_t)msb_data << 32) | lsb_data;
-}
-
-char* parse_string()
-{
-  char next_char     = get_next_byte();
-  int expected_size  = 16;
-  int counter        = 0;
-  char* ascii_string = calloc(expected_size, sizeof(char));
-  while (next_char)
-  {
-    ascii_string[counter++] = next_char;
-    if (counter >= expected_size - 1)
+    while (token == PREFIX_CHAR)
     {
-      expected_size *= 2;
-      ascii_string   = realloc(ascii_string, expected_size * sizeof(char));
+      token = next_byte();
     }
-    next_char = get_next_byte();
+
+    aml_ptr_t name_path = parse_name_path();
+    return (aml_ptr_t){PREFIX_CHAR, name_path.__ptr};
   }
-  ascii_string[counter] = next_char;
-  return ascii_string;
 }
 
-void* parse_computational_data()
+aml_ptr_t parse_def_alias()
 {
-  char current_byte = peek_next_byte(-1);
-  switch (current_byte)
-  {
-    case BYTE_PREFIX:
-      {
-        char byte_data = get_next_byte();
-        char* byte_ptr = calloc(1, sizeof(char));
-        *byte_ptr      = byte_data;
-        return byte_ptr;
-      }
-    case WORD_PREFIX:
-      {
-        uint16_t word_data = get_next_word();
-        uint16_t* word_ptr = calloc(1, sizeof(uint16_t));
-        *word_ptr          = word_data;
-        return word_ptr;
-      }
-    case DWORD_PREFIX:
-      {
-        uint32_t dword_data = get_next_dword();
-        uint32_t* dword_ptr = calloc(1, sizeof(uint32_t));
-        *dword_ptr          = dword_data;
-        return dword_ptr;
-      }
-    case QWORD_PREFIX:
-      {
-        uint64_t qword_data = get_next_qword();
-        uint64_t* qword_ptr = calloc(1, sizeof(uint64_t));
-        *qword_ptr          = qword_data;
-        return qword_ptr;
-      }
-  }
-  char* const_obj = calloc(1, sizeof(char));
-  *const_obj      = current_byte;
-  return const_obj;
+  uint8_t token = next_byte();
+  if (token != ALIAS_OP) return AML_ERROR;
+  aml_ptr_t source       = parse_name_string();
+  aml_ptr_t alias        = parse_name_string();
+  aml_alias_t* def_alias = calloc(1, sizeof(aml_alias_t));
+  def_alias->source      = source;
+  def_alias->alias       = alias;
+  return (aml_ptr_t){ALIAS_OP, def_alias};
 }
 
-void* parse_data_object()
+aml_ptr_t parse_def_name()
 {
-  uint8_t next_byte = get_next_byte();
-  switch (next_byte)
-  {
-    case BYTE_PREFIX:
-    case WORD_PREFIX:
-    case DWORD_PREFIX:
-    case QWORD_PREFIX:
-    case ZERO_OP:
-    case ONE_OP:
-    case ONES_OP:
-      {
-        return parse_computational_data();
-      }
-    case STRING_PREFIX:
-      {
-        return parse_string();
-      }
-    case EXT_OP_PREFIX:
-      {
-        char revision_op   = get_next_byte();
-        char* revision_ptr = calloc(1, sizeof(char));
-        *revision_ptr      = revision_op;
-        return revision_ptr;
-      }
-    case BUFFER_OP:
-      {
-        return parse_buffer_definition();
-      }
-  }
-  return NULL;
-}
-aml_cursed_ptr_t parse_term_arg()
-{
-  // TODO expressions
-  // TODO args
-  // TODO Local objects
-  uint8_t next_byte = peek_next_byte(0);
-  if (next_byte >= 0x60 && next_byte <= 0x6E) // local and arg objects
-  {
-    char value = get_next_byte();
-    return (aml_cursed_ptr_t){next_byte, NULL};
-  }
-  printf("NEXT BYTE %x\n", next_byte);
-  if ((next_byte >= BYTE_PREFIX && next_byte <= QWORD_PREFIX) ||
-    next_byte == ZERO_OP || next_byte == ONE_OP || next_byte == ONES_OP ||
-    next_byte == EXT_OP_PREFIX)
-  {
-    void* value = parse_data_object();
-    return (aml_cursed_ptr_t){next_byte, value};
-  }
-  return (aml_cursed_ptr_t){NULL_NAME, NULL};
+  return AML_ERROR;
 }
 
-void* parse_buffer_definition()
+aml_ptr_t parse_def_scope()
 {
-  uint32_t pkg_length          = parse_pkg_length();
-  aml_cursed_ptr_t buffer_size = parse_term_arg();
-  abort();
-  return NULL;
+  return AML_ERROR;
 }
 
-void* parse_data_ref_object()
+aml_ptr_t parse_namespace_modifier_obj()
 {
-  uint8_t next_byte = get_next_byte();
-
-  if ((next_byte >= BYTE_PREFIX && next_byte <= QWORD_PREFIX) ||
-    next_byte == ZERO_OP || next_byte == ONE_OP || next_byte == ONES_OP ||
-    next_byte == EXT_OP_PREFIX)
-  {
-    return parse_data_object();
-  }
-
-  return NULL;
+  return one_of(3, parse_def_alias, parse_def_name, parse_def_scope);
 }
 
-void parse_name_definition()
+aml_ptr_t parse_named_obj()
 {
-  char* string = parse_name_string();
-  parse_data_ref_object();
+  return AML_ERROR;
 }
 
-void parse_region_op_definition()
+aml_ptr_t parse_statement_opcode()
 {
-  char* name_string              = parse_name_string();
-  char region_space              = get_next_byte();
-  aml_cursed_ptr_t region_offset = parse_term_arg();
-  aml_cursed_ptr_t region_len    = parse_term_arg();
-  printf("%.4s: %x, %x %x, %x %x\n", name_string, region_space,
-    region_offset.prefix_byte, *(char*)region_offset.__ptr,
-    region_len.prefix_byte, *(char*)region_len.__ptr);
+  return AML_ERROR;
+}
+
+aml_ptr_t parse_expression_opcode()
+{
+  return AML_ERROR;
+}
+
+aml_ptr_t parse_term_obj()
+{
+  if (pointer >= MAX_BLOCKS) return AML_ERROR;
+  return one_of(4, parse_namespace_modifier_obj, parse_named_obj,
+    parse_statement_opcode, parse_expression_opcode);
 }
 
 void parse_term_list()
 {
-  char next_byte = get_next_byte();
+  aml_ptr_t status = (aml_ptr_t){0, NULL};
 
-  switch (next_byte)
+  while (status.prefix_byte != AML_PREFIX_ERROR)
   {
-    case ALIAS_OP:
-      {
-        parse_alias_definition();
-        break;
-      }
-    case NAME_OP:
-      {
-        parse_name_definition();
-        break;
-      }
-    case SCOPE_OP:
-      {
-        parse_scope_definition();
-        break;
-      }
-    case EXT_OP_PREFIX:
-      {
-        uint8_t extended_byte = get_next_byte();
-        switch (extended_byte)
-        {
-          case OP_REGION_OP:
-            {
-              parse_region_op_definition();
-              break;
-            }
-          case FIELD_OP:
-            {
-              // TODO FIELD OP
-            }
-          default:
-            {
-              abort();
-            }
-        }
-        break;
-      }
-    default:
-      {
-        abort();
-      }
+    status = parse_term_obj();
   }
 }
 
 void dsdt_parse()
 {
   printf("DSDT\n");
-  char next_byte = get_next_byte();
-  switch (next_byte)
-  {
-    case SCOPE_OP:
-      {
-        parse_scope_definition();
-        break;
-      }
-  }
+  parse_term_list();
 }
