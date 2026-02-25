@@ -3,7 +3,7 @@ WARNINGS=-Wno-pointer-to-int-cast -Wno-void-pointer-to-int-cast -Wno-tautologica
 CFLAGS=-Iinclude -I../libc/include $(WARNINGS) -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=large -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fno-PIC -fno-PIE
 CPPFLAGS=-mno-mmx -mno-sse -mno-sse2
 LDFLAGS=-T linker.lds -nostdlib --static -Wl,-z,max-page-size=0x1000
-SRC=$(wildcard *.c */*.c *.s */*.s)
+SRC=$(wildcard *.c */*.c */*/*.c *.s */*.s)
 OBJS=$(patsubst %,objs/%.o,$(SRC))
 ifneq ($(QEMU_DEBUG),)
 CFLAGS += -DQEMU_DEBUG
@@ -19,4 +19,4 @@ kernel:$(OBJS) ../libc/libk.a objs/font.o
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
 
 clean: 
-	rm -f $(OBJS) kernel objs/font.o
+	rm -fv $(OBJS) kernel objs/font.o

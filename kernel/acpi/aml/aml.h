@@ -26,9 +26,11 @@
 #define OP_REGION_OP      0x80
 #define FIELD_OP          0x81
 #define AML_PREFIX_ERROR  0xFA
+#define REVISION_OP       0x30
 
-#define LEAD_CHAR_OOB(x) x < 0x41 || x > 0x5A || x != 0x5F
-#define NAME_CHAR_OOB(x) x < 0x30 || x > 0x39 || LEAD_CHAR_OOB(x)
+#define LEAD_CHAR_OOB(x) x < 0x41 || (x > 0x5A && x != 0x5F)
+#define NAME_CHAR_OOB(x) x < 0x30 || (x > 0x39 && LEAD_CHAR_OOB(x))
+#define AML_ERROR        (aml_ptr_t){AML_PREFIX_ERROR, NULL};
 void parse_term_list();
 uint32_t get_next_dword();
 void* parse_buffer_definition();
@@ -53,7 +55,7 @@ typedef struct
   aml_ptr_t alias;
 } aml_alias_t;
 
-const aml_ptr_t AML_ERROR = (aml_ptr_t){AML_PREFIX_ERROR, NULL};
-
+void aml_parser_init(void*);
+void aml_parser_run(void);
 typedef aml_ptr_t (*aml_parser_fn)(void);
 #endif

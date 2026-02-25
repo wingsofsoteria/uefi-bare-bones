@@ -38,7 +38,7 @@ typedef struct
 {
   acpi_sdt_header_t header;
   uint8_t definition_blocks[];
-} __attribute__((packed)) acpi_dsdt_t;
+} __attribute__((packed)) acpi_aml_table_t;
 
 typedef struct
 {
