@@ -17,7 +17,15 @@ aml_ptr_t def_package();
 aml_ptr_t def_var_package();
 aml_ptr_t def_buffer();
 aml_ptr_t computational_data();
-
+aml_ptr_t parse_name_seg();
+aml_ptr_t parse_data_object();
+aml_ptr_t parse_target();
+aml_ptr_t parse_local_obj();
+aml_ptr_t parse_arg_obj();
+aml_ptr_t parse_debug_obj();
+aml_ptr_t parse_super_name();
+aml_ptr_t reference_type_opcode();
+aml_ptr_t parse_statement_opcode();
 void print_next_definition_block();
 uint32_t parse_pkg_length();
 #endif

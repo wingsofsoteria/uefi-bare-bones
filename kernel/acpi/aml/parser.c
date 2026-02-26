@@ -58,18 +58,18 @@ aml_ptr_t one_of(int parser_count, ...)
 
 uint8_t next_byte()
 {
-  if (pointer >= MAX_BLOCKS) abort();
+  if (pointer >= MAX_BLOCKS)
+  {
+    printf("No More Definition Blocks ");
+    abort();
+  }
   return TABLE->definition_blocks[pointer++];
 }
 void decrement_pointer()
 {
   pointer--;
 }
-aml_ptr_t parse_statement_opcode()
-{
-  printf("StatementOp\n");
-  return AML_ERROR;
-}
+
 aml_ptr_t parse_data_object()
 {
   return one_of(3, computational_data, def_package, def_var_package);
@@ -79,6 +79,7 @@ aml_ptr_t parse_arg_obj()
 {
   uint8_t token = next_byte();
   if (token < 0x68 || token > 0x6E) return AML_ERROR;
+  printf("ArgObj ");
   return (aml_ptr_t){token, NULL};
 }
 
@@ -86,6 +87,7 @@ aml_ptr_t parse_local_obj()
 {
   uint8_t token = next_byte();
   if (token < 0x60 || token > 0x67) return AML_ERROR;
+  printf("LocalObj ");
   return (aml_ptr_t){token, NULL};
 }
 
@@ -95,11 +97,6 @@ aml_ptr_t parse_term_arg()
     parse_local_obj);
 }
 
-aml_ptr_t parse_data_ref_object()
-{
-  return AML_ERROR;
-}
-
 aml_ptr_t parse_term_obj()
 {
   if (pointer >= MAX_BLOCKS) return AML_ERROR;
@@ -107,15 +104,20 @@ aml_ptr_t parse_term_obj()
     parse_statement_opcode, parse_expression_opcode);
 }
 
+aml_ptr_t parse_debug_obj()
+{
+  AML_EXT_PRELUDE(DEBUG_OP)
+  return (aml_ptr_t){DEBUG_OP, NULL};
+}
+
 void parse_term_list()
 {
   aml_ptr_t status = (aml_ptr_t){0, NULL};
-  printf("TermList\n");
+  printf("TermList ");
   while (status.prefix_byte != AML_PREFIX_ERROR)
   {
     status = parse_term_obj();
   }
-  pointer--;
   print_next_definition_block();
   abort();
 }

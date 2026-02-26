@@ -1,5 +1,6 @@
 #include "aml.h"
 #include "parser.h"
+#include <stdio.h>
 
 // returns aml_ptr UNUSED, name_segments(1)
 aml_ptr_t parse_name_seg()
@@ -11,6 +12,8 @@ aml_ptr_t parse_name_seg()
   if (LEAD_CHAR_OOB(lead_char) || NAME_CHAR_OOB(first_namechar) ||
     NAME_CHAR_OOB(second_namechar) || NAME_CHAR_OOB(third_namechar))
     return AML_ERROR;
+  printf("NameSeg %c%c%c%c ", lead_char, first_namechar, second_namechar,
+    third_namechar);
   aml_name_segment_t* name_segment_ptr = calloc(1, sizeof(aml_name_segment_t));
   aml_name_segment_t name_segment      = (aml_name_segment_t){
     lead_char, first_namechar, second_namechar, third_namechar};
@@ -25,6 +28,7 @@ aml_ptr_t parse_dual_name_path()
 {
   uint8_t token = next_byte();
   if (token != DUAL_NAME_PREFIX) return AML_ERROR;
+  printf("DualNamePath ");
   aml_ptr_t first_seg = parse_name_seg();
   if (first_seg.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
   aml_ptr_t second_seg = parse_name_seg();
@@ -46,6 +50,7 @@ aml_ptr_t parse_multi_name_path()
 {
   uint8_t token = next_byte();
   if (token != MULTI_NAME_PREFIX) return AML_ERROR;
+  printf("MultiNamePath ");
   uint8_t num_name_segs = next_byte();
   aml_name_segment_t* name_path =
     calloc(num_name_segs, sizeof(aml_name_segment_t));
@@ -65,6 +70,7 @@ aml_ptr_t parse_null_name()
 {
   uint8_t token = next_byte();
   if (token != NULL_NAME) return AML_ERROR;
+  printf("NullName ");
   return (aml_ptr_t){NULL_NAME, NULL};
 }
 
@@ -72,6 +78,17 @@ aml_ptr_t parse_name_path()
 {
   return one_of(4, parse_null_name, parse_multi_name_path, parse_dual_name_path,
     parse_name_seg);
+}
+
+aml_ptr_t parse_super_name()
+{
+  return one_of(5, parse_local_obj, parse_arg_obj, parse_debug_obj,
+    reference_type_opcode, parse_name_string);
+}
+
+aml_ptr_t parse_target()
+{
+  return one_of(2, parse_super_name, parse_null_name);
 }
 
 aml_ptr_t parse_name_string()
@@ -91,7 +108,10 @@ aml_ptr_t parse_name_string()
     decrement_pointer();
     aml_ptr_t name_path = parse_name_path();
     if (name_path.prefix_byte == AML_PREFIX_ERROR)
+    {
+      printf("NameString ERROR ");
       abort(); // name_string parser has a bug
+    }
     return (aml_ptr_t){PREFIX_CHAR, name_path.__ptr};
   }
 }

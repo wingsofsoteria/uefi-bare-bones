@@ -5,19 +5,22 @@
 
 aml_ptr_t parse_def_alias()
 {
-  uint8_t token = next_byte();
-  if (token != ALIAS_OP) return AML_ERROR;
-  printf("DefAlias\n");
+  AML_PRELUDE(ALIAS_OP)
+  printf("DefAlias ");
   aml_ptr_t source = parse_name_string();
   aml_ptr_t alias  = parse_name_string();
   return (aml_ptr_t){ALIAS_OP, NULL};
 }
 
+aml_ptr_t parse_data_ref_object()
+{
+  return parse_data_object();
+}
+
 aml_ptr_t parse_def_name()
 {
-  uint8_t token = next_byte();
-  if (token != NAME_OP) return AML_ERROR;
-  printf("DefName\n");
+  AML_PRELUDE(NAME_OP)
+  printf("DefName ");
   parse_name_string();
   parse_data_ref_object();
   return (aml_ptr_t){NAME_OP, NULL};
@@ -36,14 +39,14 @@ uint32_t parse_pkg_length()
     pkg_length    = (pkg_length << 8) | next_lsb;
     byte_data_count--;
   }
+  printf("PkgLength %d ", pkg_length);
   return pkg_length;
 }
 
 aml_ptr_t parse_def_scope()
 {
-  uint8_t token = next_byte();
-  if (token != SCOPE_OP) return AML_ERROR;
-  printf("DefScope\n");
+  AML_PRELUDE(SCOPE_OP)
+  printf("DefScope ");
   parse_pkg_length();
   parse_name_string();
   parse_term_list();
@@ -52,6 +55,5 @@ aml_ptr_t parse_def_scope()
 
 aml_ptr_t parse_namespace_modifier_obj()
 {
-  printf("NamespaceModifierObj\n");
   return one_of(3, parse_def_alias, parse_def_name, parse_def_scope);
 }

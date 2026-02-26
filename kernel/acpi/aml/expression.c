@@ -1,5 +1,6 @@
 #include "aml.h"
 #include "parser.h"
+#include "stdlib.h"
 #include <stdio.h>
 
 aml_ptr_t def_acquire()
@@ -204,17 +205,27 @@ aml_ptr_t def_shift_right()
 
 aml_ptr_t def_size_of()
 {
-  return AML_ERROR;
+  AML_PRELUDE(SIZEOF_OP)
+  parse_super_name();
+  return (aml_ptr_t){SIZEOF_OP, NULL};
 }
 
 aml_ptr_t def_store()
 {
-  return AML_ERROR;
+  AML_PRELUDE(STORE_OP)
+  parse_term_arg();
+  parse_super_name();
+  return (aml_ptr_t){STORE_OP, NULL};
 }
 
 aml_ptr_t def_subtract()
 {
-  return AML_ERROR;
+  AML_PRELUDE(SUBTRACT_OP)
+  printf("DefSubtract ");
+  parse_term_arg();
+  parse_term_arg();
+  parse_target();
+  return (aml_ptr_t){SUBTRACT_OP, NULL};
 }
 
 aml_ptr_t def_timer()
@@ -229,7 +240,11 @@ aml_ptr_t def_to_bcd()
 
 aml_ptr_t def_to_buffer()
 {
-  return AML_ERROR;
+  AML_PRELUDE(TO_BUFFER_OP)
+  printf("DefToBuffer ");
+  parse_term_arg();
+  parse_target();
+  return (aml_ptr_t){TO_BUFFER_OP, NULL};
 }
 
 aml_ptr_t def_to_decimal_string()
@@ -237,9 +252,18 @@ aml_ptr_t def_to_decimal_string()
   return AML_ERROR;
 }
 
+aml_ptr_t reference_type_opcode()
+{
+  return one_of(3, def_ref_of, def_deref_of, def_index);
+}
+
 aml_ptr_t def_to_hex_string()
 {
-  return AML_ERROR;
+  AML_PRELUDE(TO_HEX_STRING_OP)
+  printf("DefToHexString ");
+  parse_term_arg();
+  parse_target();
+  return (aml_ptr_t){TO_HEX_STRING_OP, NULL};
 }
 
 aml_ptr_t def_to_integer()

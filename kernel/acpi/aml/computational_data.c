@@ -1,5 +1,6 @@
 #include "aml.h"
 #include "parser.h"
+#include <stdio.h>
 #include <string.h>
 
 aml_ptr_t byte_data()
@@ -14,6 +15,7 @@ aml_ptr_t byte_const()
 {
   uint8_t token = next_byte();
   if (token != BYTE_PREFIX) return AML_ERROR;
+  printf("ByteData ");
   return byte_data();
 }
 
@@ -37,6 +39,7 @@ aml_ptr_t word_const()
 {
   uint8_t token = next_byte();
   if (token != WORD_PREFIX) return AML_ERROR;
+  printf("WordData ");
   return word_data();
 }
 
@@ -60,6 +63,7 @@ aml_ptr_t dword_const()
 {
   uint8_t token = next_byte();
   if (token != DWORD_PREFIX) return AML_ERROR;
+  printf("DWordData ");
   return dword_data();
 }
 
@@ -83,6 +87,7 @@ aml_ptr_t qword_const()
 {
   uint8_t token = next_byte();
   if (token != QWORD_PREFIX) return AML_ERROR;
+  printf("QWordData ");
   return qword_data();
 }
 
@@ -90,6 +95,7 @@ aml_ptr_t parse_string()
 {
   uint8_t token = next_byte();
   if (token != STRING_PREFIX) return AML_ERROR;
+  printf("StringData ");
   char* string = calloc(5, sizeof(char));
   int size     = 5;
   int i        = 0;
@@ -128,7 +134,9 @@ aml_ptr_t const_obj()
 {
   uint8_t token = next_byte();
   if (token == ZERO_OP || token == ONE_OP || token == ONES_OP)
+  {
     return (aml_ptr_t){token, NULL};
+  }
   return AML_ERROR;
 }
 
@@ -138,6 +146,7 @@ aml_ptr_t revision_op()
   if (token != EXT_OP_PREFIX) return AML_ERROR;
   token = next_byte();
   if (token != REVISION_OP) return AML_ERROR;
+  printf("Revision ");
   return (aml_ptr_t){REVISION_OP, NULL};
 }
 
