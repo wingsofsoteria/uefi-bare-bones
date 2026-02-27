@@ -6,7 +6,6 @@
 aml_ptr_t parse_def_alias()
 {
   AML_PRELUDE(ALIAS_OP)
-  printf("DefAlias ");
   aml_ptr_t source = parse_name_string();
   aml_ptr_t alias  = parse_name_string();
   return (aml_ptr_t){ALIAS_OP, NULL};
@@ -20,7 +19,6 @@ aml_ptr_t parse_data_ref_object()
 aml_ptr_t parse_def_name()
 {
   AML_PRELUDE(NAME_OP)
-  printf("DefName ");
   parse_name_string();
   parse_data_ref_object();
   return (aml_ptr_t){NAME_OP, NULL};
@@ -39,18 +37,20 @@ uint32_t parse_pkg_length()
     pkg_length    = (pkg_length << 8) | next_lsb;
     byte_data_count--;
   }
-  printf("PkgLength %d ", pkg_length);
   return pkg_length;
 }
 
 aml_ptr_t parse_def_scope()
 {
   AML_PRELUDE(SCOPE_OP)
-  printf("DefScope ");
-  parse_pkg_length();
-  parse_name_string();
-  parse_term_list();
-  return (aml_ptr_t){SCOPE_OP, NULL};
+  uint32_t length      = parse_pkg_length();
+  aml_ptr_t scope_name = parse_name_string();
+  printf("Scope %.4s %d\n",
+    scope_name.prefix_byte == NULL_NAME ? "Root" : (char*)scope_name.__ptr,
+    length);
+  aml_node_t* scope = calloc(1, sizeof(aml_node_t));
+  parse_term_list(scope, length);
+  return (aml_ptr_t){SCOPE_OP, scope};
 }
 
 aml_ptr_t parse_namespace_modifier_obj()

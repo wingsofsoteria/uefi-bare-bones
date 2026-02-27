@@ -105,7 +105,10 @@ aml_ptr_t def_LGreater_equal()
 
 aml_ptr_t def_LLess()
 {
-  return AML_ERROR;
+  AML_PRELUDE(LLESS_OP)
+  parse_term_arg();
+  parse_term_arg();
+  return (aml_ptr_t){LLESS_OP, NULL};
 }
 
 aml_ptr_t def_LLess_equal()
@@ -221,10 +224,17 @@ aml_ptr_t def_store()
 aml_ptr_t def_subtract()
 {
   AML_PRELUDE(SUBTRACT_OP)
-  printf("DefSubtract ");
-  parse_term_arg();
-  parse_term_arg();
-  parse_target();
+  aml_ptr_t term_arg   = parse_term_arg();
+  aml_ptr_t minuend    = evaluate_term_arg(term_arg);
+  term_arg             = parse_term_arg();
+  aml_ptr_t subtrahend = evaluate_term_arg(term_arg);
+  aml_ptr_t result     = parse_target();
+  printf("Subtract ");
+  print_term_arg(minuend);
+  printf(" - ");
+  print_term_arg(subtrahend);
+  printf(" = ");
+  print_name_string(result);
   return (aml_ptr_t){SUBTRACT_OP, NULL};
 }
 
@@ -241,9 +251,15 @@ aml_ptr_t def_to_bcd()
 aml_ptr_t def_to_buffer()
 {
   AML_PRELUDE(TO_BUFFER_OP)
-  printf("DefToBuffer ");
-  parse_term_arg();
-  parse_target();
+  aml_ptr_t term_arg = parse_term_arg();
+  aml_ptr_t operand  = evaluate_term_arg(term_arg);
+  aml_ptr_t target   = parse_target();
+  printf("ToBuffer ");
+  print_term_arg(operand);
+  printf("->");
+  print_name_string(target);
+  putchar('\n');
+
   return (aml_ptr_t){TO_BUFFER_OP, NULL};
 }
 
@@ -260,9 +276,14 @@ aml_ptr_t reference_type_opcode()
 aml_ptr_t def_to_hex_string()
 {
   AML_PRELUDE(TO_HEX_STRING_OP)
-  printf("DefToHexString ");
-  parse_term_arg();
-  parse_target();
+  aml_ptr_t term_arg = parse_term_arg();
+  aml_ptr_t operand  = evaluate_term_arg(term_arg);
+  aml_ptr_t target   = parse_target();
+  printf("ToHexString ");
+  print_term_arg(operand);
+  printf("->");
+  print_name_string(target);
+  putchar('\n');
   return (aml_ptr_t){TO_HEX_STRING_OP, NULL};
 }
 

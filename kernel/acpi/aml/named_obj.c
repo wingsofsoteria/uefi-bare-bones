@@ -7,8 +7,6 @@ aml_ptr_t named_field()
 {
   aml_ptr_t name_segment = parse_name_seg();
   if (name_segment.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
-  printf("NamedField %.4s ",
-    (char*)name_segment.__ptr); // TODO this might cause weird errors
   parse_pkg_length();
   return (aml_ptr_t){NAME_OP, NULL};
 }
@@ -16,7 +14,6 @@ aml_ptr_t named_field()
 aml_ptr_t reserved_field()
 {
   AML_PRELUDE(0x00)
-  printf("ReservedField ");
   parse_pkg_length();
   return (aml_ptr_t){0x00, NULL};
 }
@@ -24,7 +21,6 @@ aml_ptr_t reserved_field()
 aml_ptr_t access_field()
 {
   AML_PRELUDE(0x01)
-  printf("AccessField ");
   next_byte();
   next_byte();
   return (aml_ptr_t){0x01, NULL};
@@ -33,7 +29,6 @@ aml_ptr_t access_field()
 aml_ptr_t extended_access_field()
 {
   AML_PRELUDE(0x03)
-  printf("ExtendedAccessField ");
   next_byte();
   next_byte();
   next_byte(); // TODO AccessLength is not fully defined in the AML Spec but it
@@ -60,7 +55,6 @@ aml_ptr_t field_list()
 aml_ptr_t def_bank_field()
 {
   AML_EXT_PRELUDE(BANK_FIELD_OP)
-  printf("BankField ");
   parse_pkg_length();
   aml_ptr_t region_name = parse_name_string();
   aml_ptr_t bank_name   = parse_name_string();
@@ -73,7 +67,6 @@ aml_ptr_t def_bank_field()
 aml_ptr_t def_create_bitfield()
 {
   AML_PRELUDE(CREATE_BITFIELD_OP)
-  printf("CreateBitfield ");
   parse_term_arg();
   parse_term_arg();
   parse_name_string();
@@ -83,7 +76,6 @@ aml_ptr_t def_create_bitfield()
 aml_ptr_t def_create_bytefield()
 {
   AML_PRELUDE(CREATE_BYTEFIELD_OP)
-  printf("CreateByteField ");
   parse_term_arg();
   parse_term_arg();
   parse_name_string();
@@ -94,7 +86,6 @@ aml_ptr_t def_create_bytefield()
 aml_ptr_t def_create_dword_field()
 {
   AML_PRELUDE(CREATE_DWORDFIELD_OP)
-  printf("CreateDWORDField ");
   parse_term_arg();
   parse_term_arg();
   parse_name_string();
@@ -104,7 +95,6 @@ aml_ptr_t def_create_dword_field()
 aml_ptr_t def_create_field()
 {
   AML_EXT_PRELUDE(CREATE_FIELD_OP)
-  printf("CreateField ");
   parse_term_arg();
   parse_term_arg();
   parse_term_arg();
@@ -115,7 +105,6 @@ aml_ptr_t def_create_field()
 aml_ptr_t def_create_qword_field()
 {
   AML_PRELUDE(CREATE_QWORDFIELD_OP)
-  printf("CreateQWORDField ");
   parse_term_arg();
   parse_term_arg();
   parse_name_string();
@@ -125,7 +114,6 @@ aml_ptr_t def_create_qword_field()
 aml_ptr_t def_create_word_field()
 {
   AML_PRELUDE(CREATE_WORDFIELD_OP)
-  printf("CreateWORDField ");
   parse_term_arg();
   parse_term_arg();
   parse_name_string();
@@ -135,7 +123,6 @@ aml_ptr_t def_create_word_field()
 aml_ptr_t def_data_region()
 {
   AML_EXT_PRELUDE(DATA_REGION_OP)
-  printf("DefDataRegion ");
   parse_name_string();
   parse_term_arg();
   parse_term_arg();
@@ -146,67 +133,148 @@ aml_ptr_t def_data_region()
 aml_ptr_t def_external()
 {
   AML_PRELUDE(EXTERNAL_OP)
-  printf("DefExternal ");
   parse_name_string();
   next_byte();
   next_byte();
   return (aml_ptr_t){EXTERNAL_OP, NULL};
 }
 
+void print_region_space(uint8_t region_space)
+{
+  switch (region_space)
+  {
+    case 0x00:
+      {
+        printf("SystemMemory");
+        break;
+      }
+    case 0x01:
+      {
+        printf("SystemIO");
+        break;
+      }
+    case 0x02:
+      {
+        printf("PCI_Config");
+        break;
+      }
+    case 0x03:
+      {
+        printf("EmbeddedControl");
+        break;
+      }
+    case 0x04:
+      {
+        printf("SMBus");
+        break;
+      }
+    case 0x05:
+      {
+        printf("System CMOS");
+        break;
+      }
+    case 0x06:
+      {
+        printf("PciBarTarget");
+        break;
+      }
+    case 0x07:
+      {
+        printf("IPMI");
+        break;
+      }
+    case 0x08:
+      {
+        printf("GeneralPurposeIO");
+        break;
+      }
+    case 0x09:
+      {
+        printf("GenericSerialBus");
+        break;
+      }
+    case 0x0A:
+      {
+        printf("PCC");
+        break;
+      }
+    default:
+      {
+        printf("OEM Defined");
+        break;
+      }
+  }
+}
+
 aml_ptr_t def_op_region()
 {
   AML_EXT_PRELUDE(OP_REGION_OP);
-  printf("DefOpRegion ");
-  parse_name_string();
-  next_byte();      // region space
-  parse_term_arg(); // region offset
-  parse_term_arg(); // region len
+  printf("OperationalRegion ");
+  aml_ptr_t region_name = parse_name_string();
+  uint8_t region_space  = next_byte();
+  aml_ptr_t term_arg    = parse_term_arg();
+  aml_ptr_t offset      = evaluate_term_arg(term_arg);
+  term_arg              = parse_term_arg();
+  aml_ptr_t length      = evaluate_term_arg(term_arg);
+  print_name_string(region_name);
+  putchar(' ');
+  print_region_space(region_space);
+  printf(" RegionOffset ");
+  print_term_arg(offset);
+  printf(" RegionLen ");
+  print_term_arg(length);
+  putchar('\n');
   return (aml_ptr_t){OP_REGION_OP, NULL};
 }
 
 aml_ptr_t def_power_res()
 {
   AML_EXT_PRELUDE(POWER_RES_OP)
-  printf("DefPowerRes ");
   parse_pkg_length();
   parse_name_string();
   next_byte();
   next_byte();
   next_byte();
-  parse_term_list();
+  printf("unimplemented");
+  abort();
   return (aml_ptr_t){POWER_RES_OP, NULL};
 }
 
 aml_ptr_t def_thermal_zone()
 {
   AML_EXT_PRELUDE(THERMAL_ZONE_OP)
-  printf("DefThermalZone ");
   parse_pkg_length();
   parse_name_string();
-  parse_term_list();
+  printf("unimplemented");
+  abort();
   return (aml_ptr_t){THERMAL_ZONE_OP, NULL};
 }
 
 aml_ptr_t def_field()
 {
   AML_EXT_PRELUDE(FIELD_OP)
-  printf("DefField ");
-  parse_pkg_length();
-  parse_name_string();
-  next_byte();
+  uint32_t length       = parse_pkg_length();
+  aml_ptr_t region_name = parse_name_string();
+  uint8_t field_flags   = next_byte();
   field_list();
+  printf("Field %d ", length);
+  print_name_string(region_name);
+  printf(" %b\n", field_flags);
   return (aml_ptr_t){FIELD_OP, NULL};
 }
 
 aml_ptr_t def_method()
 {
   AML_PRELUDE(METHOD_OP)
-  printf("DefMethod ");
-  parse_pkg_length();
-  parse_name_string();
-  next_byte();
-  parse_term_list();
-  return (aml_ptr_t){METHOD_OP, NULL};
+  uint32_t length       = parse_pkg_length();
+  aml_ptr_t method_name = parse_name_string();
+  uint8_t method_flags  = next_byte();
+  printf("Method %d ", length);
+  print_name_string(method_name);
+  printf(" %b\n", method_flags);
+  aml_node_t* method_node = calloc(1, sizeof(aml_node_t));
+  parse_term_list(method_node, length);
+  return (aml_ptr_t){METHOD_OP, method_node};
 }
 
 aml_ptr_t parse_named_obj()

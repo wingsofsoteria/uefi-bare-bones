@@ -26,6 +26,7 @@
 #define OP_REGION_OP         0x80
 #define FIELD_OP             0x81
 #define AML_PREFIX_ERROR     0xFA
+#define NAME_SEG_PREFIX      0xF9
 #define REVISION_OP          0x30
 #define BANK_FIELD_OP        0x87
 #define CREATE_BITFIELD_OP   0x8D
@@ -46,6 +47,7 @@
 #define SIZEOF_OP            0x87
 #define STORE_OP             0x70
 #define WHILE_OP             0xA2
+#define LLESS_OP             0x95
 
 #define LEAD_CHAR_OOB(x) x < 0x41 || (x > 0x5A && x != 0x5F)
 #define NAME_CHAR_OOB(x) x < 0x30 || (x > 0x39 && LEAD_CHAR_OOB(x))
@@ -58,7 +60,6 @@
   if (next_byte() != EXT_OP_PREFIX) return AML_ERROR; \
   AML_PRELUDE(x)
 
-void parse_term_list();
 uint32_t get_next_dword();
 void* parse_buffer_definition();
 
@@ -72,9 +73,27 @@ typedef struct
 
 typedef struct
 {
+  aml_name_segment_t first;
+  aml_name_segment_t second;
+} aml_dual_name_path_t;
+
+typedef struct
+{
+  uint8_t length;
+  aml_name_segment_t* segments;
+} aml_multi_name_path_t;
+
+typedef struct
+{
   uint8_t prefix_byte;
   void* __ptr;
 } __attribute__((packed)) aml_ptr_t;
+
+typedef struct AmlNode
+{
+  aml_ptr_t data;
+  struct AmlNode* parent;
+} aml_node_t;
 
 typedef struct
 {

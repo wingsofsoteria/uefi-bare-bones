@@ -1,6 +1,7 @@
 #include "aml.h"
 #include "parser.h"
-#include <stdio.h>
+#include "stdlib.h"
+#include <stdint.h>
 #include <string.h>
 
 aml_ptr_t byte_data()
@@ -15,19 +16,17 @@ aml_ptr_t byte_const()
 {
   uint8_t token = next_byte();
   if (token != BYTE_PREFIX) return AML_ERROR;
-  printf("ByteData ");
   return byte_data();
 }
 
 aml_ptr_t word_data()
 {
   aml_ptr_t lower_byte = byte_data();
+  uint8_t lower        = *(uint8_t*)lower_byte.__ptr;
   aml_ptr_t upper_byte = byte_data();
-
-  uint8_t* ptr = calloc(2, sizeof(uint8_t));
-
-  ptr[0] = *(uint8_t*)lower_byte.__ptr;
-  ptr[1] = *(uint8_t*)upper_byte.__ptr;
+  uint8_t upper        = *(uint8_t*)upper_byte.__ptr;
+  uint16_t* ptr        = calloc(1, sizeof(uint16_t));
+  *ptr                 = ((uint16_t)upper << 8) | lower;
 
   free(lower_byte.__ptr);
   free(upper_byte.__ptr);
@@ -39,10 +38,9 @@ aml_ptr_t word_const()
 {
   uint8_t token = next_byte();
   if (token != WORD_PREFIX) return AML_ERROR;
-  printf("WordData ");
   return word_data();
 }
-
+// TODO fix qword and dword
 aml_ptr_t dword_data()
 {
   aml_ptr_t lower_word = word_data();
@@ -50,8 +48,8 @@ aml_ptr_t dword_data()
 
   uint16_t* ptr = calloc(2, sizeof(uint16_t));
 
-  ptr[0] = *(uint16_t*)lower_word.__ptr;
-  ptr[1] = *(uint16_t*)upper_word.__ptr;
+  ptr[1] = *(uint16_t*)lower_word.__ptr;
+  ptr[0] = *(uint16_t*)upper_word.__ptr;
 
   free(lower_word.__ptr);
   free(upper_word.__ptr);
@@ -63,7 +61,6 @@ aml_ptr_t dword_const()
 {
   uint8_t token = next_byte();
   if (token != DWORD_PREFIX) return AML_ERROR;
-  printf("DWordData ");
   return dword_data();
 }
 
@@ -74,8 +71,8 @@ aml_ptr_t qword_data()
 
   uint32_t* ptr = calloc(2, sizeof(uint32_t));
 
-  ptr[0] = *(uint32_t*)lower_word.__ptr;
-  ptr[1] = *(uint32_t*)upper_word.__ptr;
+  ptr[1] = *(uint32_t*)lower_word.__ptr;
+  ptr[0] = *(uint32_t*)upper_word.__ptr;
 
   free(lower_word.__ptr);
   free(upper_word.__ptr);
@@ -87,7 +84,6 @@ aml_ptr_t qword_const()
 {
   uint8_t token = next_byte();
   if (token != QWORD_PREFIX) return AML_ERROR;
-  printf("QWordData ");
   return qword_data();
 }
 
@@ -95,7 +91,6 @@ aml_ptr_t parse_string()
 {
   uint8_t token = next_byte();
   if (token != STRING_PREFIX) return AML_ERROR;
-  printf("StringData ");
   char* string = calloc(5, sizeof(char));
   int size     = 5;
   int i        = 0;
@@ -146,7 +141,6 @@ aml_ptr_t revision_op()
   if (token != EXT_OP_PREFIX) return AML_ERROR;
   token = next_byte();
   if (token != REVISION_OP) return AML_ERROR;
-  printf("Revision ");
   return (aml_ptr_t){REVISION_OP, NULL};
 }
 

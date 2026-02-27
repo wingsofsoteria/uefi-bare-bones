@@ -1,6 +1,7 @@
 #include "aml.h"
 #include "parser.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 aml_ptr_t def_break()
 {
@@ -70,11 +71,11 @@ aml_ptr_t def_stall()
 aml_ptr_t def_while()
 {
   AML_PRELUDE(WHILE_OP)
-  printf("DefWhile ");
-  parse_pkg_length();
+  uint32_t length = parse_pkg_length();
   parse_term_arg();
-  parse_term_list();
-  return (aml_ptr_t){WHILE_OP, NULL};
+  aml_node_t* while_node = calloc(1, sizeof(aml_node_t));
+  parse_term_list(while_node, length);
+  return (aml_ptr_t){WHILE_OP, while_node};
 }
 
 aml_ptr_t parse_statement_opcode()
