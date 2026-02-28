@@ -48,10 +48,22 @@
 #define STORE_OP             0x70
 #define WHILE_OP             0xA2
 #define LLESS_OP             0x95
+#define DEREF_OF_OP          0x83
+#define INDEX_OP             0x88
+#define INCREMENT_OP         0x75
+#define DEVICE_OP            0x82
+#define IF_OP                0xA0
+#define ELSE_OP              0xA1
+#define LEQUAL_OP            0x93
+#define RETURN_OP            0xA4
 
 #define LEAD_CHAR_OOB(x) x < 0x41 || (x > 0x5A && x != 0x5F)
 #define NAME_CHAR_OOB(x) x < 0x30 || (x > 0x39 && LEAD_CHAR_OOB(x))
-#define AML_ERROR        (aml_ptr_t){AML_PREFIX_ERROR, NULL};
+#define AML_ERROR          \
+  (aml_ptr_t)              \
+  {                        \
+    AML_PREFIX_ERROR, NULL \
+  }
 
 #define AML_PRELUDE(x)                    \
   if (next_byte() != x) return AML_ERROR;
@@ -100,6 +112,9 @@ typedef struct
   aml_ptr_t source;
   aml_ptr_t alias;
 } aml_alias_t;
+
+static aml_ptr_t ARG_OBJS[8]   = {AML_ERROR};
+static aml_ptr_t LOCAL_OBJS[8] = {AML_ERROR};
 
 void aml_parser_init(void*);
 void aml_parser_run(void);

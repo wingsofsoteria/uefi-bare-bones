@@ -134,11 +134,41 @@ void print_term_arg(aml_ptr_t evaluated_term)
   }
 }
 
+void write_to_target(aml_ptr_t target, aml_ptr_t value)
+{
+  if (target.prefix_byte >= 0x60 && target.prefix_byte <= 0x67)
+  {
+    LOCAL_OBJS[target.prefix_byte - 0x60] = value;
+  }
+  else if (target.prefix_byte >= 0x68 && target.prefix_byte <= 0x6E)
+  {
+    ARG_OBJS[target.prefix_byte - 0x68] = value;
+  }
+  else
+  {
+    abort();
+  }
+}
+
+aml_ptr_t read_from_target(aml_ptr_t target)
+{
+  if (target.prefix_byte >= 0x60 && target.prefix_byte <= 0x67)
+  {
+    return LOCAL_OBJS[target.prefix_byte - 0x60];
+  }
+  else if (target.prefix_byte >= 0x68 && target.prefix_byte <= 0x6E)
+  {
+    return ARG_OBJS[target.prefix_byte - 0x68];
+  }
+  return AML_ERROR;
+}
+
 aml_ptr_t evaluate_term_arg(aml_ptr_t term_arg)
 {
   switch (term_arg.prefix_byte)
   {
     case ONE_OP:
+    case BYTE_PREFIX:
     case WORD_PREFIX:
       {
         return term_arg; // most of the computational_data terms can be returned
@@ -147,10 +177,17 @@ aml_ptr_t evaluate_term_arg(aml_ptr_t term_arg)
   }
   if (term_arg.prefix_byte >= 0x60 && term_arg.prefix_byte <= 0x6E)
   {
-    return term_arg;
+    aml_ptr_t object = read_from_target(term_arg);
+    if (object.prefix_byte == AML_PREFIX_ERROR)
+    {
+      return term_arg;
+    }
+    else
+    {
+      return object;
+    }
   }
-  printf("Error evaluating term %x\n", term_arg.prefix_byte);
-  abort();
+  return (aml_ptr_t){0xCE, NULL};
 }
 
 void parse_term_list(aml_node_t* parent, int count)
@@ -170,8 +207,12 @@ void parse_term_list(aml_node_t* parent, int count)
     new_node->parent     = current;
     current              = new_node;
   }
-  print_next_definition_block();
-  abort();
+  return;
+}
+
+int get_pointer()
+{
+  return pointer;
 }
 
 void aml_parser_run()
@@ -179,4 +220,6 @@ void aml_parser_run()
   printf("Max Bytes: %d\n", MAX_BLOCKS);
   aml_node_t* root = calloc(1, sizeof(aml_node_t));
   parse_term_list(root, MAX_BLOCKS);
+  decrement_pointer();
+  print_next_definition_block();
 }

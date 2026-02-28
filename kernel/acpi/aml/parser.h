@@ -26,8 +26,11 @@ aml_ptr_t parse_super_name();
 aml_ptr_t reference_type_opcode();
 aml_ptr_t parse_statement_opcode();
 aml_ptr_t evaluate_term_arg(aml_ptr_t);
+aml_ptr_t read_from_target(aml_ptr_t);
+void write_to_target(aml_ptr_t target, aml_ptr_t value);
 void print_term_arg(aml_ptr_t evaluated_term);
 void print_name_string(aml_ptr_t);
 void print_next_definition_block();
+int get_pointer();
 uint32_t parse_pkg_length();
 #endif

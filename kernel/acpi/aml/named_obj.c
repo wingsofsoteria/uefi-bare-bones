@@ -263,6 +263,17 @@ aml_ptr_t def_field()
   return (aml_ptr_t){FIELD_OP, NULL};
 }
 
+aml_ptr_t def_device()
+{
+  AML_EXT_PRELUDE(DEVICE_OP)
+  uint32_t pkg_length     = parse_pkg_length();
+  aml_ptr_t name_string   = parse_name_string();
+  aml_node_t* device_node = calloc(1, sizeof(aml_node_t));
+  parse_term_list(device_node, pkg_length);
+
+  return (aml_ptr_t){DEVICE_OP, device_node};
+}
+
 aml_ptr_t def_method()
 {
   AML_PRELUDE(METHOD_OP)
@@ -279,8 +290,9 @@ aml_ptr_t def_method()
 
 aml_ptr_t parse_named_obj()
 {
-  return one_of(14, def_bank_field, def_create_bitfield, def_create_bytefield,
-    def_create_dword_field, def_create_field, def_create_qword_field,
-    def_create_word_field, def_data_region, def_external, def_op_region,
-    def_power_res, def_thermal_zone, def_field, def_method);
+  return one_of(15, def_device, def_bank_field, def_create_bitfield,
+    def_create_bytefield, def_create_dword_field, def_create_field,
+    def_create_qword_field, def_create_word_field, def_data_region,
+    def_external, def_op_region, def_power_res, def_thermal_zone, def_field,
+    def_method);
 }

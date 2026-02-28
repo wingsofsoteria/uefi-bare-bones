@@ -20,7 +20,41 @@ aml_ptr_t def_and()
 
 aml_ptr_t def_buffer()
 {
-  return AML_ERROR;
+  AML_PRELUDE(BUFFER_OP)
+  printf("DefBuffer(%d) ", get_pointer());
+  parse_pkg_length();
+  uint32_t length    = 0;
+  aml_ptr_t term_arg = parse_term_arg();
+  switch (term_arg.prefix_byte)
+  {
+    case ONE_OP:
+      {
+        length = 1;
+        break;
+      }
+    case BYTE_PREFIX:
+      {
+        uint8_t value = *(uint8_t*)term_arg.__ptr;
+        length        = value;
+        break;
+      }
+    case WORD_PREFIX:
+      {
+        uint16_t value = *(uint16_t*)term_arg.__ptr;
+        length         = value;
+        break;
+      }
+    default:
+      {
+        abort();
+      }
+  }
+  while (length > 0)
+  {
+    next_byte();
+    length--;
+  }
+  return (aml_ptr_t){BUFFER_OP, NULL};
 }
 
 aml_ptr_t def_concat()
@@ -50,7 +84,11 @@ aml_ptr_t def_decrement()
 
 aml_ptr_t def_deref_of()
 {
-  return AML_ERROR;
+  AML_PRELUDE(DEREF_OF_OP)
+  printf("DefDerefOfOp(%d) ", get_pointer());
+  parse_term_arg();
+  parse_term_arg();
+  return (aml_ptr_t){DEREF_OF_OP, NULL};
 }
 
 aml_ptr_t def_divide()
@@ -75,12 +113,20 @@ aml_ptr_t def_from_bcd()
 
 aml_ptr_t def_increment()
 {
-  return AML_ERROR;
+  AML_PRELUDE(INCREMENT_OP)
+  printf("DefIncrement(%d) ", get_pointer());
+  parse_super_name();
+  return (aml_ptr_t){INCREMENT_OP, NULL};
 }
 
 aml_ptr_t def_index()
 {
-  return AML_ERROR;
+  AML_PRELUDE(INDEX_OP)
+  printf("DefIndex(%d) ", get_pointer());
+  parse_term_arg();
+  parse_term_arg();
+  parse_target();
+  return (aml_ptr_t){INDEX_OP, NULL};
 }
 
 aml_ptr_t def_LAnd()
@@ -90,7 +136,11 @@ aml_ptr_t def_LAnd()
 
 aml_ptr_t def_LEqual()
 {
-  return AML_ERROR;
+  AML_PRELUDE(LEQUAL_OP)
+  printf("DefLEqual(%d) ", get_pointer());
+  parse_term_arg();
+  parse_term_arg();
+  return (aml_ptr_t){LEQUAL_OP, NULL};
 }
 
 aml_ptr_t def_LGreater()
@@ -106,6 +156,7 @@ aml_ptr_t def_LGreater_equal()
 aml_ptr_t def_LLess()
 {
   AML_PRELUDE(LLESS_OP)
+  printf("DefLLess(%d) ", get_pointer());
   parse_term_arg();
   parse_term_arg();
   return (aml_ptr_t){LLESS_OP, NULL};
@@ -209,32 +260,27 @@ aml_ptr_t def_shift_right()
 aml_ptr_t def_size_of()
 {
   AML_PRELUDE(SIZEOF_OP)
-  parse_super_name();
+  printf("DefSizeOf(%d) ", get_pointer());
+  aml_ptr_t operand = parse_super_name();
   return (aml_ptr_t){SIZEOF_OP, NULL};
 }
 
 aml_ptr_t def_store()
 {
   AML_PRELUDE(STORE_OP)
+  printf("DefStore(%d) ", get_pointer());
   parse_term_arg();
-  parse_super_name();
+  aml_ptr_t name = parse_super_name();
   return (aml_ptr_t){STORE_OP, NULL};
 }
 
 aml_ptr_t def_subtract()
 {
   AML_PRELUDE(SUBTRACT_OP)
-  aml_ptr_t term_arg   = parse_term_arg();
-  aml_ptr_t minuend    = evaluate_term_arg(term_arg);
-  term_arg             = parse_term_arg();
-  aml_ptr_t subtrahend = evaluate_term_arg(term_arg);
-  aml_ptr_t result     = parse_target();
-  printf("Subtract ");
-  print_term_arg(minuend);
-  printf(" - ");
-  print_term_arg(subtrahend);
-  printf(" = ");
-  print_name_string(result);
+  printf("DefSubtract(%d) ", get_pointer());
+  aml_ptr_t term_arg = parse_term_arg();
+  term_arg           = parse_term_arg();
+  aml_ptr_t result   = parse_target();
   return (aml_ptr_t){SUBTRACT_OP, NULL};
 }
 
@@ -251,15 +297,12 @@ aml_ptr_t def_to_bcd()
 aml_ptr_t def_to_buffer()
 {
   AML_PRELUDE(TO_BUFFER_OP)
+  printf("DefToBuffer(%d) ", get_pointer());
   aml_ptr_t term_arg = parse_term_arg();
   aml_ptr_t operand  = evaluate_term_arg(term_arg);
   aml_ptr_t target   = parse_target();
-  printf("ToBuffer ");
-  print_term_arg(operand);
-  printf("->");
-  print_name_string(target);
-  putchar('\n');
-
+  // we're supposed to do some manipulation of data here but I'm leaving it
+  // unimplemented until it becomes an issue
   return (aml_ptr_t){TO_BUFFER_OP, NULL};
 }
 
@@ -276,14 +319,9 @@ aml_ptr_t reference_type_opcode()
 aml_ptr_t def_to_hex_string()
 {
   AML_PRELUDE(TO_HEX_STRING_OP)
+  printf("DefToHexString(%d) ", get_pointer());
   aml_ptr_t term_arg = parse_term_arg();
-  aml_ptr_t operand  = evaluate_term_arg(term_arg);
   aml_ptr_t target   = parse_target();
-  printf("ToHexString ");
-  print_term_arg(operand);
-  printf("->");
-  print_name_string(target);
-  putchar('\n');
   return (aml_ptr_t){TO_HEX_STRING_OP, NULL};
 }
 
