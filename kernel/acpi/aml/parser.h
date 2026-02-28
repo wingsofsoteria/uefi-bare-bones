@@ -5,9 +5,8 @@
 #include <stdint.h>
 uint8_t next_byte();
 aml_ptr_t one_of(int, ...);
-void decrement_pointer();
 
-void parse_term_list(aml_node_t* parent, int);
+void parse_term_list(int);
 aml_ptr_t parse_name_string();
 aml_ptr_t parse_namespace_modifier_obj();
 aml_ptr_t parse_named_obj();
@@ -31,6 +30,7 @@ void write_to_target(aml_ptr_t target, aml_ptr_t value);
 void print_term_arg(aml_ptr_t evaluated_term);
 void print_name_string(aml_ptr_t);
 void print_next_definition_block();
-int get_pointer();
 uint32_t parse_pkg_length();
+int get_pointer();
+void move_pointer(int);
 #endif

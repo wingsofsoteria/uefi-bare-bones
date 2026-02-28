@@ -14,8 +14,7 @@ aml_ptr_t byte_data()
 
 aml_ptr_t byte_const()
 {
-  uint8_t token = next_byte();
-  if (token != BYTE_PREFIX) return AML_ERROR;
+  AML_PRELUDE(BYTE_PREFIX)
   return byte_data();
 }
 
@@ -36,8 +35,7 @@ aml_ptr_t word_data()
 
 aml_ptr_t word_const()
 {
-  uint8_t token = next_byte();
-  if (token != WORD_PREFIX) return AML_ERROR;
+  AML_PRELUDE(WORD_PREFIX)
   return word_data();
 }
 // TODO fix qword and dword
@@ -45,11 +43,10 @@ aml_ptr_t dword_data()
 {
   aml_ptr_t lower_word = word_data();
   aml_ptr_t upper_word = word_data();
-
-  uint16_t* ptr = calloc(2, sizeof(uint16_t));
-
-  ptr[1] = *(uint16_t*)lower_word.__ptr;
-  ptr[0] = *(uint16_t*)upper_word.__ptr;
+  uint16_t lower       = *(uint16_t*)lower_word.__ptr;
+  uint16_t upper       = *(uint16_t*)upper_word.__ptr;
+  uint32_t* ptr        = calloc(1, sizeof(uint32_t));
+  *ptr                 = ((uint32_t)upper << 16) | lower;
 
   free(lower_word.__ptr);
   free(upper_word.__ptr);
@@ -59,8 +56,7 @@ aml_ptr_t dword_data()
 
 aml_ptr_t dword_const()
 {
-  uint8_t token = next_byte();
-  if (token != DWORD_PREFIX) return AML_ERROR;
+  AML_PRELUDE(DWORD_PREFIX)
   return dword_data();
 }
 
@@ -68,11 +64,10 @@ aml_ptr_t qword_data()
 {
   aml_ptr_t lower_word = dword_data();
   aml_ptr_t upper_word = dword_data();
-
-  uint32_t* ptr = calloc(2, sizeof(uint32_t));
-
-  ptr[1] = *(uint32_t*)lower_word.__ptr;
-  ptr[0] = *(uint32_t*)upper_word.__ptr;
+  uint32_t lower       = *(uint32_t*)lower_word.__ptr;
+  uint32_t upper       = *(uint32_t*)upper_word.__ptr;
+  uint64_t* ptr        = calloc(1, sizeof(uint64_t));
+  *ptr                 = ((uint64_t)upper << 32) | lower;
 
   free(lower_word.__ptr);
   free(upper_word.__ptr);
@@ -82,25 +77,23 @@ aml_ptr_t qword_data()
 
 aml_ptr_t qword_const()
 {
-  uint8_t token = next_byte();
-  if (token != QWORD_PREFIX) return AML_ERROR;
+  AML_PRELUDE(QWORD_PREFIX)
   return qword_data();
 }
 
 aml_ptr_t parse_string()
 {
+  AML_PRELUDE(STRING_PREFIX)
+  char* string  = calloc(5, sizeof(char));
+  int size      = 5;
+  int i         = 0;
   uint8_t token = next_byte();
-  if (token != STRING_PREFIX) return AML_ERROR;
-  char* string = calloc(5, sizeof(char));
-  int size     = 5;
-  int i        = 0;
-  token        = next_byte();
   while (token != ZERO_OP)
   {
     if (token > 0x7F)
     {
       free(string);
-      return AML_ERROR;
+      return AML_PARSE_ERROR;
     }
     string[i++] = token;
     if (i >= size)
@@ -132,15 +125,12 @@ aml_ptr_t const_obj()
   {
     return (aml_ptr_t){token, NULL};
   }
-  return AML_ERROR;
+  return AML_PREFIX_ERROR;
 }
 
 aml_ptr_t revision_op()
 {
-  uint8_t token = next_byte();
-  if (token != EXT_OP_PREFIX) return AML_ERROR;
-  token = next_byte();
-  if (token != REVISION_OP) return AML_ERROR;
+  AML_EXT_PRELUDE(REVISION_OP)
   return (aml_ptr_t){REVISION_OP, NULL};
 }
 

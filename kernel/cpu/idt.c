@@ -72,6 +72,11 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
       {
         break;
       }
+    case 8:
+      {
+        printf("===DOUBLE FAULT===\n");
+        halt_cpu
+      }
     case 13:
       {
         printf("===GENERAL PROTECTION FAULT===\n\tError Code: %d", stack->err);

@@ -25,8 +25,9 @@
 #define ADD_OP               0x72
 #define OP_REGION_OP         0x80
 #define FIELD_OP             0x81
-#define AML_PREFIX_ERROR     0xFA
+#define ERR_PREFIX           0xFA
 #define NAME_SEG_PREFIX      0xF9
+#define ERR_PARSE            0xF8
 #define REVISION_OP          0x30
 #define BANK_FIELD_OP        0x87
 #define CREATE_BITFIELD_OP   0x8D
@@ -56,20 +57,38 @@
 #define ELSE_OP              0xA1
 #define LEQUAL_OP            0x93
 #define RETURN_OP            0xA4
+#define PACKAGE_OP           0x12
+#define MUTEX_OP             0x01
+#define SHIFT_LEFT_OP        0x79
+#define RELEASE_OP           0x27
+#define OR_OP                0x7D
+#define NOT_OP               0x80
+#define VAR_PACKAGE_OP       0x13
 
 #define LEAD_CHAR_OOB(x) x < 0x41 || (x > 0x5A && x != 0x5F)
 #define NAME_CHAR_OOB(x) x < 0x30 || (x > 0x39 && LEAD_CHAR_OOB(x))
-#define AML_ERROR          \
-  (aml_ptr_t)              \
-  {                        \
-    AML_PREFIX_ERROR, NULL \
+#define AML_ERR_CHECK(x)                                         \
+  if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
+  {                                                              \
+    printf("AML Error");                                         \
+    return AML_PARSE_ERROR;                                      \
+  }
+#define AML_PREFIX_ERROR \
+  (aml_ptr_t)            \
+  {                      \
+    ERR_PREFIX, NULL     \
   }
 
-#define AML_PRELUDE(x)                    \
-  if (next_byte() != x) return AML_ERROR;
+#define AML_PARSE_ERROR \
+  (aml_ptr_t)           \
+  {                     \
+    ERR_PARSE, NULL     \
+  }
+#define AML_PRELUDE(x)                           \
+  if (next_byte() != x) return AML_PREFIX_ERROR;
 
-#define AML_EXT_PRELUDE(x)                            \
-  if (next_byte() != EXT_OP_PREFIX) return AML_ERROR; \
+#define AML_EXT_PRELUDE(x)                                   \
+  if (next_byte() != EXT_OP_PREFIX) return AML_PREFIX_ERROR; \
   AML_PRELUDE(x)
 
 uint32_t get_next_dword();
@@ -109,12 +128,17 @@ typedef struct AmlNode
 
 typedef struct
 {
+  aml_ptr_t method_name;
+  uint8_t method_flags;
+  uint32_t length;
+  char* code;
+} aml_method_t;
+
+typedef struct
+{
   aml_ptr_t source;
   aml_ptr_t alias;
 } aml_alias_t;
-
-static aml_ptr_t ARG_OBJS[8]   = {AML_ERROR};
-static aml_ptr_t LOCAL_OBJS[8] = {AML_ERROR};
 
 void aml_parser_init(void*);
 void aml_parser_run(void);

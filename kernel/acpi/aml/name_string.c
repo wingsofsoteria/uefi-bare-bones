@@ -13,7 +13,7 @@ aml_ptr_t parse_name_seg()
   uint8_t third_namechar  = next_byte();
   if (LEAD_CHAR_OOB(lead_char) || NAME_CHAR_OOB(first_namechar) ||
     NAME_CHAR_OOB(second_namechar) || NAME_CHAR_OOB(third_namechar))
-    return AML_ERROR;
+    return AML_PREFIX_ERROR;
   aml_name_segment_t* name_segment = calloc(1, sizeof(aml_name_segment_t));
 
   name_segment->lead_char   = lead_char;
@@ -26,12 +26,11 @@ aml_ptr_t parse_name_seg()
 // returns aml_ptr DUAL_NAME_PREFIX, name_segments(2)
 aml_ptr_t parse_dual_name_path()
 {
-  uint8_t token = next_byte();
-  if (token != DUAL_NAME_PREFIX) return AML_ERROR;
+  AML_PRELUDE(DUAL_NAME_PREFIX)
   aml_ptr_t first_seg = parse_name_seg();
-  if (first_seg.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
+  AML_ERR_CHECK(first_seg);
   aml_ptr_t second_seg = parse_name_seg();
-  if (second_seg.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
+  AML_ERR_CHECK(second_seg);
   aml_dual_name_path_t* name_path = calloc(1, sizeof(aml_dual_name_path_t));
   name_path->first                = *(aml_name_segment_t*)first_seg.__ptr;
   name_path->second               = *(aml_name_segment_t*)second_seg.__ptr;
@@ -44,15 +43,14 @@ aml_ptr_t parse_dual_name_path()
 // number of name segments
 aml_ptr_t parse_multi_name_path()
 {
-  uint8_t token = next_byte();
-  if (token != MULTI_NAME_PREFIX) return AML_ERROR;
+  AML_PRELUDE(MULTI_NAME_PREFIX)
   uint8_t num_name_segs            = next_byte();
   aml_multi_name_path_t* name_path = calloc(1, sizeof(aml_multi_name_path_t));
   name_path->segments = calloc(num_name_segs, sizeof(aml_name_segment_t));
   for (int i = 0; i < num_name_segs; i++)
   {
     aml_ptr_t name_segment = parse_name_seg();
-    if (name_segment.prefix_byte == AML_PREFIX_ERROR) return AML_ERROR;
+    AML_ERR_CHECK(name_segment);
     name_path->segments[i] = *(aml_name_segment_t*)name_segment.__ptr;
     free(name_segment.__ptr);
   }
@@ -63,8 +61,7 @@ aml_ptr_t parse_multi_name_path()
 
 aml_ptr_t parse_null_name()
 {
-  uint8_t token = next_byte();
-  if (token != NULL_NAME) return AML_ERROR;
+  AML_PRELUDE(NULL_NAME)
   return (aml_ptr_t){NULL_NAME, NULL};
 }
 
@@ -98,12 +95,9 @@ aml_ptr_t parse_name_string()
     {
       token = next_byte();
     }
-    decrement_pointer();
+    move_pointer(-1);
     aml_ptr_t name_path = parse_name_path();
-    if (name_path.prefix_byte == AML_PREFIX_ERROR)
-    {
-      return AML_ERROR;
-    }
+    AML_ERR_CHECK(name_path);
     return name_path;
   }
 }
