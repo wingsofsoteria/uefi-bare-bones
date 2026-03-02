@@ -107,7 +107,7 @@ static void dump_array()
 
   for (i = 0; i < MAXEXP; i++)
   {
-    printf("%.2i(%d): ", i, l_completePages[i]);
+    printf("%d(%d): ", i, l_completePages[i]);
 
     tag = l_freePages[i];
     while (tag != NULL)

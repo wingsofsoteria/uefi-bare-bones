@@ -1,10 +1,7 @@
 #include "parser.h"
-#include "acpi/tables.h"
 #include "aml.h"
+#include "host.h"
 #include "stdlib.h"
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
 int MAX_BLOCKS = 0;
 
 int pointer = 0;
@@ -13,20 +10,20 @@ acpi_aml_table_t* TABLE = NULL;
 void aml_parser_init(void* address)
 {
   TABLE      = (acpi_aml_table_t*)address;
-  MAX_BLOCKS = TABLE->header.length - 36;
+  MAX_BLOCKS = TABLE->length - 36;
   pointer    = 0;
 }
 
 void print_next_definition_block()
 {
   int current_pointer = pointer;
-  printf("%d: ", current_pointer);
+  AML_LOG("%d: ", current_pointer);
   for (int i = 0; i < 20; i++)
   {
     if (pointer >= MAX_BLOCKS) break;
-    printf("%x ", TABLE->definition_blocks[pointer++]);
+    AML_LOG("%x ", TABLE->definition_blocks[pointer++]);
   }
-  putchar('\n');
+  AML_LOG("\n");
 
   pointer = current_pointer;
 }
@@ -59,7 +56,7 @@ uint8_t peek_byte()
 {
   if (pointer >= MAX_BLOCKS)
   {
-    abort();
+    AML_EXIT();
   }
   return TABLE->definition_blocks[pointer];
 }
@@ -68,8 +65,7 @@ uint8_t next_byte()
 {
   if (pointer >= MAX_BLOCKS)
   {
-    printf("No More Definition Blocks ");
-    abort();
+    AML_EXIT();
   }
   return TABLE->definition_blocks[pointer++];
 }
@@ -105,39 +101,39 @@ void print_term_arg(aml_ptr_t evaluated_term)
 {
   if (evaluated_term.prefix_byte >= 0x60 && evaluated_term.prefix_byte <= 0x6E)
   {
-    printf("%d", evaluated_term.prefix_byte);
+    AML_LOG("%d", evaluated_term.prefix_byte);
     return;
   }
   switch (evaluated_term.prefix_byte)
   {
     case ONE_OP:
       {
-        putchar('1');
+        AML_LOG("1");
         break;
       }
     case ZERO_OP:
       {
-        putchar('0');
+        AML_LOG("0");
         break;
       }
     case ONES_OP:
       {
-        printf("255");
+        AML_LOG("255");
         break;
       }
     case BYTE_PREFIX:
       {
-        printf("%d", *(uint8_t*)evaluated_term.__ptr);
+        AML_LOG("%d", *(uint8_t*)evaluated_term.__ptr);
         break;
       }
     case WORD_PREFIX:
       {
-        printf("%d", *(uint16_t*)evaluated_term.__ptr);
+        AML_LOG("%d", *(uint16_t*)evaluated_term.__ptr);
         break;
       }
     default:
       {
-        printf("Unknown");
+        AML_LOG("Unknown");
       }
   }
 }
@@ -215,8 +211,7 @@ aml_ptr_t parse_term_list(int count)
     }
     if ((new_pointer - old_pointer) > count)
     {
-      printf("Overshot pkglength\n");
-      abort();
+      AML_EXIT();
     }
     if ((new_pointer - old_pointer) == count)
     {
@@ -224,16 +219,14 @@ aml_ptr_t parse_term_list(int count)
     }
     if (status.prefix_byte == ERR_PARSE)
     {
-      printf("Parser errored out\n");
-      print_next_definition_block();
-      abort();
+      AML_EXIT();
     }
+
     aml_node_t* list_child = aml_create_node();
     list_child->data       = status;
     aml_append_node(list_root, list_child);
     list_root = list_child;
   }
-
   return (aml_ptr_t){TERM_LIST_PREFIX, static_list_root};
 }
 // TODO have this look up scope using aml_root

@@ -1,5 +1,5 @@
-#ifndef __KERNEL_ACPI_AML_PARSER_H__
-#define __KERNEL_ACPI_AML_PARSER_H__
+#ifndef __AML_INTERNAL_PARSER_H__
+#define __AML_INTERNAL_PARSER_H__
 
 #include "aml.h"
 #include <stdint.h>

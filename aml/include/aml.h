@@ -1,8 +1,8 @@
-#ifndef __KERNEL_ACPI_AML_INTERNAL_H__
-#define __KERNEL_ACPI_AML_INTERNAL_H__
+#ifndef __AML_INTERNAL_H__
+#define __AML_INTERNAL_H__
 
-#include "stdlib.h"
-#include <stdint.h>
+#include "host.h"
+
 #define EXT_OP_PREFIX        0x5B
 #define ROOT_CHAR            0x5C
 #define PREFIX_CHAR          0x5E
@@ -71,6 +71,7 @@
 #define AML_ERR_CHECK(x)                                         \
   if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
   {                                                              \
+    AML_LOG("ERR Check Failed");                                 \
     return AML_PARSE_ERROR;                                      \
   }
 #define AML_PREFIX_ERROR \
@@ -93,6 +94,20 @@
 
 uint32_t get_next_dword();
 void* parse_buffer_definition();
+
+typedef struct
+{
+  char signature[4];
+  uint32_t length;
+  uint8_t revision;
+  uint8_t checksum;
+  uint8_t oem_id[6];
+  uint64_t oem_table_id;
+  uint32_t oem_revision;
+  uint32_t creator_id;
+  uint32_t creator_revision;
+  uint8_t definition_blocks[];
+} __attribute__((packed)) acpi_aml_table_t;
 
 typedef struct
 {

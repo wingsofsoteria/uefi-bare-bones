@@ -15,7 +15,7 @@ objs/%.s.o: %.s
 	nasm -felf64 -i include $< -o $@
 objs/%.c.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
-kernel:$(OBJS) ../libc/libk.a objs/font.o
+kernel:$(OBJS) ../aml/objs/aml_interpreter.a ../libc/libk.a objs/font.o
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
 
 clean: 

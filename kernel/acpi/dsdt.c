@@ -1,5 +1,4 @@
 #include "acpi.h"
-#include "aml/aml.h"
 void dsdt_parse()
 {
   acpi_fadt_t* fadt  = (acpi_fadt_t*)acpi_get_table("FACP");

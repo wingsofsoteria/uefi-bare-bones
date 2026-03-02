@@ -25,7 +25,9 @@
 // thing in one form or another and this is what was born of it)
 // I also only ever comment things after the fact so that doesn't help either
 
-// TODO (priority) real time clock
+// TODO theres a bug *somewhere* that seems to be caused by printing too many
+// lines to the screen
+
 // TODO syscalls, porting a c library, better interrupt handling, actually
 // support framebuffer formats instead of assuming 32bpp
 // TODO use cpuid to calibrate TSC if available

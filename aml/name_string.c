@@ -1,8 +1,5 @@
 #include "aml.h"
 #include "parser.h"
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 // returns aml_ptr UNUSED, name_segments(1)
 aml_ptr_t parse_name_seg()
@@ -174,13 +171,13 @@ char* name_string_to_cstring(aml_ptr_t name_string)
 
 void print_name_seg(aml_name_segment_t segment)
 {
-  printf("%c%c%c%c", segment.lead_char, segment.name_char_1,
+  AML_LOG("%c%c%c%c", segment.lead_char, segment.name_char_1,
     segment.name_char_2, segment.name_char_3);
 }
 
 void print_name_string(aml_ptr_t string)
 {
-  printf("%c",
+  AML_LOG("%c",
     string.prefix_byte == ROOT_CHAR || string.prefix_byte == PREFIX_CHAR
       ? string.prefix_byte
       : ' ');
@@ -195,7 +192,7 @@ void print_name_string(aml_ptr_t string)
     case DUAL_NAME_PREFIX:
       {
         print_name_seg(name_string.dual_seg.first);
-        printf(".");
+        AML_LOG(".");
         print_name_seg(name_string.dual_seg.second);
         break;
       }
@@ -204,21 +201,20 @@ void print_name_string(aml_ptr_t string)
         for (int i = 0; i < name_string.multi_seg.length; i++)
         {
           print_name_seg(name_string.multi_seg.segments[i]);
-          printf(".");
+          AML_LOG(".");
         }
         break;
       }
     case NULL_NAME:
       {
-        printf("NullName");
+        AML_LOG("NullName");
         break;
       }
     default:
       {
         // Name might be SuperName
         // try evaluating it
-        aml_ptr_t evaluated_string = evaluate_term_arg(string);
-        print_term_arg(evaluated_string);
+        AML_LOG("Unknown");
         break;
       }
   }

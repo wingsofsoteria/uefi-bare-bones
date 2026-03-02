@@ -1,9 +1,6 @@
 #include "aml.h"
-#include "cpu/isr.h"
+#include "host.h"
 #include "parser.h"
-#include "stdlib.h"
-#include <stdint.h>
-#include <stdio.h>
 
 aml_ptr_t named_field()
 {
@@ -13,16 +10,12 @@ aml_ptr_t named_field()
     return AML_PREFIX_ERROR;
   }
   uint32_t length = parse_pkg_length();
-  printf("NamedField(%d, ", length);
-  print_name_string(name_seg);
-  printf(")");
   return (aml_ptr_t){NAME_OP, NULL};
 }
 aml_ptr_t reserved_field()
 {
   AML_PRELUDE(0x00);
   uint32_t length = parse_pkg_length();
-  printf("ReservedField(%d)", length);
   return (aml_ptr_t){0x00, NULL};
 }
 
@@ -31,7 +24,6 @@ aml_ptr_t access_field()
   AML_PRELUDE(0x01);
   next_byte();
   next_byte();
-  printf("AccessField");
   return (aml_ptr_t){0x01, NULL};
 }
 
@@ -41,7 +33,6 @@ aml_ptr_t extended_access_field()
   next_byte();
   next_byte();
   next_byte();
-  printf("ExtendedAccessField");
   return (aml_ptr_t){0x03, NULL};
 }
 
@@ -108,62 +99,62 @@ void print_region_space(uint8_t region_space)
   {
     case 0x00:
       {
-        printf("SystemMemory");
+        AML_LOG("SystemMemory");
         break;
       }
     case 0x01:
       {
-        printf("SystemIO");
+        AML_LOG("SystemIO");
         break;
       }
     case 0x02:
       {
-        printf("PCI_Config");
+        AML_LOG("PCI_Config");
         break;
       }
     case 0x03:
       {
-        printf("EmbeddedControl");
+        AML_LOG("EmbeddedControl");
         break;
       }
     case 0x04:
       {
-        printf("SMBus");
+        AML_LOG("SMBus");
         break;
       }
     case 0x05:
       {
-        printf("System CMOS");
+        AML_LOG("System CMOS");
         break;
       }
     case 0x06:
       {
-        printf("PciBarTarget");
+        AML_LOG("PciBarTarget");
         break;
       }
     case 0x07:
       {
-        printf("IPMI");
+        AML_LOG("IPMI");
         break;
       }
     case 0x08:
       {
-        printf("GeneralPurposeIO");
+        AML_LOG("GeneralPurposeIO");
         break;
       }
     case 0x09:
       {
-        printf("GenericSerialBus");
+        AML_LOG("GenericSerialBus");
         break;
       }
     case 0x0A:
       {
-        printf("PCC");
+        AML_LOG("PCC");
         break;
       }
     default:
       {
-        printf("OEM Defined");
+        AML_LOG("OEM Defined");
         break;
       }
   }
@@ -172,20 +163,14 @@ void print_region_space(uint8_t region_space)
 aml_ptr_t def_op_region()
 {
   AML_EXT_PRELUDE(OP_REGION_OP);
-  printf("OperationalRegion(");
   aml_ptr_t region_name = parse_name_string();
   AML_ERR_CHECK(region_name);
-  print_name_string(region_name);
-  printf(", ");
-  uint8_t region_space = next_byte();
-  print_region_space(region_space);
-  printf(", ");
+
+  uint8_t region_space    = next_byte();
   aml_ptr_t region_offset = parse_term_arg();
   AML_ERR_CHECK(region_offset);
-  printf(", ");
   aml_ptr_t region_len = parse_term_arg();
   AML_ERR_CHECK(region_len);
-  printf(");\n");
   return (aml_ptr_t){OP_REGION_OP, NULL};
 }
 
@@ -202,20 +187,16 @@ aml_ptr_t def_thermal_zone()
 aml_ptr_t def_field()
 {
   AML_EXT_PRELUDE(FIELD_OP);
-  printf("DefField(");
   int old_pointer       = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t name_string = parse_name_string();
   AML_ERR_CHECK(name_string);
-  print_name_string(name_string);
   uint8_t field_flags  = next_byte();
   int new_pointer      = get_pointer();
   length              -= (new_pointer - old_pointer);
-  printf(", %d, %d", length, field_flags);
   aml_ptr_t status;
   while (length > 0)
   {
-    printf(", ");
     status = one_of(5, named_field, reserved_field, access_field,
       extended_access_field, connect_field);
     AML_ERR_CHECK(status);
@@ -223,48 +204,38 @@ aml_ptr_t def_field()
     new_pointer = get_pointer();
     if ((new_pointer - old_pointer) > length)
     {
-      printf("\nOvershot field length\n");
-      abort();
+      AML_EXIT();
     }
     length -= (new_pointer - old_pointer);
   }
-  printf(");\n");
   return (aml_ptr_t){FIELD_OP, NULL};
 }
 
 aml_ptr_t def_device()
 {
   AML_EXT_PRELUDE(DEVICE_OP);
-  printf("DefDevice(");
   int current_pointer   = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t name_string = parse_name_string();
   AML_ERR_CHECK(name_string);
-  print_name_string(name_string);
-  printf(", ");
   int new_pointer      = get_pointer();
   length              -= (new_pointer - current_pointer);
   aml_ptr_t term_list  = parse_term_list(length);
   AML_ERR_CHECK(term_list);
-  printf(");\n");
   return (aml_ptr_t){DEVICE_OP, NULL};
 }
 // TODO replace move_pointer with actual parser code
 aml_ptr_t def_method()
 {
   AML_PRELUDE(METHOD_OP);
-  printf("DefMethod(");
   int current_pointer   = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t name_string = parse_name_string();
   AML_ERR_CHECK(name_string);
-  print_name_string(name_string);
-  printf(", %d", length);
   uint8_t method_flags  = next_byte();
   int new_pointer       = get_pointer();
   length               -= (new_pointer - current_pointer);
   move_pointer(length);
-  printf(");\n");
   return (aml_ptr_t){METHOD_OP, NULL};
 }
 
@@ -274,9 +245,6 @@ aml_ptr_t def_mutex()
   aml_ptr_t name_string = parse_name_string();
   AML_ERR_CHECK(name_string);
   uint8_t sync_flags = next_byte();
-  printf("DefMutex(");
-  print_name_string(name_string);
-  printf(", %d);\n", sync_flags);
   return (aml_ptr_t){MUTEX_OP, NULL};
 }
 
@@ -284,7 +252,6 @@ aml_ptr_t def_mutex()
 aml_ptr_t def_processor()
 {
   AML_EXT_PRELUDE(0x83);
-  printf("DEPRECATED\n");
   int old_pointer = get_pointer();
   uint32_t length = parse_pkg_length();
   parse_name_string();

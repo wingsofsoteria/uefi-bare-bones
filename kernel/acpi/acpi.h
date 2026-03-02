@@ -23,4 +23,6 @@ acpi_sdt_header_t* acpi_get_table(char id[4]);
 uint32_t lapic_read(uint16_t offset);
 void lapic_write(uint16_t offset, uint32_t value);
 void dsdt_init();
+void aml_parser_init(void*);
+void aml_parser_run();
 #endif

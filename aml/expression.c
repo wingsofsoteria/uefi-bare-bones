@@ -1,6 +1,5 @@
 #include "aml.h"
 #include "parser.h"
-#include <iso646.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -22,14 +21,12 @@ aml_ptr_t def_and()
 aml_ptr_t def_buffer()
 {
   AML_PRELUDE(BUFFER_OP);
-  int old_pointer = get_pointer();
-  uint32_t length = parse_pkg_length();
-  printf("DefBuffer(%d, ", length);
+  int old_pointer       = get_pointer();
+  uint32_t length       = parse_pkg_length();
   aml_ptr_t buffer_size = parse_term_arg();
   AML_ERR_CHECK(buffer_size);
-  int new_pointer = get_pointer();
-  printf(")");
-  length -= (new_pointer - old_pointer);
+  int new_pointer  = get_pointer();
+  length          -= (new_pointer - old_pointer);
   while (length > 0) // TODO use buffer_size instead of pkg_length
   {
     uint8_t byte = next_byte();
@@ -202,12 +199,10 @@ aml_ptr_t def_package()
   uint8_t num_elements  = next_byte();
   int new_pointer       = get_pointer();
   length               -= (new_pointer - old_pointer);
-  printf("DefPackage(%d, ", length);
   for (int i = 0; i < num_elements; i++)
   {
     aml_ptr_t status = one_of(2, parse_data_ref_object, parse_name_string);
     AML_ERR_CHECK(status);
-    printf(", ");
   }
   return (aml_ptr_t){PACKAGE_OP, NULL};
 }

@@ -1,5 +1,5 @@
 #include "aml.h"
-#include "stdlib.h"
+#include "host.h"
 aml_node_t* aml_root = NULL;
 
 aml_node_t* aml_root_node()

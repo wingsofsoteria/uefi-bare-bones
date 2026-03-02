@@ -37,12 +37,6 @@ typedef struct
 typedef struct
 {
   acpi_sdt_header_t header;
-  uint8_t definition_blocks[];
-} __attribute__((packed)) acpi_aml_table_t;
-
-typedef struct
-{
-  acpi_sdt_header_t header;
   uint32_t local_interrupt_controller_address;
   uint32_t flags;
   char interrupt_controller_structure[];

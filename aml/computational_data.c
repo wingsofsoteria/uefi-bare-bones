@@ -17,7 +17,6 @@ aml_ptr_t byte_const()
 {
   AML_PRELUDE(BYTE_PREFIX);
   aml_ptr_t data = byte_data();
-  printf("0x%x", *(uint8_t*)data.__ptr);
   return data;
 }
 
@@ -40,7 +39,6 @@ aml_ptr_t word_const()
 {
   AML_PRELUDE(WORD_PREFIX);
   aml_ptr_t data = word_data();
-  printf("0x%x", *(uint16_t*)data.__ptr);
   return data;
 }
 // TODO fix qword and dword
@@ -63,7 +61,6 @@ aml_ptr_t dword_const()
 {
   AML_PRELUDE(DWORD_PREFIX);
   aml_ptr_t data = dword_data();
-  printf("0x%x", *(uint32_t*)data.__ptr);
 
   return data;
 }
@@ -87,7 +84,6 @@ aml_ptr_t qword_const()
 {
   AML_PRELUDE(QWORD_PREFIX);
   aml_ptr_t data = qword_data();
-  printf("0x%x", *(uint64_t*)data.__ptr);
 
   return data;
 }
@@ -125,7 +121,6 @@ aml_ptr_t parse_string()
     string = new_string;
   }
   string[i] = 0;
-  printf("%s", string);
   return (aml_ptr_t){STRING_PREFIX, string};
 }
 
@@ -134,7 +129,6 @@ aml_ptr_t const_obj()
   uint8_t token = next_byte();
   if (token == ZERO_OP || token == ONE_OP || token == ONES_OP)
   {
-    printf("0x%x", token);
     return (aml_ptr_t){token, NULL};
   }
   return AML_PREFIX_ERROR;
@@ -143,7 +137,6 @@ aml_ptr_t const_obj()
 aml_ptr_t revision_op()
 {
   AML_EXT_PRELUDE(REVISION_OP);
-  printf("0x%x", REVISION_OP);
   return (aml_ptr_t){REVISION_OP, NULL};
 }
 
