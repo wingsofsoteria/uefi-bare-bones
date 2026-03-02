@@ -10,7 +10,6 @@ int MAX_BLOCKS = 0;
 int pointer = 0;
 
 acpi_aml_table_t* TABLE = NULL;
-
 void aml_parser_init(void* address)
 {
   TABLE      = (acpi_aml_table_t*)address;
@@ -204,6 +203,8 @@ aml_ptr_t parse_term_list(int count)
 {
   int old_pointer = pointer;
   aml_ptr_t status;
+  aml_node_t* static_list_root = aml_create_node();
+  aml_node_t* list_root        = static_list_root;
   while (1)
   {
     status          = parse_term_obj();
@@ -227,10 +228,15 @@ aml_ptr_t parse_term_list(int count)
       print_next_definition_block();
       abort();
     }
+    aml_node_t* list_child = aml_create_node();
+    list_child->data       = status;
+    aml_append_node(list_root, list_child);
+    list_root = list_child;
   }
 
-  return (aml_ptr_t){NULL_NAME, NULL};
+  return (aml_ptr_t){TERM_LIST_PREFIX, static_list_root};
 }
+// TODO have this look up scope using aml_root
 aml_ptr_t lookup_scope(char scope[4])
 {
   aml_ptr_t status = (aml_ptr_t){ERR_PREFIX, NULL};
@@ -254,10 +260,12 @@ aml_ptr_t lookup_scope(char scope[4])
   }
   return status;
 }
+
 int get_pointer()
 {
   return pointer;
 }
+
 void move_pointer(int amount_to_move)
 {
   pointer += amount_to_move;
@@ -265,6 +273,11 @@ void move_pointer(int amount_to_move)
 
 void aml_parser_run()
 {
-  parse_term_list(MAX_BLOCKS);
+  aml_node_init();
+  aml_ptr_t node_ptr = parse_term_list(MAX_BLOCKS);
+  if (node_ptr.prefix_byte == TERM_LIST_PREFIX)
+  {
+    aml_root_node()->child = node_ptr.__ptr;
+  }
   print_next_definition_block();
 }

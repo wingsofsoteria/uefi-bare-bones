@@ -14,13 +14,17 @@ aml_ptr_t parse_name_seg()
   if (LEAD_CHAR_OOB(lead_char) || NAME_CHAR_OOB(first_namechar) ||
     NAME_CHAR_OOB(second_namechar) || NAME_CHAR_OOB(third_namechar))
     return AML_PREFIX_ERROR;
-  aml_name_segment_t* name_segment = calloc(1, sizeof(aml_name_segment_t));
+  aml_name_segment_t name_segment;
+  aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
 
-  name_segment->lead_char   = lead_char;
-  name_segment->name_char_1 = first_namechar;
-  name_segment->name_char_2 = second_namechar;
-  name_segment->name_char_3 = third_namechar;
-  return (aml_ptr_t){NAME_SEG_PREFIX, name_segment};
+  name_segment.lead_char   = lead_char;
+  name_segment.name_char_1 = first_namechar;
+  name_segment.name_char_2 = second_namechar;
+  name_segment.name_char_3 = third_namechar;
+
+  name_string->name_prefix = NAME_SEG_PREFIX;
+  name_string->name_seg    = name_segment;
+  return (aml_ptr_t){NAME_SEG_PREFIX, name_string};
 }
 
 // returns aml_ptr DUAL_NAME_PREFIX, name_segments(2)
@@ -31,12 +35,15 @@ aml_ptr_t parse_dual_name_path()
   AML_ERR_CHECK(first_seg);
   aml_ptr_t second_seg = parse_name_seg();
   AML_ERR_CHECK(second_seg);
-  aml_dual_name_path_t* name_path = calloc(1, sizeof(aml_dual_name_path_t));
-  name_path->first                = *(aml_name_segment_t*)first_seg.__ptr;
-  name_path->second               = *(aml_name_segment_t*)second_seg.__ptr;
+  aml_dual_name_path_t dual_seg;
+  aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
+  dual_seg.first           = ((aml_name_string_t*)first_seg.__ptr)->name_seg;
+  dual_seg.second          = ((aml_name_string_t*)second_seg.__ptr)->name_seg;
+  name_string->name_prefix = DUAL_NAME_PREFIX;
+  name_string->dual_seg    = dual_seg;
   free(first_seg.__ptr);
   free(second_seg.__ptr);
-  return (aml_ptr_t){DUAL_NAME_PREFIX, name_path};
+  return (aml_ptr_t){DUAL_NAME_PREFIX, name_string};
 }
 
 // returns aml_ptr MULTI_NAME_PREFIX, name_segment(n) where n is an arbitrary
@@ -44,19 +51,22 @@ aml_ptr_t parse_dual_name_path()
 aml_ptr_t parse_multi_name_path()
 {
   AML_PRELUDE(MULTI_NAME_PREFIX);
-  uint8_t num_name_segs            = next_byte();
-  aml_multi_name_path_t* name_path = calloc(1, sizeof(aml_multi_name_path_t));
-  name_path->segments = calloc(num_name_segs, sizeof(aml_name_segment_t));
+  uint8_t num_name_segs = next_byte();
+
+  aml_multi_name_path_t multi_seg;
+  multi_seg.segments = calloc(num_name_segs, sizeof(aml_name_segment_t));
   for (int i = 0; i < num_name_segs; i++)
   {
     aml_ptr_t name_segment = parse_name_seg();
     AML_ERR_CHECK(name_segment);
-    name_path->segments[i] = *(aml_name_segment_t*)name_segment.__ptr;
+    multi_seg.segments[i] = ((aml_name_string_t*)name_segment.__ptr)->name_seg;
     free(name_segment.__ptr);
   }
-  name_path->length = num_name_segs;
-
-  return (aml_ptr_t){MULTI_NAME_PREFIX, name_path};
+  multi_seg.length               = num_name_segs;
+  aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
+  name_string->name_prefix       = MULTI_NAME_PREFIX;
+  name_string->multi_seg         = multi_seg;
+  return (aml_ptr_t){MULTI_NAME_PREFIX, name_string};
 }
 
 aml_ptr_t parse_null_name()
@@ -88,7 +98,8 @@ aml_ptr_t parse_name_string()
   {
     next_byte(); // consume ROOT_CHAR byte
     aml_ptr_t name_path = parse_name_path();
-    return name_path;
+    AML_ERR_CHECK(name_path);
+    return (aml_ptr_t){ROOT_CHAR, name_path.__ptr};
   }
   else
   {
@@ -98,7 +109,66 @@ aml_ptr_t parse_name_string()
     }
     aml_ptr_t name_path = parse_name_path();
     AML_ERR_CHECK(name_path);
-    return name_path;
+    return (aml_ptr_t){PREFIX_CHAR, name_path.__ptr};
+  }
+}
+
+char* name_string_to_cstring(aml_ptr_t name_string)
+{
+  if (name_string.prefix_byte != PREFIX_CHAR &&
+    name_string.prefix_byte != ROOT_CHAR)
+    return NULL;
+  if (name_string.__ptr == NULL) return "\\";
+  aml_name_string_t name_path = *((aml_name_string_t*)name_string.__ptr);
+  switch (name_path.name_prefix)
+  {
+    case MULTI_NAME_PREFIX:
+      {
+        aml_multi_name_path_t multi = name_path.multi_seg;
+        char* cstring = calloc((multi.length * 4) + 1, sizeof(char));
+        for (int i = 0; i < multi.length; i++)
+        {
+          cstring[(i * 4) + 0] = multi.segments[i].lead_char;
+          cstring[(i * 4) + 1] = multi.segments[i].name_char_1;
+          cstring[(i * 4) + 2] = multi.segments[i].name_char_2;
+          cstring[(i * 4) + 3] = multi.segments[i].name_char_3;
+        }
+        cstring[multi.length * 4] = 0;
+        return cstring;
+      }
+    case DUAL_NAME_PREFIX:
+      {
+        aml_dual_name_path_t dual = name_path.dual_seg;
+
+        char* cstring = calloc(9, sizeof(char));
+        cstring[0]    = dual.first.lead_char;
+        cstring[1]    = dual.first.name_char_1;
+        cstring[2]    = dual.first.name_char_2;
+        cstring[3]    = dual.first.name_char_3;
+
+        cstring[4] = dual.second.lead_char;
+        cstring[5] = dual.second.name_char_1;
+        cstring[6] = dual.second.name_char_2;
+        cstring[7] = dual.second.name_char_3;
+        cstring[8] = 0;
+        return cstring;
+      }
+    case NAME_SEG_PREFIX:
+      {
+        aml_name_segment_t segment = name_path.name_seg;
+
+        char* cstring = calloc(5, sizeof(char));
+        cstring[0]    = segment.lead_char;
+        cstring[1]    = segment.name_char_1;
+        cstring[2]    = segment.name_char_2;
+        cstring[3]    = segment.name_char_3;
+        cstring[4]    = 0;
+        return cstring;
+      }
+    default:
+      {
+        return NULL;
+      }
   }
 }
 
@@ -110,26 +180,31 @@ void print_name_seg(aml_name_segment_t segment)
 
 void print_name_string(aml_ptr_t string)
 {
-  switch (string.prefix_byte)
+  printf("%c",
+    string.prefix_byte == ROOT_CHAR || string.prefix_byte == PREFIX_CHAR
+      ? string.prefix_byte
+      : ' ');
+  aml_name_string_t name_string = *((aml_name_string_t*)string.__ptr);
+  switch (name_string.name_prefix)
   {
     case NAME_SEG_PREFIX:
       {
-        print_name_seg(*(aml_name_segment_t*)string.__ptr);
+        print_name_seg(name_string.name_seg);
         break;
       }
     case DUAL_NAME_PREFIX:
       {
-        aml_dual_name_path_t* name_path = string.__ptr;
-        print_name_seg(name_path->first);
-        print_name_seg(name_path->second);
+        print_name_seg(name_string.dual_seg.first);
+        printf(".");
+        print_name_seg(name_string.dual_seg.second);
         break;
       }
     case MULTI_NAME_PREFIX:
       {
-        aml_multi_name_path_t* name_path = string.__ptr;
-        for (int i = 0; i < name_path->length; i++)
+        for (int i = 0; i < name_string.multi_seg.length; i++)
         {
-          print_name_seg(name_path->segments[i]);
+          print_name_seg(name_string.multi_seg.segments[i]);
+          printf(".");
         }
         break;
       }

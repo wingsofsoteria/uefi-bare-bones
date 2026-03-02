@@ -28,6 +28,7 @@
 #define ERR_PREFIX           0xFA
 #define NAME_SEG_PREFIX      0xF9
 #define ERR_PARSE            0xF8
+#define TERM_LIST_PREFIX     0xF7
 #define REVISION_OP          0x30
 #define BANK_FIELD_OP        0x87
 #define CREATE_BITFIELD_OP   0x8D
@@ -115,6 +116,18 @@ typedef struct
 
 typedef struct
 {
+  uint8_t name_prefix;
+  union
+  {
+    aml_name_segment_t name_seg;
+    aml_dual_name_path_t dual_seg;
+    aml_multi_name_path_t multi_seg;
+  };
+
+} aml_name_string_t;
+
+typedef struct
+{
   uint8_t prefix_byte;
   void* __ptr;
 } __attribute__((packed)) aml_ptr_t;
@@ -122,7 +135,9 @@ typedef struct
 typedef struct AmlNode
 {
   aml_ptr_t data;
+  char* name;
   struct AmlNode* parent;
+  struct AmlNode* child;
 } aml_node_t;
 
 typedef struct
@@ -141,5 +156,9 @@ typedef struct
 
 void aml_parser_init(void*);
 void aml_parser_run(void);
+aml_node_t* aml_root_node();
+void aml_append_node(aml_node_t* parent, aml_node_t* this);
+aml_node_t* aml_create_node();
+void aml_node_init();
 typedef aml_ptr_t (*aml_parser_fn)(void);
 #endif

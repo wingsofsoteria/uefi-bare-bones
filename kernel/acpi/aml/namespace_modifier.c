@@ -80,7 +80,10 @@ aml_ptr_t parse_def_scope()
   aml_ptr_t term_list = parse_term_list(length);
   AML_ERR_CHECK(term_list);
   printf("}\n");
-  return (aml_ptr_t){SCOPE_OP, NULL};
+  aml_node_t* scope_node = aml_create_node();
+  aml_append_node(scope_node, term_list.__ptr);
+  scope_node->name = name_string_to_cstring(scope_name);
+  return (aml_ptr_t){SCOPE_OP, scope_node};
 }
 
 aml_ptr_t parse_namespace_modifier_obj()

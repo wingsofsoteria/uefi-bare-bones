@@ -32,6 +32,7 @@ void write_to_target(aml_ptr_t target, aml_ptr_t value);
 void print_term_arg(aml_ptr_t evaluated_term);
 void print_name_string(aml_ptr_t);
 void print_next_definition_block();
+char* name_string_to_cstring(aml_ptr_t);
 uint32_t parse_pkg_length();
 int get_pointer();
 void move_pointer(int);
