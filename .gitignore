@@ -6,6 +6,7 @@ kernel/kernel
 loader/uefi
 loader/bootx64.efi
 fat.img
+test.vdi
 fs.dmp
 font.psf
 *.o

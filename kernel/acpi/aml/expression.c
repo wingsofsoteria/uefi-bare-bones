@@ -1,6 +1,7 @@
 #include "aml.h"
 #include "parser.h"
 #include <iso646.h>
+#include <stdint.h>
 #include <stdio.h>
 
 aml_ptr_t def_acquire()
@@ -17,10 +18,24 @@ aml_ptr_t def_and()
 {
   return AML_PREFIX_ERROR;
 }
-// TODO bug check this
+
 aml_ptr_t def_buffer()
 {
-  return AML_PREFIX_ERROR;
+  AML_PRELUDE(BUFFER_OP);
+  int old_pointer = get_pointer();
+  uint32_t length = parse_pkg_length();
+  printf("DefBuffer(%d, ", length);
+  aml_ptr_t buffer_size = parse_term_arg();
+  AML_ERR_CHECK(buffer_size);
+  int new_pointer = get_pointer();
+  printf(")");
+  length -= (new_pointer - old_pointer);
+  while (length > 0) // TODO use buffer_size instead of pkg_length
+  {
+    uint8_t byte = next_byte();
+    length--;
+  }
+  return (aml_ptr_t){BUFFER_OP, NULL};
 }
 
 aml_ptr_t def_concat()
@@ -178,9 +193,23 @@ aml_ptr_t def_or()
   return AML_PREFIX_ERROR;
 }
 
+// TODO sanity check PkgLength against NumElements
 aml_ptr_t def_package()
 {
-  return AML_PREFIX_ERROR;
+  AML_PRELUDE(PACKAGE_OP);
+  int old_pointer       = get_pointer();
+  uint32_t length       = parse_pkg_length();
+  uint8_t num_elements  = next_byte();
+  int new_pointer       = get_pointer();
+  length               -= (new_pointer - old_pointer);
+  printf("DefPackage(%d, ", length);
+  for (int i = 0; i < num_elements; i++)
+  {
+    aml_ptr_t status = one_of(2, parse_data_ref_object, parse_name_string);
+    AML_ERR_CHECK(status);
+    printf(", ");
+  }
+  return (aml_ptr_t){PACKAGE_OP, NULL};
 }
 
 aml_ptr_t def_var_package()

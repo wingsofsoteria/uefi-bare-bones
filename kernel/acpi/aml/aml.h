@@ -70,7 +70,6 @@
 #define AML_ERR_CHECK(x)                                         \
   if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
   {                                                              \
-    printf("AML Error");                                         \
     return AML_PARSE_ERROR;                                      \
   }
 #define AML_PREFIX_ERROR \
@@ -84,8 +83,8 @@
   {                     \
     ERR_PARSE, NULL     \
   }
-#define AML_PRELUDE(x)                           \
-  if (next_byte() != x) return AML_PREFIX_ERROR;
+#define AML_PRELUDE(x)                          \
+  if (next_byte() != x) return AML_PREFIX_ERROR
 
 #define AML_EXT_PRELUDE(x)                                   \
   if (next_byte() != EXT_OP_PREFIX) return AML_PREFIX_ERROR; \

@@ -17,7 +17,7 @@ clean:
 	make -C kernel clean
 	make -C libc clean
 	make -C loader/uefi clean
-fat.img:
+images:
 	dd if=/dev/zero of=fat.img bs=1M count=100
 	losetup -P loop100 fat.img
 	echo -e "label: gpt\n,+,\n" | sfdisk /dev/loop100
@@ -30,5 +30,5 @@ fat.img:
 	tree /mnt
 	umount /mnt
 	losetup -d /dev/loop100
-qemu: fat.img
+qemu: images
 	qemu-system-x86_64 -m 4G -drive if=pflash,format=raw,readonly,file=bin/OVMF_CODE.4m.fd -drive file=fat.img -d int -no-reboot -monitor stdio 2> >(tee log >&2)

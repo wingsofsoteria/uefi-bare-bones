@@ -1,11 +1,10 @@
+#include "parser.h"
 #include "acpi/tables.h"
 #include "aml.h"
-#include "graphics/pixel.h"
 #include "stdlib.h"
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "parser.h"
 int MAX_BLOCKS = 0;
 
 int pointer = 0;
@@ -15,13 +14,14 @@ acpi_aml_table_t* TABLE = NULL;
 void aml_parser_init(void* address)
 {
   TABLE      = (acpi_aml_table_t*)address;
-  MAX_BLOCKS = TABLE->header.length - sizeof(acpi_sdt_header_t);
+  MAX_BLOCKS = TABLE->header.length - 36;
   pointer    = 0;
 }
 
 void print_next_definition_block()
 {
   int current_pointer = pointer;
+  printf("%d: ", current_pointer);
   for (int i = 0; i < 20; i++)
   {
     if (pointer >= MAX_BLOCKS) break;
@@ -46,10 +46,7 @@ aml_ptr_t one_of(int parser_count, ...)
     if (return_value.prefix_byte == ERR_PREFIX) continue;
     if (return_value.prefix_byte == ERR_PARSE)
     {
-      pointer = current_pointer;
-      printf("Parser Error ");
-      print_next_definition_block();
-      halt_cpu;
+      return AML_PARSE_ERROR;
     }
     va_end(parsers);
     return return_value;
@@ -57,6 +54,15 @@ aml_ptr_t one_of(int parser_count, ...)
   pointer = current_pointer;
   va_end(parsers);
   return AML_PREFIX_ERROR;
+}
+
+uint8_t peek_byte()
+{
+  if (pointer >= MAX_BLOCKS)
+  {
+    abort();
+  }
+  return TABLE->definition_blocks[pointer];
 }
 
 uint8_t next_byte()
@@ -78,11 +84,9 @@ aml_ptr_t parse_misc_obj()
   uint8_t token = next_byte();
   if (token >= 0x60 && token <= 0x6E)
   {
-    printf("MiscObj ");
     return (aml_ptr_t){token, NULL};
   }
   if (token != EXT_OP_PREFIX) return AML_PREFIX_ERROR;
-  printf("DebugObj ");
   return (aml_ptr_t){DEBUG_OP, NULL};
 }
 
@@ -196,24 +200,59 @@ aml_ptr_t evaluate_term_arg(aml_ptr_t term_arg)
   return (aml_ptr_t){0xCE, NULL};
 }
 
-void parse_term_list(int count)
+aml_ptr_t parse_term_list(int count)
 {
-  aml_ptr_t status     = (aml_ptr_t){0, NULL};
-  int starting_pointer = pointer;
-  while ((pointer - starting_pointer) < count)
+  int old_pointer = pointer;
+  aml_ptr_t status;
+  while (1)
   {
-    status = parse_term_obj();
+    status          = parse_term_obj();
+    int new_pointer = pointer;
     if (status.prefix_byte == ERR_PREFIX)
+    {
+      return AML_PREFIX_ERROR;
+    }
+    if ((new_pointer - old_pointer) > count)
+    {
+      printf("Overshot pkglength\n");
+      abort();
+    }
+    if ((new_pointer - old_pointer) == count)
     {
       break;
     }
     if (status.prefix_byte == ERR_PARSE)
     {
-      printf("Parse Error %d\n", starting_pointer);
+      printf("Parser errored out\n");
+      print_next_definition_block();
       abort();
     }
   }
-  return;
+
+  return (aml_ptr_t){NULL_NAME, NULL};
+}
+aml_ptr_t lookup_scope(char scope[4])
+{
+  aml_ptr_t status = (aml_ptr_t){ERR_PREFIX, NULL};
+  while (1)
+  {
+    uint8_t byte = next_byte();
+    if (byte != scope[0]) continue;
+    byte = next_byte();
+    if (byte != scope[1]) continue;
+    byte = next_byte();
+    if (byte != scope[2]) continue;
+    byte = next_byte();
+    if (byte != scope[3]) continue;
+    move_pointer(-4);
+    while (peek_byte() != SCOPE_OP)
+    {
+      move_pointer(-1);
+    }
+    status = parse_def_scope();
+    break;
+  }
+  return status;
 }
 int get_pointer()
 {
@@ -223,9 +262,9 @@ void move_pointer(int amount_to_move)
 {
   pointer += amount_to_move;
 }
+
 void aml_parser_run()
 {
-  clear_screen();
   parse_term_list(MAX_BLOCKS);
   print_next_definition_block();
 }

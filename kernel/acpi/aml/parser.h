@@ -4,15 +4,17 @@
 #include "aml.h"
 #include <stdint.h>
 uint8_t next_byte();
+uint8_t peek_byte();
 aml_ptr_t one_of(int, ...);
 
-void parse_term_list(int);
+aml_ptr_t parse_term_list(int);
 aml_ptr_t parse_name_string();
 aml_ptr_t parse_namespace_modifier_obj();
 aml_ptr_t parse_named_obj();
 aml_ptr_t parse_data_ref_object();
 aml_ptr_t parse_term_arg();
 aml_ptr_t parse_expression_opcode();
+aml_ptr_t parse_def_scope();
 aml_ptr_t def_package();
 aml_ptr_t def_var_package();
 aml_ptr_t def_buffer();

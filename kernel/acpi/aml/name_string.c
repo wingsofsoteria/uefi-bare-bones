@@ -26,7 +26,7 @@ aml_ptr_t parse_name_seg()
 // returns aml_ptr DUAL_NAME_PREFIX, name_segments(2)
 aml_ptr_t parse_dual_name_path()
 {
-  AML_PRELUDE(DUAL_NAME_PREFIX)
+  AML_PRELUDE(DUAL_NAME_PREFIX);
   aml_ptr_t first_seg = parse_name_seg();
   AML_ERR_CHECK(first_seg);
   aml_ptr_t second_seg = parse_name_seg();
@@ -43,7 +43,7 @@ aml_ptr_t parse_dual_name_path()
 // number of name segments
 aml_ptr_t parse_multi_name_path()
 {
-  AML_PRELUDE(MULTI_NAME_PREFIX)
+  AML_PRELUDE(MULTI_NAME_PREFIX);
   uint8_t num_name_segs            = next_byte();
   aml_multi_name_path_t* name_path = calloc(1, sizeof(aml_multi_name_path_t));
   name_path->segments = calloc(num_name_segs, sizeof(aml_name_segment_t));
@@ -61,7 +61,7 @@ aml_ptr_t parse_multi_name_path()
 
 aml_ptr_t parse_null_name()
 {
-  AML_PRELUDE(NULL_NAME)
+  AML_PRELUDE(NULL_NAME);
   return (aml_ptr_t){NULL_NAME, NULL};
 }
 
@@ -83,9 +83,10 @@ aml_ptr_t parse_target()
 
 aml_ptr_t parse_name_string()
 {
-  uint8_t token = next_byte();
+  uint8_t token = peek_byte();
   if (token == ROOT_CHAR)
   {
+    next_byte(); // consume ROOT_CHAR byte
     aml_ptr_t name_path = parse_name_path();
     return name_path;
   }
@@ -95,7 +96,6 @@ aml_ptr_t parse_name_string()
     {
       token = next_byte();
     }
-    move_pointer(-1);
     aml_ptr_t name_path = parse_name_path();
     AML_ERR_CHECK(name_path);
     return name_path;
