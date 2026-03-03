@@ -4,7 +4,7 @@ CFLAGS=-Iinclude
 ifneq ($(AML_DEBUG),)
 CFLAGS += -DAML_DEBUG
 else ifneq ($(AML_TEST),)
-CFLAGS += -DAML_TEST -DAML_DEBUG
+CFLAGS += -g -DAML_TEST -DAML_DEBUG -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
 endif
 
 ifeq ($(AML_TEST),)
