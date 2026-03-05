@@ -6,7 +6,6 @@
 uint8_t next_byte();
 uint8_t peek_byte();
 aml_ptr_t one_of(int, ...);
-
 aml_ptr_t parse_term_list(int);
 aml_ptr_t parse_name_string();
 aml_ptr_t parse_namespace_modifier_obj();
@@ -28,6 +27,7 @@ aml_ptr_t reference_type_opcode();
 aml_ptr_t parse_statement_opcode();
 aml_ptr_t evaluate_term_arg(aml_ptr_t);
 aml_ptr_t read_from_target(aml_ptr_t);
+
 void write_to_target(aml_ptr_t target, aml_ptr_t value);
 void print_term_arg(aml_ptr_t evaluated_term);
 void print_name_string(aml_ptr_t);
@@ -35,5 +35,8 @@ void print_next_definition_block();
 char* name_string_to_cstring(aml_ptr_t);
 uint32_t parse_pkg_length();
 int get_pointer();
+// move_pointer will add (int) to the current pointer
 void move_pointer(int);
+// set_pointer will replace pointer with (int)
+void set_pointer(int);
 #endif

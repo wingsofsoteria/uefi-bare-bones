@@ -16,7 +16,7 @@ static inline void io_wait(void)
   outb(0x80, 0);
 }
 
-void start_pic()
+static void start_pic()
 {
   outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
   io_wait();
@@ -39,7 +39,7 @@ void start_pic()
   outb(PIC2_DATA, 0);
 }
 
-void mask_pic()
+static void mask_pic()
 {
   outb(PIC1_DATA, 0xFF);
   outb(PIC2_DATA, 0xFF);
@@ -73,9 +73,15 @@ madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq)
   MADT_LOOP
   {
     uint8_t type = (uint8_t)madt->interrupt_controller_structure[i];
-    if (type != 2) continue;
+    if (type != 2)
+    {
+      continue;
+    }
     uint8_t current_irq = madt->interrupt_controller_structure[i + 3];
-    if (current_irq != irq) continue;
+    if (current_irq != irq)
+    {
+      continue;
+    }
     return (void*)(madt->interrupt_controller_structure + i);
   }
   return NULL;
@@ -86,9 +92,15 @@ uint32_t madt_get_ioapic(uint32_t gsi)
   MADT_LOOP
   {
     uint8_t type = (uint8_t)madt->interrupt_controller_structure[i];
-    if (type != 1) continue;
+    if (type != 1)
+    {
+      continue;
+    }
     uint32_t current_gsi = MADT_ADDR32(i + 8);
-    if (current_gsi != gsi) continue;
+    if (current_gsi != gsi)
+    {
+      continue;
+    }
     return MADT_ADDR32(i + 4);
   }
 

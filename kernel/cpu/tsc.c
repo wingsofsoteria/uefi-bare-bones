@@ -8,13 +8,14 @@ uint64_t TSC_FREQ_KHZ;
 
 uint64_t rdtsc()
 {
-  uint64_t low, high;
+  uint64_t low;
+  uint64_t high;
   asm volatile("rdtsc"
     : "=a"(low), "=d"(high));
   return ((high << 32) | low);
 }
 
-uint64_t calibrate_tsc_single_pass()
+static uint64_t calibrate_tsc_single_pass()
 {
   int ms         = 10;
   uint16_t ticks = (ms * PIT_FREQ) / 1000;
@@ -23,7 +24,9 @@ uint64_t calibrate_tsc_single_pass()
   outb(PIT_DATA0, ticks & 0xff);
   outb(PIT_DATA0, ticks >> 8);
 
-  uint64_t tsc, t1, t2;
+  uint64_t tsc;
+  uint64_t t1;
+  uint64_t t2;
   uint64_t delta = 0;
   t1 = t2 = rdtsc();
   while (pit_count() > 0)
@@ -38,7 +41,9 @@ uint64_t calibrate_tsc_single_pass()
 void calibrate_tsc_slow()
 {
   int acceptable_error = 500;
-  uint64_t d0, d1, d2;
+  uint64_t d0;
+  uint64_t d1;
+  uint64_t d2;
   for (;;)
   {
     d2 = d1;

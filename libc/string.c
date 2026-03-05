@@ -2,8 +2,8 @@
 
 void* memcpy(void* dest, const void* src, size_t size)
 {
-  char* destp = dest;
-  char* srcp  = srcp;
+  char* destp      = dest;
+  const char* srcp = src;
   for (int i = 0; i < size; i++)
   {
     destp[i] = srcp[i];
@@ -21,7 +21,7 @@ int memcmp(const void* aptr, const void* bptr, size_t size)
     {
       return -1;
     }
-    else if (a[i] > b[i])
+    if (a[i] > b[i])
     {
       return 1;
     }
@@ -72,7 +72,7 @@ int strncmp(const char* s1, const char* s2, size_t n)
     {
       return -1;
     }
-    else if (s1[i] > s2[i])
+    if (s1[i] > s2[i])
     {
       return 1;
     }

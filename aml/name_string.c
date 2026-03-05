@@ -1,5 +1,6 @@
 #include "aml.h"
 #include "parser.h"
+#include "stdlib.h"
 
 // returns aml_ptr UNUSED, name_segments(1)
 aml_ptr_t parse_name_seg()
@@ -10,7 +11,9 @@ aml_ptr_t parse_name_seg()
   uint8_t third_namechar  = next_byte();
   if (LEAD_CHAR_OOB(lead_char) || NAME_CHAR_OOB(first_namechar) ||
     NAME_CHAR_OOB(second_namechar) || NAME_CHAR_OOB(third_namechar))
+  {
     return AML_PREFIX_ERROR;
+  }
   aml_name_segment_t name_segment;
   aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
 
@@ -25,13 +28,12 @@ aml_ptr_t parse_name_seg()
 }
 
 // returns aml_ptr DUAL_NAME_PREFIX, name_segments(2)
-aml_ptr_t parse_dual_name_path()
+static aml_ptr_t parse_dual_name_path()
 {
-  AML_PRELUDE(DUAL_NAME_PREFIX);
   aml_ptr_t first_seg = parse_name_seg();
-  AML_ERR_CHECK(first_seg);
+  AML_ERR_CHECK_ABRT(first_seg);
   aml_ptr_t second_seg = parse_name_seg();
-  AML_ERR_CHECK(second_seg);
+  AML_ERR_CHECK_ABRT(second_seg);
   aml_dual_name_path_t dual_seg;
   aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
   dual_seg.first           = ((aml_name_string_t*)first_seg.__ptr)->name_seg;
@@ -45,9 +47,8 @@ aml_ptr_t parse_dual_name_path()
 
 // returns aml_ptr MULTI_NAME_PREFIX, name_segment(n) where n is an arbitrary
 // number of name segments
-aml_ptr_t parse_multi_name_path()
+static aml_ptr_t parse_multi_name_path()
 {
-  AML_PRELUDE(MULTI_NAME_PREFIX);
   uint8_t num_name_segs = next_byte();
 
   aml_multi_name_path_t multi_seg;
@@ -55,7 +56,7 @@ aml_ptr_t parse_multi_name_path()
   for (int i = 0; i < num_name_segs; i++)
   {
     aml_ptr_t name_segment = parse_name_seg();
-    AML_ERR_CHECK(name_segment);
+    AML_ERR_CHECK_ABRT(name_segment);
     multi_seg.segments[i] = ((aml_name_string_t*)name_segment.__ptr)->name_seg;
     free(name_segment.__ptr);
   }
@@ -66,16 +67,31 @@ aml_ptr_t parse_multi_name_path()
   return (aml_ptr_t){MULTI_NAME_PREFIX, name_string};
 }
 
-aml_ptr_t parse_null_name()
+static aml_ptr_t parse_null_name()
 {
   AML_PRELUDE(NULL_NAME);
   return (aml_ptr_t){NULL_NAME, NULL};
 }
 
-aml_ptr_t parse_name_path()
+static aml_ptr_t parse_name_path()
 {
-  return one_of(4, parse_null_name, parse_multi_name_path, parse_dual_name_path,
-    parse_name_seg);
+  uint8_t token   = next_byte();
+  switch (token)
+  {
+    case MULTI_NAME_PREFIX:
+      return parse_multi_name_path();
+    case DUAL_NAME_PREFIX:
+      return parse_dual_name_path();
+    case NULL_NAME:
+      {
+        return (aml_ptr_t){NULL_NAME, NULL};
+      }
+    default:
+      {
+        move_pointer(-1);
+        return parse_name_seg();
+      }
+  }
 }
 
 aml_ptr_t parse_super_name()
@@ -85,7 +101,14 @@ aml_ptr_t parse_super_name()
 
 aml_ptr_t parse_target()
 {
-  return one_of(2, parse_super_name, parse_null_name);
+  uint8_t token   = next_byte();
+  if (token == NULL_NAME)
+  {
+    return (aml_ptr_t){NULL_NAME, NULL};
+  }
+
+  move_pointer(-1);
+  return parse_super_name();
 }
 
 aml_ptr_t parse_name_string()
@@ -95,27 +118,31 @@ aml_ptr_t parse_name_string()
   {
     next_byte(); // consume ROOT_CHAR byte
     aml_ptr_t name_path = parse_name_path();
-    AML_ERR_CHECK(name_path);
+AML_ERR_CHECK(name_path);
+
     return (aml_ptr_t){ROOT_CHAR, name_path.__ptr};
   }
-  else
+
+  while (token == PREFIX_CHAR)
   {
-    while (token == PREFIX_CHAR)
-    {
-      token = next_byte();
-    }
-    aml_ptr_t name_path = parse_name_path();
-    AML_ERR_CHECK(name_path);
-    return (aml_ptr_t){PREFIX_CHAR, name_path.__ptr};
+    token = next_byte();
   }
+  aml_ptr_t name_path = parse_name_path();
+AML_ERR_CHECK(name_path);
+  return (aml_ptr_t){PREFIX_CHAR, name_path.__ptr};
 }
 
 char* name_string_to_cstring(aml_ptr_t name_string)
 {
   if (name_string.prefix_byte != PREFIX_CHAR &&
     name_string.prefix_byte != ROOT_CHAR)
+  {
     return NULL;
-  if (name_string.__ptr == NULL) return "\\";
+  }
+  if (name_string.__ptr == NULL)
+  {
+    return "\\";
+  }
   aml_name_string_t name_path = *((aml_name_string_t*)name_string.__ptr);
   switch (name_path.name_prefix)
   {
@@ -169,7 +196,7 @@ char* name_string_to_cstring(aml_ptr_t name_string)
   }
 }
 
-void print_name_seg(aml_name_segment_t segment)
+static void print_name_seg(aml_name_segment_t segment)
 {
   AML_LOG("%c%c%c%c", segment.lead_char, segment.name_char_1,
     segment.name_char_2, segment.name_char_3);

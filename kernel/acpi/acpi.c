@@ -7,7 +7,7 @@
 #include <stdio.h>
 static acpi_xsdt_t* XSDT = NULL;
 
-bool sdt_checksum(acpi_sdt_header_t* sdt)
+static bool sdt_checksum(acpi_sdt_header_t* sdt)
 {
   printf("%.4s ", sdt->signature);
   uint8_t* bytes = (uint8_t*)sdt;

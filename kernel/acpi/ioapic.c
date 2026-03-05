@@ -8,19 +8,21 @@
 // TODO get correct ioapic instead of defaulting to 0 (and figure out if qemu
 // can emulate more than one ioapic)
 
-void write_ioapic(uint64_t ioregsel, const uint8_t offset, const uint32_t value)
+static void write_ioapic(
+  uint64_t ioregsel, const uint8_t offset, const uint32_t value)
 {
   *(volatile uint32_t*)(ioregsel)        = offset;
   *(volatile uint32_t*)(ioregsel + 0x10) = value;
 }
 
-uint32_t read_ioapic(uint64_t ioregsel, const uint8_t offset)
+static uint32_t read_ioapic(uint64_t ioregsel, const uint8_t offset)
 {
   *(volatile uint32_t*)(ioregsel) = offset;
   return *(volatile uint32_t*)(ioregsel + 0x10);
 }
 
-void set_redirection_table_entry(uint64_t ioregsel, ioapic_redtbl_t redtbl)
+static void set_redirection_table_entry(
+  uint64_t ioregsel, ioapic_redtbl_t redtbl)
 {
   write_ioapic(ioregsel, redtbl.pin,
     redtbl.trigger_mode << 15 | redtbl.pin_polarity << 13 |

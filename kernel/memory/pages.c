@@ -18,7 +18,7 @@ static inline void load_page_table()
     : "r"((uint64_t)p4_table));
 }
 
-page_table_t* new_page_table()
+static page_table_t* new_page_table()
 {
   page_table_t* page = malloc(4096);
   memset(page, 0, 4096);
@@ -93,7 +93,7 @@ void map_pages(void* v_addr, void* p_addr, uint64_t pages, uint16_t flags)
   load_page_table();
 }
 
-void copy_existing_pages()
+static void copy_existing_pages()
 {
   p4_table = new_page_table();
   printf("%x\n", p4_table);

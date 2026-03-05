@@ -8,7 +8,7 @@
   (madt->interrupt_controller_structure[index + 3] & 0xFF) << 24 |   \
     (madt->interrupt_controller_structure[index + 2] & 0xFF) << 16 | \
     (madt->interrupt_controller_structure[index + 1] & 0xFF) << 8 |  \
-    madt->interrupt_controller_structure[index] & 0xFF;
+    (madt->interrupt_controller_structure[index] & 0xFF);
 #define MADT_LOOP                                                 \
   for (uint64_t i  = 0; i < madt->header.length - 44;             \
     i             += madt->interrupt_controller_structure[i + 1])

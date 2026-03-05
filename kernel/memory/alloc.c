@@ -6,19 +6,19 @@ static kernel_page_table_t* page_table = (void*)-1;
 
 static int page_table_len = 0;
 
-bool is_usable(int type)
+static bool is_usable(int type)
 {
   return (type > 0 && type < 8) || type == EfiACPIReclaimMemory ||
     type == EfiACPIMemoryNVS;
 }
 
-bool is_available(int type)
+static bool is_available(int type)
 {
   return type == EfiConventionalMemory || type == EfiLoaderCode ||
     type == EfiBootServicesCode || type == EfiBootServicesData;
 }
 
-void dummy_alloc(mmap_t* mmap)
+static void dummy_alloc(mmap_t* mmap)
 {
   uint64_t total_pages = 0;
   for (int i = 0; i < (mmap->size / mmap->desc_size); i++)

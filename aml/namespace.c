@@ -1,6 +1,6 @@
 #include "aml.h"
-#include "host.h"
-aml_node_t* aml_root = NULL;
+#include "stdlib.h"
+static aml_node_t* aml_root = NULL;
 
 aml_node_t* aml_root_node()
 {

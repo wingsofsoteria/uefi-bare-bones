@@ -1,8 +1,9 @@
 #include "aml.h"
 #include "host.h"
 #include "parser.h"
+#include "stdlib.h"
 
-aml_ptr_t named_field()
+static aml_ptr_t named_field()
 {
   aml_ptr_t name_seg = parse_name_seg();
   if (name_seg.prefix_byte == ERR_PREFIX || name_seg.prefix_byte == ERR_PARSE)
@@ -12,24 +13,21 @@ aml_ptr_t named_field()
   uint32_t length = parse_pkg_length();
   return (aml_ptr_t){NAME_OP, NULL};
 }
-aml_ptr_t reserved_field()
+static aml_ptr_t reserved_field()
 {
-  AML_PRELUDE(0x00);
   uint32_t length = parse_pkg_length();
   return (aml_ptr_t){0x00, NULL};
 }
 
-aml_ptr_t access_field()
+static aml_ptr_t access_field()
 {
-  AML_PRELUDE(0x01);
   next_byte();
   next_byte();
   return (aml_ptr_t){0x01, NULL};
 }
 
-aml_ptr_t extended_access_field()
+static aml_ptr_t extended_access_field()
 {
-  AML_PRELUDE(0x03);
   next_byte();
   next_byte();
   next_byte();
@@ -38,62 +36,62 @@ aml_ptr_t extended_access_field()
 
 // BufferData isn't defined in the AML spec so I'm leaving this undefined until
 // I find an example of it in my emulator
-aml_ptr_t connect_field()
+static aml_ptr_t connect_field()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t field_list()
+static aml_ptr_t field_list()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_bank_field()
+static aml_ptr_t def_bank_field()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_create_bitfield()
+static aml_ptr_t def_create_bitfield()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_create_bytefield()
+static aml_ptr_t def_create_bytefield()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_create_dword_field()
+static aml_ptr_t def_create_dword_field()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_create_field()
+static aml_ptr_t def_create_field()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_create_qword_field()
+static aml_ptr_t def_create_qword_field()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_create_word_field()
+static aml_ptr_t def_create_word_field()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_data_region()
+static aml_ptr_t def_data_region()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_external()
+static aml_ptr_t def_external()
 {
   return AML_PREFIX_ERROR;
 }
 
-void print_region_space(uint8_t region_space)
+static void print_region_space(uint8_t region_space)
 {
   switch (region_space)
   {
@@ -160,37 +158,36 @@ void print_region_space(uint8_t region_space)
   }
 }
 
-aml_ptr_t def_op_region()
+static aml_ptr_t def_op_region()
 {
-  AML_EXT_PRELUDE(OP_REGION_OP);
   aml_ptr_t region_name = parse_name_string();
-  AML_ERR_CHECK(region_name);
+  AML_ERR_CHECK_ABRT(region_name);
 
   uint8_t region_space    = next_byte();
   aml_ptr_t region_offset = parse_term_arg();
-  AML_ERR_CHECK(region_offset);
+  AML_SET_ANCHOR;
+  AML_ERR_CHECK_ABRT(region_offset);
   aml_ptr_t region_len = parse_term_arg();
-  AML_ERR_CHECK(region_len);
-  return (aml_ptr_t){OP_REGION_OP, NULL};
+  AML_ERR_CHECK_ABRT(region_len);
+  return (aml_ptr_t){EXT_OP_REGION_OP, NULL};
 }
 
-aml_ptr_t def_power_res()
+static aml_ptr_t def_power_res()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_thermal_zone()
+static aml_ptr_t def_thermal_zone()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_field()
+static aml_ptr_t def_field()
 {
-  AML_EXT_PRELUDE(FIELD_OP);
   int old_pointer       = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t name_string = parse_name_string();
-  AML_ERR_CHECK(name_string);
+  AML_ERR_CHECK_ABRT(name_string);
   uint8_t field_flags  = next_byte();
   int new_pointer      = get_pointer();
   length              -= (new_pointer - old_pointer);
@@ -199,7 +196,7 @@ aml_ptr_t def_field()
   {
     status = one_of(5, named_field, reserved_field, access_field,
       extended_access_field, connect_field);
-    AML_ERR_CHECK(status);
+    AML_ERR_CHECK_ABRT(status);
     old_pointer = new_pointer;
     new_pointer = get_pointer();
     if ((new_pointer - old_pointer) > length)
@@ -208,30 +205,28 @@ aml_ptr_t def_field()
     }
     length -= (new_pointer - old_pointer);
   }
-  return (aml_ptr_t){FIELD_OP, NULL};
+  return (aml_ptr_t){EXT_FIELD_OP, NULL};
 }
 
-aml_ptr_t def_device()
+static aml_ptr_t def_device()
 {
-  AML_EXT_PRELUDE(DEVICE_OP);
   int current_pointer   = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t name_string = parse_name_string();
-  AML_ERR_CHECK(name_string);
+  AML_ERR_CHECK_ABRT(name_string);
   int new_pointer      = get_pointer();
   length              -= (new_pointer - current_pointer);
   aml_ptr_t term_list  = parse_term_list(length);
-  AML_ERR_CHECK(term_list);
-  return (aml_ptr_t){DEVICE_OP, NULL};
+  AML_ERR_CHECK_ABRT(term_list);
+  return (aml_ptr_t){EXT_DEVICE_OP, NULL};
 }
 // TODO replace move_pointer with actual parser code
-aml_ptr_t def_method()
+static aml_ptr_t def_method()
 {
-  AML_PRELUDE(METHOD_OP);
   int current_pointer   = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t name_string = parse_name_string();
-  AML_ERR_CHECK(name_string);
+  AML_ERR_CHECK_ABRT(name_string);
   uint8_t method_flags  = next_byte();
   int new_pointer       = get_pointer();
   length               -= (new_pointer - current_pointer);
@@ -239,19 +234,17 @@ aml_ptr_t def_method()
   return (aml_ptr_t){METHOD_OP, NULL};
 }
 
-aml_ptr_t def_mutex()
+static aml_ptr_t def_mutex()
 {
-  AML_EXT_PRELUDE(MUTEX_OP);
   aml_ptr_t name_string = parse_name_string();
-  AML_ERR_CHECK(name_string);
+  AML_ERR_CHECK_ABRT(name_string);
   uint8_t sync_flags = next_byte();
-  return (aml_ptr_t){MUTEX_OP, NULL};
+  return (aml_ptr_t){EXT_MUTEX_OP, NULL};
 }
 
 // Compatibility for outdated ACPI versions
-aml_ptr_t def_processor()
+static aml_ptr_t def_processor()
 {
-  AML_EXT_PRELUDE(0x83);
   int old_pointer = get_pointer();
   uint32_t length = parse_pkg_length();
   parse_name_string();
@@ -268,11 +261,96 @@ aml_ptr_t def_processor()
   return (aml_ptr_t){0x83, NULL};
 }
 
+static aml_ptr_t def_index_field()
+{
+  int old_pointer = get_pointer();
+  uint32_t length = parse_pkg_length();
+  aml_ptr_t index_name = parse_name_string();
+  AML_ERR_CHECK_ABRT(index_name);
+  aml_ptr_t data_name = parse_name_string();
+  AML_ERR_CHECK_ABRT(data_name);
+  uint8_t field_flags = next_byte();
+  int new_pointer = get_pointer();
+  length -= (new_pointer - old_pointer);
+  while (length > 0)
+  {
+    aml_ptr_t status = one_of(5, named_field, reserved_field, access_field,
+      extended_access_field, connect_field);
+    AML_ERR_CHECK_ABRT(status);
+    old_pointer = new_pointer;
+    new_pointer = get_pointer();
+    if ((new_pointer - old_pointer) > length)
+    {
+      AML_EXIT();
+    }
+    length -= (new_pointer - old_pointer);
+  }
+  return (aml_ptr_t){EXT_INDEX_FIELD_OP, NULL};
+}
+
+static aml_ptr_t def_event()
+{
+  return AML_PREFIX_ERROR;
+}
+
 aml_ptr_t parse_named_obj()
 {
-  return one_of(17, def_processor, def_mutex, def_device, def_bank_field,
-    def_create_bitfield, def_create_bytefield, def_create_dword_field,
-    def_create_field, def_create_qword_field, def_create_word_field,
-    def_data_region, def_external, def_op_region, def_power_res,
-    def_thermal_zone, def_field, def_method);
+  aml_ptr_t status;
+  uint8_t token   = next_byte();
+  switch (token)
+  {
+    case EXT_OP_PREFIX:
+      {
+        token = next_byte();
+        switch (token)
+        {
+          case EXT_BANK_FIELD_OP:
+            return def_bank_field();
+          case EXT_CREATE_FIELD_OP:
+            return def_create_field();
+          case EXT_DATA_REGION_OP:
+            return def_data_region();
+          case EXT_DEVICE_OP:
+            return def_device();
+          case EXT_EVENT_OP:
+            return def_event();
+          case EXT_FIELD_OP:
+            return def_field();
+          case EXT_INDEX_FIELD_OP:
+            return def_index_field();
+          case EXT_MUTEX_OP:
+            return def_mutex();
+          case EXT_OP_REGION_OP:
+            return def_op_region();
+          case EXT_POWER_RES_OP:
+            return def_power_res();
+          case EXT_THERMAL_ZONE_OP:
+            return def_thermal_zone();
+          case 0x83:
+            return def_processor();
+          default:
+            {
+              return AML_PREFIX_ERROR;
+            }
+        }
+      }
+    case METHOD_OP:
+      return def_method();
+    case EXTERNAL_OP:
+      return def_external();
+    case CREATE_BITFIELD_OP:
+      return def_create_bitfield();
+    case CREATE_BYTEFIELD_OP:
+      return def_create_bytefield();
+    case CREATE_DWORDFIELD_OP:
+      return def_create_dword_field();
+    case CREATE_QWORDFIELD_OP:
+      return def_create_qword_field();
+    case CREATE_WORDFIELD_OP:
+      return def_create_word_field();
+    default:
+      {
+        return AML_PREFIX_ERROR;
+      }
+  }
 }

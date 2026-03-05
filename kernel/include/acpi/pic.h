@@ -67,6 +67,6 @@ typedef struct
 } __attribute__((packed)) acpi_io_apic_structure_t;
 
 void apic_enable_timer();
-void apic_sleep(uint64_t microseconds);
+void apic_sleep(uint64_t duration);
 
 #endif

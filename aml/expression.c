@@ -1,30 +1,29 @@
 #include "aml.h"
 #include "parser.h"
+#include "stdlib.h"
 #include <stdint.h>
-#include <stdio.h>
 
-aml_ptr_t def_acquire()
+static aml_ptr_t def_acquire()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_add()
+static aml_ptr_t def_add()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_and()
+static aml_ptr_t def_and()
 {
   return AML_PREFIX_ERROR;
 }
 
 aml_ptr_t def_buffer()
 {
-  AML_PRELUDE(BUFFER_OP);
   int old_pointer       = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t buffer_size = parse_term_arg();
-  AML_ERR_CHECK(buffer_size);
+  AML_ERR_CHECK_ABRT(buffer_size);
   int new_pointer  = get_pointer();
   length          -= (new_pointer - old_pointer);
   while (length > 0) // TODO use buffer_size instead of pkg_length
@@ -35,157 +34,157 @@ aml_ptr_t def_buffer()
   return (aml_ptr_t){BUFFER_OP, NULL};
 }
 
-aml_ptr_t def_concat()
+static aml_ptr_t def_concat()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_concat_res()
+static aml_ptr_t def_concat_res()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_cond_ref_of()
+static aml_ptr_t def_cond_ref_of()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_copy_object()
+static aml_ptr_t def_copy_object()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_decrement()
+static aml_ptr_t def_decrement()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_deref_of()
+static aml_ptr_t def_deref_of()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_divide()
+static aml_ptr_t def_divide()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_find_set_left_bit()
+static aml_ptr_t def_find_set_left_bit()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_find_set_right_bit()
+static aml_ptr_t def_find_set_right_bit()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_from_bcd()
+static aml_ptr_t def_from_bcd()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_increment()
+static aml_ptr_t def_increment()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_index()
+static aml_ptr_t def_index()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LAnd()
+static aml_ptr_t def_LAnd()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LEqual()
+static aml_ptr_t def_LEqual()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LGreater()
+static aml_ptr_t def_LGreater()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LGreater_equal()
+static aml_ptr_t def_LGreater_equal()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LLess()
+static aml_ptr_t def_LLess()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LLess_equal()
+static aml_ptr_t def_LLess_equal()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_mid()
+static aml_ptr_t def_mid()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LNot()
+static aml_ptr_t def_LNot()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LNot_equal()
+static aml_ptr_t def_LNot_equal()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_load_table()
+static aml_ptr_t def_load_table()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_LOr()
+static aml_ptr_t def_LOr()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_match()
+static aml_ptr_t def_match()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_mod()
+static aml_ptr_t def_mod()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_multiply()
+static aml_ptr_t def_multiply()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_NAnd()
+static aml_ptr_t def_NAnd()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_NOr()
+static aml_ptr_t def_NOr()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_not()
+static aml_ptr_t def_not()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_object_type()
+static aml_ptr_t def_object_type()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_or()
+static aml_ptr_t def_or()
 {
   return AML_PREFIX_ERROR;
 }
@@ -193,7 +192,7 @@ aml_ptr_t def_or()
 // TODO sanity check PkgLength against NumElements
 aml_ptr_t def_package()
 {
-  AML_PRELUDE(PACKAGE_OP);
+AML_PRELUDE(PACKAGE_OP);
   int old_pointer       = get_pointer();
   uint32_t length       = parse_pkg_length();
   uint8_t num_elements  = next_byte();
@@ -202,7 +201,7 @@ aml_ptr_t def_package()
   for (int i = 0; i < num_elements; i++)
   {
     aml_ptr_t status = one_of(2, parse_data_ref_object, parse_name_string);
-    AML_ERR_CHECK(status);
+    AML_ERR_CHECK_ABRT(status);
   }
   return (aml_ptr_t){PACKAGE_OP, NULL};
 }
@@ -212,51 +211,51 @@ aml_ptr_t def_var_package()
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_ref_of()
+static aml_ptr_t def_ref_of()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_shift_left()
+static aml_ptr_t def_shift_left()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_shift_right()
+static aml_ptr_t def_shift_right()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_size_of()
+static aml_ptr_t def_size_of()
 {
   return AML_PREFIX_ERROR;
 }
-aml_ptr_t def_store()
-{
-  return AML_PREFIX_ERROR;
-}
-
-aml_ptr_t def_subtract()
+static aml_ptr_t def_store()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_timer()
+static aml_ptr_t def_subtract()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_to_bcd()
+static aml_ptr_t def_timer()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_to_buffer()
+static aml_ptr_t def_to_bcd()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_to_decimal_string()
+static aml_ptr_t def_to_buffer()
+{
+  return AML_PREFIX_ERROR;
+}
+
+static aml_ptr_t def_to_decimal_string()
 {
   return AML_PREFIX_ERROR;
 }
@@ -266,47 +265,59 @@ aml_ptr_t reference_type_opcode()
   return one_of(3, def_ref_of, def_deref_of, def_index);
 }
 
-aml_ptr_t def_to_hex_string()
+static aml_ptr_t def_to_hex_string()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_to_integer()
+static aml_ptr_t def_to_integer()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_to_string()
+static aml_ptr_t def_to_string()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_wait()
+static aml_ptr_t def_wait()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t def_xor()
+static aml_ptr_t def_xor()
 {
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t method_invocation()
+static aml_ptr_t method_invocation()
 {
-  return AML_PREFIX_ERROR;
+  aml_ptr_t method_name = parse_name_string();
+  if (method_name.prefix_byte == ERR_PARSE || method_name.prefix_byte == ERR_PREFIX) {
+    return AML_PREFIX_ERROR;
+  }
+  aml_ptr_t status = parse_term_arg();
+  AML_ERR_CHECK(status);
+  while (status.prefix_byte != ERR_PARSE && status.prefix_byte != ERR_PREFIX) {
+    status = parse_term_arg();
+  }
+  return (aml_ptr_t){NULL_NAME, NULL};
 }
 
 aml_ptr_t parse_expression_opcode()
 {
-  return one_of(53, def_acquire, def_add, def_and, def_buffer, def_concat,
-    def_concat_res, def_cond_ref_of, def_copy_object, def_decrement,
-    def_deref_of, def_divide, def_find_set_left_bit, def_find_set_right_bit,
-    def_from_bcd, def_increment, def_index, def_LAnd, def_LEqual, def_LGreater,
-    def_LGreater_equal, def_LLess, def_LLess_equal, def_mid, def_LNot,
-    def_LNot_equal, def_load_table, def_LOr, def_match, def_mod, def_multiply,
-    def_NAnd, def_NOr, def_not, def_object_type, def_or, def_package,
-    def_var_package, def_ref_of, def_shift_left, def_shift_right, def_size_of,
-    def_store, def_subtract, def_timer, def_to_bcd, def_to_buffer,
-    def_to_decimal_string, def_to_hex_string, def_to_integer, def_to_string,
-    def_wait, def_xor, method_invocation);
+  uint8_t token = next_byte();
+  switch (token)
+  {
+    case PACKAGE_OP:
+      move_pointer(-1);
+      return def_package();
+    case BUFFER_OP:
+      return def_buffer();
+    default:
+      {
+      move_pointer(-1);
+        return method_invocation(); // default to method invocation since it has no prefix
+      }
+  }
 }

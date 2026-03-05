@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-uint32_t cursor = 1;
-uint32_t line   = 1;
+static uint32_t cursor = 1;
+static uint32_t line   = 1;
 
 void init_text(uint8_t* addr)
 {
@@ -71,13 +71,11 @@ void tty_delc()
       cursor--;
       return;
     }
-    else
-    {
-      cursor = 79;
-      line--;
-      tty_putc(' ');
-      cursor--;
-    }
+
+    cursor = 79;
+    line--;
+    tty_putc(' ');
+    cursor--;
   }
   else
   {

@@ -16,14 +16,14 @@ uint32_t lapic_read(uint16_t offset)
   return *(volatile uint32_t*)((uint64_t)lapic_addr + offset);
 }
 
-void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
+static void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
 {
   asm volatile("rdmsr"
     : "=a"(*low), "=d"(*high)
     : "c"(msr));
 }
 
-void write_msr(uint32_t msr, uint32_t low, uint32_t high)
+static void write_msr(uint32_t msr, uint32_t low, uint32_t high)
 {
   asm volatile("wrmsr"
     :
@@ -48,7 +48,7 @@ void lapic_enable()
   asm volatile("sti");
 }
 
-void lapic_disable()
+static void lapic_disable()
 {
   asm volatile("cli");
   lapic_write(0xF0, lapic_read(0xF0) & ~(0x100));

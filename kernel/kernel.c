@@ -50,9 +50,12 @@ void task_1(void* _inner)
   }
 }
 
-void print_cpu_flags()
+static void print_cpu_flags()
 {
-  uint64_t eax = 0, ecx = 0, edx = 0, ebx = 0;
+  uint64_t eax = 0;
+  uint64_t ecx = 0;
+  uint64_t edx = 0;
+  uint64_t ebx = 0;
   asm volatile("mov $0x01, %%rax\n"
                "cpuid\n"
                "mov %%rax, %0\n"

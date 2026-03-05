@@ -32,7 +32,7 @@ void init_tasks()
   current = kernel;
 }
 
-isr_stack_t* copy_ctx(isr_stack_t* dest, isr_stack_t* src)
+static isr_stack_t* copy_ctx(isr_stack_t* dest, isr_stack_t* src)
 {
   dest->r15    = src->r15;
   dest->r14    = src->r14;
@@ -57,7 +57,7 @@ isr_stack_t* copy_ctx(isr_stack_t* dest, isr_stack_t* src)
   return dest;
 }
 
-void switch_task_to_kb(isr_stack_t* ctx)
+static void switch_task_to_kb(isr_stack_t* ctx)
 {
   current->ctx = copy_ctx(current->ctx, ctx);
   current      = keyboard;
@@ -66,8 +66,14 @@ void switch_task_to_kb(isr_stack_t* ctx)
 
 void switch_task(isr_stack_t* ctx)
 {
-  if (current->next == NULL) return;
-  if (current == NULL) return;
+  if (current->next == NULL)
+  {
+    return;
+  }
+  if (current == NULL)
+  {
+    return;
+  }
   current->ctx = copy_ctx(current->ctx, ctx);
   current      = current->next;
   ctx          = copy_ctx(ctx, current->ctx);

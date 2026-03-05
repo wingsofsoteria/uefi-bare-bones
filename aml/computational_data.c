@@ -2,10 +2,9 @@
 #include "parser.h"
 #include "stdlib.h"
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
-aml_ptr_t byte_data()
+static aml_ptr_t byte_data()
 {
   uint8_t token = next_byte();
   uint8_t* ptr  = calloc(1, sizeof(uint8_t));
@@ -13,14 +12,7 @@ aml_ptr_t byte_data()
   return (aml_ptr_t){BYTE_PREFIX, ptr};
 }
 
-aml_ptr_t byte_const()
-{
-  AML_PRELUDE(BYTE_PREFIX);
-  aml_ptr_t data = byte_data();
-  return data;
-}
-
-aml_ptr_t word_data()
+static aml_ptr_t word_data()
 {
   aml_ptr_t lower_byte = byte_data();
   uint8_t lower        = *(uint8_t*)lower_byte.__ptr;
@@ -35,14 +27,8 @@ aml_ptr_t word_data()
   return (aml_ptr_t){WORD_PREFIX, ptr};
 }
 
-aml_ptr_t word_const()
-{
-  AML_PRELUDE(WORD_PREFIX);
-  aml_ptr_t data = word_data();
-  return data;
-}
 // TODO fix qword and dword
-aml_ptr_t dword_data()
+static aml_ptr_t dword_data()
 {
   aml_ptr_t lower_word = word_data();
   aml_ptr_t upper_word = word_data();
@@ -57,15 +43,7 @@ aml_ptr_t dword_data()
   return (aml_ptr_t){DWORD_PREFIX, ptr};
 }
 
-aml_ptr_t dword_const()
-{
-  AML_PRELUDE(DWORD_PREFIX);
-  aml_ptr_t data = dword_data();
-
-  return data;
-}
-
-aml_ptr_t qword_data()
+static aml_ptr_t qword_data()
 {
   aml_ptr_t lower_word = dword_data();
   aml_ptr_t upper_word = dword_data();
@@ -80,24 +58,15 @@ aml_ptr_t qword_data()
   return (aml_ptr_t){QWORD_PREFIX, ptr};
 }
 
-aml_ptr_t qword_const()
+static aml_ptr_t parse_string()
 {
-  AML_PRELUDE(QWORD_PREFIX);
-  aml_ptr_t data = qword_data();
-
-  return data;
-}
-
-aml_ptr_t parse_string()
-{
-  AML_PRELUDE(STRING_PREFIX);
-  char* string  = calloc(5, sizeof(char));
   int size      = 5;
+  char* string  = calloc(size, sizeof(char));
   int i         = 0;
   uint8_t token = next_byte();
   while (token != ZERO_OP)
   {
-    if (token > 0x7F)
+    if (token > STRING_OOB)
     {
       free(string);
       return AML_PARSE_ERROR;
@@ -124,24 +93,37 @@ aml_ptr_t parse_string()
   return (aml_ptr_t){STRING_PREFIX, string};
 }
 
-aml_ptr_t const_obj()
-{
-  uint8_t token = next_byte();
-  if (token == ZERO_OP || token == ONE_OP || token == ONES_OP)
-  {
-    return (aml_ptr_t){token, NULL};
-  }
-  return AML_PREFIX_ERROR;
-}
-
-aml_ptr_t revision_op()
-{
-  AML_EXT_PRELUDE(REVISION_OP);
-  return (aml_ptr_t){REVISION_OP, NULL};
-}
-
 aml_ptr_t computational_data()
 {
-  return one_of(8, byte_const, word_const, dword_const, qword_const,
-    parse_string, const_obj, revision_op, def_buffer);
+  uint8_t token = next_byte();
+  switch (token)
+  {
+    case EXT_OP_PREFIX:
+      {
+        token = next_byte();
+        if (token != EXT_REVISION_OP)
+        {
+          return AML_PREFIX_ERROR;
+        }
+        return (aml_ptr_t){EXT_REVISION_OP, NULL};
+      }
+    case BYTE_PREFIX:
+      return byte_data();
+    case WORD_PREFIX:
+      return word_data();
+    case DWORD_PREFIX:
+      return dword_data();
+    case QWORD_PREFIX:
+      return qword_data();
+    case STRING_PREFIX:
+      return parse_string();
+    case ZERO_OP:
+    case ONE_OP:
+    case ONES_OP:
+      return (aml_ptr_t){token, NULL};
+    case BUFFER_OP:
+      return def_buffer();
+    default:
+      return AML_PREFIX_ERROR;
+  }
 }

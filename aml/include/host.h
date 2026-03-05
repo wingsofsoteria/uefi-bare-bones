@@ -1,9 +1,13 @@
 #ifndef __AML_INTERNAL_HOST_H__
 #define __AML_INTERNAL_HOST_H__
 #include <stdint.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
+
+static void host_exit() {
+    abort();
+}
 
 #ifndef AML_TEST // AML_TEST means we're working with the host libc not the
                  // kernel libc
@@ -21,6 +25,5 @@
 #endif
 #define AML_EXIT()                 \
   AML_LOG("Exiting AML parser\n"); \
-  HOST_EXIT();
-
+  host_exit();
 #endif

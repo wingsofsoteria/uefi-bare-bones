@@ -7,7 +7,8 @@
 
 uint16_t pit_count()
 {
-  uint16_t low, high;
+  uint16_t low;
+  uint16_t high;
 
   low  = inb(PIT_DATA0);
   high = inb(PIT_DATA0);

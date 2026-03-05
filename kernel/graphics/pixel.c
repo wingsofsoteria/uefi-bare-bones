@@ -1,8 +1,8 @@
 #include "graphics/pixel.h"
 #include "graphics/tty.h"
 
-uint64_t fb_base;
-uint32_t fb_pitch;
+static uint64_t fb_base;
+static uint32_t fb_pitch;
 static int fb_yres;
 static int fb_xres;
 
@@ -10,7 +10,9 @@ void init_fb(uint64_t base, uint32_t pitch, int x, int y)
 {
   if (base == 0)
   {
-    for (;;);
+    for (;;)
+    {
+    }
   }
   fb_base  = base;
   fb_pitch = pitch;

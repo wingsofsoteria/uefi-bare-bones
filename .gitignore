@@ -1,5 +1,6 @@
 .vs
 .vscode
+.idea
 .cache
 OVMF*
 aml_test

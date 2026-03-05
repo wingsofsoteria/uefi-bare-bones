@@ -6,9 +6,9 @@
 
 static uint8_t* cpio_address;
 
-bool cpio_eof = false;
-uint32_t file_size();
-bool check_header();
+static bool cpio_eof = false;
+static uint32_t file_size();
+static bool check_header();
 void init_cpio(uint8_t* addr)
 {
   cpio_address = addr;
@@ -18,12 +18,12 @@ void init_cpio(uint8_t* addr)
     halt_cpu;
   }
 }
-bool check_header()
+static bool check_header()
 {
   return ((cpio_header_t*)cpio_address)->c_magic == 0070707;
 }
 
-void check_eof()
+static void check_eof()
 {
   char* filename = (char*)(cpio_address + CPIO_HEADER_SIZE);
   if (strncmp(filename, "TRAILER!!!", file_size()))
@@ -50,7 +50,10 @@ uint32_t file_size()
 
 bool next_header()
 {
-  if (cpio_eof) return false;
+  if (cpio_eof)
+  {
+    return false;
+  }
   cpio_address = cpio_address + CPIO_HEADER_SIZE +
     ((cpio_header_t*)cpio_address)->c_namesize + 1 + file_size();
   check_eof();

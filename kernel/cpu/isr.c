@@ -20,7 +20,10 @@ void register_handler(int vector, interrupt handler)
 
 isr_stack_t* apic_timer_isr(isr_stack_t* stack)
 {
-  if (ticks > 0) ticks--;
+  if (ticks > 0)
+  {
+    ticks--;
+  }
   if (kernel_config & INTERRUPT_CONFIG_ENABLE_TASKING)
   {
     switch_task(stack);
@@ -30,7 +33,10 @@ isr_stack_t* apic_timer_isr(isr_stack_t* stack)
 
 isr_stack_t* pic_timer_isr(isr_stack_t* stack)
 {
-  if (ticks > 0) ticks--;
+  if (ticks > 0)
+  {
+    ticks--;
+  }
   return stack;
 }
 

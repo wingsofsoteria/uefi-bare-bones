@@ -2,13 +2,12 @@
 #include "parser.h"
 #include "stdlib.h"
 
-aml_ptr_t parse_def_alias()
+static aml_ptr_t parse_def_alias()
 {
-  AML_PRELUDE(ALIAS_OP);
   aml_ptr_t source = parse_name_string();
-  AML_ERR_CHECK(source);
+  AML_ERR_CHECK_ABRT(source);
   aml_ptr_t alias = parse_name_string();
-  AML_ERR_CHECK(alias);
+  AML_ERR_CHECK_ABRT(alias);
   return (aml_ptr_t){ALIAS_OP, NULL};
 }
 
@@ -17,13 +16,12 @@ aml_ptr_t parse_data_ref_object()
   return parse_data_object();
 }
 
-aml_ptr_t parse_def_name()
+static aml_ptr_t parse_def_name()
 {
-  AML_PRELUDE(NAME_OP);
   aml_ptr_t name = parse_name_string();
-  AML_ERR_CHECK(name);
+  AML_ERR_CHECK_ABRT(name);
   aml_ptr_t object = parse_data_ref_object();
-  AML_ERR_CHECK(object);
+  AML_ERR_CHECK_ABRT(object);
   return (aml_ptr_t){NAME_OP, NULL};
 }
 
@@ -56,22 +54,33 @@ uint32_t parse_pkg_length()
 
 aml_ptr_t parse_def_scope()
 {
-  AML_PRELUDE(SCOPE_OP);
   int current_pointer   = get_pointer();
   uint32_t length       = parse_pkg_length();
   aml_ptr_t scope_name  = parse_name_string();
   int new_pointer       = get_pointer();
   length               -= (new_pointer - current_pointer);
-  AML_ERR_CHECK(scope_name);
+  AML_ERR_CHECK_ABRT(scope_name);
   aml_ptr_t term_list = parse_term_list(length);
-  AML_ERR_CHECK(term_list);
-  aml_node_t* scope_node = aml_create_node();
-  aml_append_node(scope_node, term_list.__ptr);
-  scope_node->name = name_string_to_cstring(scope_name);
+  AML_ERR_CHECK_ABRT(term_list);
+  void* scope_node = NULL;
+  // aml_node_t* scope_node = aml_create_node();
+  // aml_append_node(scope_node, term_list.__ptr);
+  // scope_node->name = name_string_to_cstring(scope_name);
   return (aml_ptr_t){SCOPE_OP, scope_node};
 }
 
 aml_ptr_t parse_namespace_modifier_obj()
 {
-  return one_of(3, parse_def_alias, parse_def_name, parse_def_scope);
+  uint8_t token = next_byte();
+  switch (token)
+  {
+    case ALIAS_OP:
+      return parse_def_alias();
+    case NAME_OP:
+      return parse_def_name();
+    case SCOPE_OP:
+      return parse_def_scope();
+    default:
+      return AML_PREFIX_ERROR;
+  }
 }

@@ -11,7 +11,7 @@
 volatile uint64_t ticks;
 __attribute__((aligned(4096))) static idt_t idt;
 
-isr_stack_t* blank_handler(isr_stack_t* stack)
+static isr_stack_t* blank_handler(isr_stack_t* stack)
 {
   return stack;
 }
@@ -36,7 +36,7 @@ void enable_irq(int irq, int vector, interrupt handler)
   register_handler(vector, handler);
 }
 
-void set_idt_entry_simple(uint8_t vector, void* handler)
+static void set_idt_entry_simple(uint8_t vector, void* handler)
 {
   idt_entry_t* entry      = &(idt.entries[vector]);
   entry->offset_low       = (uint64_t)handler & 0xFFFF;
@@ -48,7 +48,7 @@ void set_idt_entry_simple(uint8_t vector, void* handler)
   entry->reserved_high    = 0;
 }
 
-isr_stack_t* interrupt_handler(isr_stack_t* stack)
+static isr_stack_t* interrupt_handler(isr_stack_t* stack)
 {
   isr_stack_t* modified_stack = isr_handler_table[stack->isr](stack);
   lapic_send_eoi();
@@ -100,7 +100,7 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
 
 void load_idt()
 {
-  for (int i = 0; i < 256; i++)
+  for (int i = 0; i < IDT_ENTRY_COUNT; i++)
   {
     set_idt_entry_simple(i, isr_stub_table[i]);
   }

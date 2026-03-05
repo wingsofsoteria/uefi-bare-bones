@@ -2,11 +2,11 @@
 #include "aml.h"
 #include "host.h"
 #include "stdlib.h"
-int MAX_BLOCKS = 0;
+static int MAX_BLOCKS = 0;
 
-int pointer = 0;
-
-acpi_aml_table_t* TABLE = NULL;
+static int pointer = 0;
+int __current_anchor__ = 0;
+static acpi_aml_table_t* TABLE = NULL;
 void aml_parser_init(void* address)
 {
   TABLE      = (acpi_aml_table_t*)address;
@@ -20,7 +20,10 @@ void print_next_definition_block()
   AML_LOG("%d: ", current_pointer);
   for (int i = 0; i < 20; i++)
   {
-    if (pointer >= MAX_BLOCKS) break;
+    if (pointer >= MAX_BLOCKS)
+    {
+      break;
+    }
     AML_LOG("%x ", TABLE->definition_blocks[pointer++]);
   }
   AML_LOG("\n");
@@ -39,9 +42,13 @@ aml_ptr_t one_of(int parser_count, ...)
 
     aml_parser_fn parser   = va_arg(parsers, aml_parser_fn);
     aml_ptr_t return_value = parser();
-    if (return_value.prefix_byte == ERR_PREFIX) continue;
+    if (return_value.prefix_byte == ERR_PREFIX)
+    {
+      continue;
+    }
     if (return_value.prefix_byte == ERR_PARSE)
     {
+      va_end(parsers);
       return AML_PARSE_ERROR;
     }
     va_end(parsers);
@@ -50,6 +57,17 @@ aml_ptr_t one_of(int parser_count, ...)
   pointer = current_pointer;
   va_end(parsers);
   return AML_PREFIX_ERROR;
+}
+
+static aml_ptr_t try_parse(aml_parser_fn parser_function)
+{
+  int old_pointer  = pointer;
+  aml_ptr_t status = parser_function();
+  if (status.prefix_byte == ERR_PREFIX)
+  {
+    pointer = old_pointer;
+  }
+  return status;
 }
 
 uint8_t peek_byte()
@@ -81,8 +99,11 @@ aml_ptr_t parse_misc_obj()
   {
     return (aml_ptr_t){token, NULL};
   }
-  if (token != EXT_OP_PREFIX) return AML_PREFIX_ERROR;
-  return (aml_ptr_t){DEBUG_OP, NULL};
+  if (token != EXT_OP_PREFIX)
+  {
+    return AML_PREFIX_ERROR;
+  }
+  return (aml_ptr_t){EXT_DEBUG_OP, NULL};
 }
 
 aml_ptr_t parse_term_arg()
@@ -90,9 +111,12 @@ aml_ptr_t parse_term_arg()
   return one_of(3, parse_expression_opcode, parse_data_object, parse_misc_obj);
 }
 
-aml_ptr_t parse_term_obj()
+static aml_ptr_t parse_term_obj()
 {
-  if (pointer >= MAX_BLOCKS) return AML_PARSE_ERROR;
+  if (pointer >= MAX_BLOCKS)
+  {
+    return AML_PARSE_ERROR;
+  }
   return one_of(4, parse_namespace_modifier_obj, parse_named_obj,
     parse_statement_opcode, parse_expression_opcode);
 }
@@ -187,10 +211,8 @@ aml_ptr_t evaluate_term_arg(aml_ptr_t term_arg)
     {
       return term_arg;
     }
-    else
-    {
-      return object;
-    }
+
+    return object;
   }
   return (aml_ptr_t){0xCE, NULL};
 }
@@ -199,10 +221,11 @@ aml_ptr_t parse_term_list(int count)
 {
   int old_pointer = pointer;
   aml_ptr_t status;
-  aml_node_t* static_list_root = aml_create_node();
-  aml_node_t* list_root        = static_list_root;
+  // aml_node_t* static_list_root = aml_create_node();
+  // aml_node_t* list_root        = static_list_root;
   while (1)
   {
+    AML_SET_ANCHOR;
     status          = parse_term_obj();
     int new_pointer = pointer;
     if (status.prefix_byte == ERR_PREFIX)
@@ -222,27 +245,39 @@ aml_ptr_t parse_term_list(int count)
       AML_EXIT();
     }
 
-    aml_node_t* list_child = aml_create_node();
-    list_child->data       = status;
-    aml_append_node(list_root, list_child);
-    list_root = list_child;
+    // aml_node_t* list_child = aml_create_node();
+    // list_child->data       = status;
+    // aml_append_node(list_root, list_child);
+    // list_root = list_child;
   }
-  return (aml_ptr_t){TERM_LIST_PREFIX, static_list_root};
+  return (aml_ptr_t){TERM_LIST_PREFIX, NULL};
 }
 // TODO have this look up scope using aml_root
-aml_ptr_t lookup_scope(char scope[4])
+static aml_ptr_t lookup_scope(const char scope[4])
 {
   aml_ptr_t status = (aml_ptr_t){ERR_PREFIX, NULL};
   while (1)
   {
     uint8_t byte = next_byte();
-    if (byte != scope[0]) continue;
+    if (byte != scope[0])
+    {
+      continue;
+    }
     byte = next_byte();
-    if (byte != scope[1]) continue;
+    if (byte != scope[1])
+    {
+      continue;
+    }
     byte = next_byte();
-    if (byte != scope[2]) continue;
+    if (byte != scope[2])
+    {
+      continue;
+    }
     byte = next_byte();
-    if (byte != scope[3]) continue;
+    if (byte != scope[3])
+    {
+      continue;
+    }
     move_pointer(-4);
     while (peek_byte() != SCOPE_OP)
     {
@@ -262,6 +297,11 @@ int get_pointer()
 void move_pointer(int amount_to_move)
 {
   pointer += amount_to_move;
+}
+
+void set_pointer(int new_pointer)
+{
+  pointer = new_pointer;
 }
 
 void aml_parser_run()
