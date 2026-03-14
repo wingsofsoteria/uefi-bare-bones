@@ -17,7 +17,7 @@ void set_cursor(uint32_t new_cursor, uint32_t new_line)
 }
 uint64_t get_cursor()
 {
-  return ((uint64_t)cursor << 32) & line;
+  return ((uint64_t)cursor << 32) | line;
 }
 
 void tty_putc(char ch)

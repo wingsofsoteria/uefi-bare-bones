@@ -6,18 +6,20 @@
 
 typedef void (*task_function)(void*);
 
+void install_task(task_function fn_ptr, void* data);
+
 typedef struct task
 {
   isr_stack_t* ctx;
   struct task* next;
-  bool ctx_uninit;
+  int task_id;
 } task_t;
 
-void create_task(task_function);
+void create_task(task_function, void*);
 
 void switch_task(isr_stack_t*);
 void init_tasks();
-
+void task_loop();
 extern void idle(void*);
 
 #endif

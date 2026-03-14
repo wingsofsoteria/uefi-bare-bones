@@ -33,8 +33,11 @@
 // TODO use cpuid to calibrate TSC if available
 // TODO have abort dump the task stack data structures
 // TODO finish handling keyboard tasks + basic shell
-// TODO generic sleep function
-
+// TODO finish TSC for APIC timer
+// TODO finish AML interpreter OR switch to ACPICA
+// TODO locking mechanism for tasks + better scheduling (right now I have little
+// ability to quickly edit the tasks in queue since it requires looking through
+// the ENTIRE list starting at the idle task)
 void idle(void* _inner)
 {
   printf("KERNEL IDLE");
@@ -93,6 +96,14 @@ static void print_cpu_flags()
   }
 }
 
+void test_task(void* data)
+{
+  uint64_t old_cursor = get_cursor();
+  set_cursor(79, 1);
+  tty_putc(1);
+  set_cursor(old_cursor >> 32, old_cursor & 0xFFFFFFFF);
+}
+
 int _start(kernel_bootinfo_t* bootinfo, void* ptr)
 {
   asm volatile("cli");
@@ -106,19 +117,18 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   acpi_init(bootinfo->xsdt_address);
   clear_screen();
   enable_irq(1, 33, keyboard_isr);
+  enable_tasking();
   // init_tasks();
   // create_task(idle);
   // create_task(task_1);
   calibrate_tsc_slow();
-  pit_init();
-  enable_irq(0, 34, pic_timer_isr);
+  enable_pit();
   init_kb_status();
   lapic_enable();
-  register_handler(32, apic_timer_isr);
-  apic_enable_timer();
-  disable_irq(0, 34);
-
   print_cpu_flags();
-  dsdt_parse();
+  create_task(test_task, NULL);
+  task_loop();
+  // TODO finish aml parser
+  // dsdt_parse();
   halt_cpu
 }

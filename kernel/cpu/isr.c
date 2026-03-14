@@ -1,5 +1,4 @@
 #include "cpu/isr.h"
-#include "config.h"
 #include "cpu/idt.h"
 #include "cpu/task.h"
 
@@ -24,10 +23,7 @@ isr_stack_t* apic_timer_isr(isr_stack_t* stack)
   {
     ticks--;
   }
-  if (kernel_config & INTERRUPT_CONFIG_ENABLE_TASKING)
-  {
-    switch_task(stack);
-  }
+
   return stack;
 }
 
@@ -43,5 +39,11 @@ isr_stack_t* pic_timer_isr(isr_stack_t* stack)
 isr_stack_t* keyboard_isr(isr_stack_t* stack)
 {
   kb_handle_key();
+  return stack;
+}
+
+isr_stack_t* task_switch_isr(isr_stack_t* stack)
+{
+  switch_task(stack);
   return stack;
 }

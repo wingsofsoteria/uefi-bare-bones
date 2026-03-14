@@ -18,7 +18,7 @@ typedef struct
 void init_text(uint8_t*);
 void tty_putc(char);
 void tty_delc();
-void set_cursor(uint32_t, uint32_t);
+void set_cursor(uint32_t new_cursor, uint32_t new_line);
 uint64_t get_cursor();
 extern char _binary_font_psf_start;
 
