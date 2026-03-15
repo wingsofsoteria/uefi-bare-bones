@@ -29,6 +29,9 @@ void create_task(task_function, void*);
 void switch_task(isr_stack_t*);
 void init_tasks();
 void task_loop();
+int get_task_id();
+void signal_idle();
+void signal_live();
 extern void idle(void*);
 
 #endif

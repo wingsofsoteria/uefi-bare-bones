@@ -2,6 +2,7 @@
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
+#include "graphics/tty.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -11,10 +12,10 @@ static task_t* current = NULL;
 static task_t* kernel  = NULL;
 
 static int TASK_COUNT;
+static task_queue_t* LIVE_QUEUE = NULL;
+static task_queue_t* IDLE_QUEUE = NULL;
 
-static task_queue_t* queue = NULL;
-
-static void push_queue(task_t* task)
+static void push_queue(task_queue_t* queue, task_t* task)
 {
   if (((queue->head + 1) % queue->capacity) == queue->tail)
   {
@@ -24,7 +25,7 @@ static void push_queue(task_t* task)
   queue->tail                = (queue->tail + 1) % queue->capacity;
 }
 
-static task_t* pop_queue()
+static task_t* pop_queue(task_queue_t* queue)
 {
   if (queue->head == queue->tail)
   {
@@ -32,7 +33,27 @@ static task_t* pop_queue()
   }
   task_t* task = queue->_inner[queue->head];
   queue->head  = (queue->head + 1) % queue->capacity;
+  if (task == NULL)
+  {
+    return pop_queue(queue);
+  }
   return task;
+}
+
+static task_queue_t* new_queue()
+{
+  task_queue_t* queue = malloc(sizeof(task_queue_t));
+  queue->head         = 0;
+  queue->tail         = 0;
+  queue->capacity     = TASK_QUEUE_SIZE;
+  queue->_inner       = malloc(queue->capacity * sizeof(task_t*));
+
+  return queue;
+}
+
+int get_task_id()
+{
+  return current->task_id;
 }
 
 // the kernel task is just meant to be a halt loop to prevent the task switching
@@ -40,11 +61,8 @@ static task_t* pop_queue()
 void init_tasks()
 {
   register_handler(128, task_switch_isr);
-  queue               = malloc(sizeof(task_queue_t));
-  queue->head         = 0;
-  queue->tail         = 0;
-  queue->capacity     = TASK_QUEUE_SIZE;
-  queue->_inner       = malloc(queue->capacity * sizeof(task_t*));
+  LIVE_QUEUE          = new_queue();
+  IDLE_QUEUE          = new_queue();
   TASK_COUNT          = 0;
   kernel              = calloc(1, sizeof(task_t));
   kernel->ctx         = calloc(1, sizeof(isr_stack_t));
@@ -87,33 +105,44 @@ void switch_task(isr_stack_t* ctx)
 {
   current->ctx = copy_ctx(current->ctx, ctx);
   task_t* old  = current;
-  current      = pop_queue();
-  while (current->finished == 1)
-  {
-    free(current->ctx);
-    free(current);
-    current = pop_queue();
-  }
-  push_queue(old);
+  current      = pop_queue(LIVE_QUEUE);
+  push_queue(LIVE_QUEUE, old);
   ctx = copy_ctx(ctx, current->ctx);
 }
 
-static void remove_task(int id)
+static task_t* remove_task(task_queue_t* queue, int id)
 {
   if (id == 0) // id is 0 for the kernel / idle task so we never want to remove
                // that on accident
   {
-    return;
+    return NULL;
   }
   for (int i = 0; i < queue->capacity; i++)
   {
-    if (queue->_inner[i]->task_id == id)
+    if (queue->_inner[i]->task_id != id)
     {
-      queue->_inner[i]->finished = 1;
+      continue;
     }
+    task_t* task     = queue->_inner[i];
+    queue->_inner[i] = NULL;
+    return task;
   }
-  // remove this task from the list and free all its structures
+  return NULL;
 }
+
+void signal_idle()
+{
+  task_t* self = remove_task(LIVE_QUEUE, get_task_id());
+  push_queue(IDLE_QUEUE, self);
+}
+
+// TODO implement this
+// it'll require keeping track of what each idle task is waiting for
+void signal_live()
+{
+  abort();
+}
+
 // I have zero confidence in this btw
 // the idea is that when the task function finishes it automatically removes
 // itself from the task list, that way I can have a task run AND exit instead of
@@ -121,7 +150,13 @@ static void remove_task(int id)
 static void task_wrapper(int id, task_function fn_ptr, void* fn_args)
 {
   fn_ptr(fn_args);
-  remove_task(id);
+  task_t* self = remove_task(LIVE_QUEUE, id);
+  if (self == NULL)
+  {
+    return;
+  }
+  free(self->ctx);
+  free(self);
 }
 
 void create_task(task_function rip, void* data)
