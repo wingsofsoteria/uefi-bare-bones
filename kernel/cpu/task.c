@@ -1,7 +1,6 @@
 #include "cpu/task.h"
 #include "cpu/idt.h"
 #include "cpu/isr.h"
-#include "cpu/pit.h"
 #include "cpu/sleep.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -13,11 +12,39 @@ static task_t* kernel  = NULL;
 
 static int TASK_COUNT;
 
+static task_queue_t* queue = NULL;
+
+static void push_queue(task_t* task)
+{
+  if (((queue->head + 1) % queue->capacity) == queue->tail)
+  {
+    return; // queue is full
+  }
+  queue->_inner[queue->tail] = task;
+  queue->tail                = (queue->tail + 1) % queue->capacity;
+}
+
+static task_t* pop_queue()
+{
+  if (queue->head == queue->tail)
+  {
+    return kernel;
+  }
+  task_t* task = queue->_inner[queue->head];
+  queue->head  = (queue->head + 1) % queue->capacity;
+  return task;
+}
+
 // the kernel task is just meant to be a halt loop to prevent the task switching
 // code from randomly dying
 void init_tasks()
 {
   register_handler(128, task_switch_isr);
+  queue               = malloc(sizeof(task_queue_t));
+  queue->head         = 0;
+  queue->tail         = 0;
+  queue->capacity     = TASK_QUEUE_SIZE;
+  queue->_inner       = malloc(queue->capacity * sizeof(task_t*));
   TASK_COUNT          = 0;
   kernel              = calloc(1, sizeof(task_t));
   kernel->ctx         = calloc(1, sizeof(isr_stack_t));
@@ -27,7 +54,7 @@ void init_tasks()
   kernel->ctx->err    = 0;
   kernel->ctx->cs     = 0x08;
   kernel->task_id     = TASK_COUNT++;
-  kernel->next        = kernel;
+  kernel->finished    = 0;
   current             = kernel;
 }
 
@@ -58,17 +85,17 @@ static isr_stack_t* copy_ctx(isr_stack_t* dest, isr_stack_t* src)
 
 void switch_task(isr_stack_t* ctx)
 {
-  if (current->next == NULL)
-  {
-    return;
-  }
-  if (current == NULL)
-  {
-    return;
-  }
   current->ctx = copy_ctx(current->ctx, ctx);
-  current      = current->next;
-  ctx          = copy_ctx(ctx, current->ctx);
+  task_t* old  = current;
+  current      = pop_queue();
+  while (current->finished == 1)
+  {
+    free(current->ctx);
+    free(current);
+    current = pop_queue();
+  }
+  push_queue(old);
+  ctx = copy_ctx(ctx, current->ctx);
 }
 
 static void remove_task(int id)
@@ -78,21 +105,14 @@ static void remove_task(int id)
   {
     return;
   }
-  task_t* task   = kernel;
-  task_t* parent = kernel;
-  while (task->task_id != id)
+  for (int i = 0; i < queue->capacity; i++)
   {
-    parent = task;
-    task   = task->next;
-    if (task == NULL)
+    if (queue->_inner[i]->task_id == id)
     {
-      return;
+      queue->_inner[i]->finished = 1;
     }
   }
   // remove this task from the list and free all its structures
-  parent->next = task->next;
-  free(task->ctx);
-  free(task);
 }
 // I have zero confidence in this btw
 // the idea is that when the task function finishes it automatically removes
@@ -118,13 +138,12 @@ void create_task(task_function rip, void* data)
   ctx->err          = 0;
   ctx->cs           = 0x08;
   new_task->ctx     = ctx;
-  new_task->next    = kernel->next;
-  kernel->next      = new_task;
+  push_queue(new_task);
 }
 
 void task_loop()
 {
-  while (true)
+  while (1)
   {
     ksleep(10);
     asm volatile("int $128");
