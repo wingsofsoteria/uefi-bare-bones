@@ -2,6 +2,7 @@
 #define __KERNEL_ACPI_TABLES_H__
 
 #include <stdint.h>
+
 typedef struct
 {
   char signature[4];
@@ -14,6 +15,27 @@ typedef struct
   uint32_t creator_id;
   uint32_t creator_revision;
 } __attribute__((packed)) acpi_sdt_header_t;
+
+typedef struct
+{
+  acpi_sdt_header_t header;
+  uint8_t hardware_rev_id;
+  uint8_t comparator_count : 5;
+  uint8_t counter_size : 1;
+  uint8_t reserved : 1;
+  uint8_t legacy_replacement : 1;
+  uint16_t pci_vendor_id;
+
+  uint8_t address_space_id;
+  uint8_t register_bit_width;
+  uint8_t register_bit_offset;
+  uint8_t _reserved;
+  uint64_t address;
+
+  uint8_t hpet_number;
+  uint16_t min_clock_tick;
+  uint8_t page_protection;
+} __attribute__((packed)) acpi_hpet_t;
 
 typedef struct
 {
