@@ -53,49 +53,6 @@ void task_1(void* _inner)
   }
 }
 
-static void print_cpu_flags()
-{
-  uint64_t eax = 0;
-  uint64_t ecx = 0;
-  uint64_t edx = 0;
-  uint64_t ebx = 0;
-  asm volatile("mov $0x01, %%rax\n"
-               "cpuid\n"
-               "mov %%rax, %0\n"
-               "mov %%rcx, %1\n"
-               "mov %%rdx, %2\n"
-               "mov %%rbx, %3\n"
-    : "=m"(eax), "=m"(ecx), "=m"(edx), "=m"(ebx)
-    :
-    : "rax", "rcx", "rdx", "rbx", "memory");
-
-  int tsc_available = ecx & (1 << 24);
-
-  printf("CPU Family: %x\nTSC available: %s\nAPIC has tsc deadline mode: %s\n",
-    ((eax & 0xF00) >> 8) + ((eax & 0x0FF00000) >> 20),
-    ((edx & 0b10000) ? "True" : "False"), tsc_available ? "True" : "False");
-
-  eax = 0;
-  ebx = 0;
-  ecx = 0;
-  asm volatile("mov $0x16, %%rax\n"
-               "cpuid\n"
-               "mov %%rax, %0\n"
-               "mov %%rbx, %1\n"
-               "mov %%rcx, %2\n"
-    : "=m"(eax), "=m"(ebx), "=m"(ecx)
-    :
-    : "rax", "rcx", "rbx", "memory");
-
-  if (eax != 0)
-  {
-    printf("TSC Freq Ratio: %x/%x\nCore Crystal Clock: %x", ebx, eax, ecx);
-  }
-  else
-  {
-  }
-}
-
 void test_task(void* data)
 {
   uint64_t old_cursor = get_cursor();
@@ -107,12 +64,12 @@ void test_task(void* data)
 int _start(kernel_bootinfo_t* bootinfo, void* ptr)
 {
   asm volatile("cli");
-  kernel_config = 0;
   load_gdt();
   load_idt();
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution,
     bootinfo->vertical_resolution);
   clear_screen();
+  check_cpuid();
   setup_allocator(bootinfo->mmap);
   acpi_init(bootinfo->xsdt_address);
   clear_screen();
@@ -125,7 +82,6 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   enable_pit();
   init_kb_status();
   lapic_enable();
-  print_cpu_flags();
   create_task(test_task, NULL);
   task_loop();
   // TODO finish aml parser
