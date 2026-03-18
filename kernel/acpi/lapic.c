@@ -1,4 +1,5 @@
 #include "acpi.h"
+#include "stdio.h"
 
 #include <stdint.h>
 
@@ -15,21 +16,6 @@ uint32_t lapic_read(uint16_t offset)
 {
   return *(volatile uint32_t*)((uint64_t)lapic_addr + offset);
 }
-
-static void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
-{
-  asm volatile("rdmsr"
-    : "=a"(*low), "=d"(*high)
-    : "c"(msr));
-}
-
-static void write_msr(uint32_t msr, uint32_t low, uint32_t high)
-{
-  asm volatile("wrmsr"
-    :
-    : "a"(low), "d"(high), "c"(msr));
-}
-
 void lapic_init()
 {
   lapic_addr = madt_get_lapic_addr();
