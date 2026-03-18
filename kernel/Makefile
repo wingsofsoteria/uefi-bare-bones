@@ -1,6 +1,7 @@
+STRIP=llvm-strip
 CC=clang
 WARNINGS=-Wno-pointer-to-int-cast -Wno-void-pointer-to-int-cast -Wno-tautological-pointer-compare
-CFLAGS=-Iinclude -I../libc/include $(WARNINGS) -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=large -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fno-PIC -fno-PIE
+CFLAGS=-Iinclude -I../libc/include $(WARNINGS) -O2 -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=large -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fno-PIC -fno-PIE
 CPPFLAGS=-mno-mmx -mno-sse -mno-sse2
 LDFLAGS=-T linker.lds -nostdlib --static -Wl,-z,max-page-size=0x1000
 SRC=$(wildcard *.c */*.c */*/*.c *.s */*.s)
@@ -17,6 +18,6 @@ objs/%.c.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 kernel:$(OBJS) ../aml/objs/aml_interpreter.a ../libc/libk.a objs/font.o
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
-
+	$(STRIP) $@
 clean: 
 	rm -fv $(OBJS) kernel objs/font.o
