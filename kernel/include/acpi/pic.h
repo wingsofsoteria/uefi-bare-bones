@@ -30,6 +30,7 @@
 #define LAPIC_TIMER_REGISTER               0x320
 #define LAPIC_INTERRUPT_MASK               0x10000
 #define LAPIC_TIMER_MODE_PERIODIC          (1 << 17)
+#define LAPIC_TIMER_MODE_TSC_DEADLINE      (1 << 18)
 #define LAPIC_TIMER_IRQ                    32
 
 typedef struct

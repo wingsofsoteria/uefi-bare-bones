@@ -43,4 +43,5 @@ void load_idt();
 void disable_irq(int irq, int vector);
 void enable_irq(int irq, int vector, interrupt handler);
 extern volatile uint64_t ticks;
+extern volatile uint8_t tsc_waiting;
 #endif
