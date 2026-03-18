@@ -9,6 +9,7 @@
 #include <keyboard.h>
 
 volatile uint64_t ticks;
+volatile uint8_t tsc_waiting;
 __attribute__((aligned(4096))) static idt_t idt;
 
 static isr_stack_t* blank_handler(isr_stack_t* stack)
@@ -18,17 +19,17 @@ static isr_stack_t* blank_handler(isr_stack_t* stack)
 
 void disable_irq(int irq, int vector)
 {
-  if (kernel_config & INTERRUPT_CONFIG_APIC)
+  if (is_flag_enabled(INTERRUPT_CONFIG_APIC))
   {
     ioapic_disable_irq(irq);
   }
 
   unregister_handler(vector);
 }
-
+// TODO add support for PIC
 void enable_irq(int irq, int vector, interrupt handler)
 {
-  if (kernel_config & INTERRUPT_CONFIG_APIC)
+  if (is_flag_enabled(INTERRUPT_CONFIG_APIC))
   {
     ioapic_enable_irq(irq, vector);
   }

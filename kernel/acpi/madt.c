@@ -56,11 +56,11 @@ void madt_init()
   if (madt == NULL)
   {
     // Configure PIC
-    kernel_config |= INTERRUPT_CONFIG_PIC;
+    enable_flag(INTERRUPT_CONFIG_PIC);
   }
   else
   {
-    kernel_config |= INTERRUPT_CONFIG_APIC; // used for enable_irq
+    enable_flag(INTERRUPT_CONFIG_APIC);
   }
   if ((madt->flags & 0b1) == 1)
   {

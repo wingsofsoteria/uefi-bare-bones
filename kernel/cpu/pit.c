@@ -19,8 +19,7 @@ uint16_t pit_count()
 // Init PIT with about 1000hz (~1ms per irq) freq
 void pit_init()
 {
-  kernel_config         |= TIMER_CONFIG_PIT_ENABLED;
-  uint16_t reload_value  = PIT_FREQ / PIT_HZ;
+  uint16_t reload_value = PIT_FREQ / PIT_HZ;
   outb(PIT_MODE_COMMAND_REG,
     0b00110100); // Select channel 0 with access mode lobyte/hibyte and
                  // operating mode rate generator and use 16-bit binary mode
