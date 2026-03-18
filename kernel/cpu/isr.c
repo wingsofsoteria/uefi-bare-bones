@@ -3,6 +3,7 @@
 #include "cpu/task.h"
 
 #include <keyboard.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 volatile interrupt isr_handler_table[256];
@@ -19,11 +20,7 @@ void register_handler(int vector, interrupt handler)
 
 isr_stack_t* apic_timer_isr(isr_stack_t* stack)
 {
-  if (ticks > 0)
-  {
-    ticks--;
-  }
-
+  tsc_waiting = 0;
   return stack;
 }
 
