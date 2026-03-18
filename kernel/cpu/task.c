@@ -1,4 +1,5 @@
 #include "cpu/task.h"
+#include "config.h"
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
@@ -173,14 +174,14 @@ void create_task(task_function rip, void* data)
   ctx->err          = 0;
   ctx->cs           = 0x08;
   new_task->ctx     = ctx;
-  push_queue(new_task);
+  push_queue(LIVE_QUEUE, new_task);
 }
 
 void task_loop()
 {
   while (1)
   {
-    ksleep(10);
+    ksleep(10 * TICK_RATE);
     asm volatile("int $128");
   }
 }
