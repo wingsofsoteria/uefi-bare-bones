@@ -2,6 +2,7 @@
 .vscode
 .idea
 .cache
+*.swp
 OVMF*
 aml_test
 aml_driver/dsdt.dat
