@@ -18,7 +18,9 @@ void apic_sleep(uint64_t duration)
 void apic_enable_timer()
 {
   uint32_t initial_state = lapic_read(LAPIC_TIMER_REGISTER);
-  lapic_write(LAPIC_TIMER_DIVIDE_CONFIG_REGISTER, 0x3); // set divider to 16
+  lapic_write(
+    LAPIC_TIMER_REGISTER, LAPIC_TIMER_IRQ | LAPIC_TIMER_MODE_TSC_DEADLINE);
+/*  lapic_write(LAPIC_TIMER_DIVIDE_CONFIG_REGISTER, 0x3); // set divider to 16
   lapic_write(LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
   lapic_write(LAPIC_TIMER_REGISTER,
     (initial_state & ~(LAPIC_INTERRUPT_MASK)) | LAPIC_TIMER_IRQ |
@@ -37,4 +39,4 @@ void apic_enable_timer()
 
   kernel_config |= TIMER_CONFIG_APIC_TIMER_ENABLED;
   kernel_config &= ~(TIMER_CONFIG_PIT_ENABLED);
-}
+*/}
