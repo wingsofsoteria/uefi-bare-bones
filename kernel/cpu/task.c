@@ -181,7 +181,7 @@ void task_loop()
 {
   while (1)
   {
-    ksleep(10 * TICK_RATE);
+    ksleep(10000);
     asm volatile("int $128");
   }
 }

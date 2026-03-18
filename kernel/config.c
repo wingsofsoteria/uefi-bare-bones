@@ -4,52 +4,85 @@
 #include "cpu/isr.h"
 #include "cpu/pit.h"
 #include "cpu/task.h"
-static uint16_t kernel_config;
-uint16_t TICK_RATE;
+#include "cpu/tsc.h"
+#include "cpuid.h"
+#include <stdio.h>
+struct kernel_config kernel_config;
+
+void init_config_cpuid()
+{
+  kernel_config   = (struct kernel_config){0};
+  uint32_t eax    = 0;
+  uint32_t ebx    = 0;
+  uint32_t ecx    = 0;
+  uint32_t edx    = 0;
+  uint32_t unused = 0;
+  int supported   = __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+  if (!supported)
+  {
+    printf("Could not get CPU information\n");
+    return;
+  }
+  if (!(edx & bit_MSR)) // I'm not sure this is even needed
+  {
+    printf("MSRs unsupported\n");
+  }
+
+  if (ecx & bit_TSCDeadline)
+  {
+    kernel_config.apic_tsc_deadline = 0b1;
+  }
+  supported = __get_cpuid(0x80000007, &unused, &unused, &unused, &edx);
+  if (supported && (edx & (1 << 8)))
+  {
+    kernel_config.tsc_invariant = 0b1;
+  }
+
+  supported = __get_cpuid(0x15, &eax, &ebx, &ecx, &edx);
+  if (supported)
+  {
+    printf("CPUID 0x15: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
+    // leaf 15 gives the tsc freq in hz so divide by 1000
+    kernel_config.tsc_freq_khz = (ecx * (ebx / eax)) / 1000;
+  }
+  supported = __get_cpuid(0x16, &eax, &ebx, &ecx, &edx);
+  if (supported)
+  {
+    printf("CPUID 0x16: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
+    // leaf 16 gives the processor base frequency in mhz so multiply by 1000 for
+    // tsc frequency in khz
+    kernel_config.tsc_freq_khz = eax * 1000;
+  }
+}
+
 void enable_tasking()
 {
   init_tasks();
-  kernel_config |= INTERRUPT_CONFIG_TASKING;
+  kernel_config.multitasking_enabled = 0b1;
 }
 
 void enable_pit()
 {
   pit_init();
   enable_irq(0, 34, pic_timer_isr);
-  kernel_config |= TIMER_CONFIG_PIT;
-  TICK_RATE      = 1;
+  kernel_config.timer_source |= 0b001;
 }
 
-void enable_flag(uint16_t bits)
-{
-  kernel_config |= bits;
-}
-
-uint16_t is_flag_enabled(uint16_t bits)
-{
-  return kernel_config & bits;
-}
 void enable_apic()
 {
+  if (kernel_config.interrupt_source != 0b10 ||
+    !kernel_config.apic_tsc_deadline || !kernel_config.tsc_invariant)
+  {
+    printf("APIC timer unsupported\n");
+    return;
+  }
+  // TODO faster tsc calibration
+  if (kernel_config.tsc_freq_khz == 0)
+  {
+    kernel_config.tsc_freq_khz = calibrate_tsc_slow();
+  }
   register_handler(32, apic_timer_isr);
   apic_enable_timer();
   disable_irq(0, 34);
-
-  kernel_config &= ~(TIMER_CONFIG_PIT);
-  kernel_config |= TIMER_CONFIG_APIC_TIMER;
-  kernel_config |= INTERRUPT_CONFIG_APIC;
-  TICK_RATE      = 1000;
-}
-
-uint16_t is_debug()
-{
-  return kernel_config & KERNEL_DEBUG;
-}
-
-void init_kernel_config()
-{
-  TICK_RATE = 0;
-#ifdef QEMU_DEBUG
-  kernel_config = KERNEL_DEBUG;
-#endif
+  kernel_config.timer_source |= 0b010;
 }

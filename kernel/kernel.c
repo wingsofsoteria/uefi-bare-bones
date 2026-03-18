@@ -69,22 +69,21 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution,
     bootinfo->vertical_resolution);
   clear_screen();
-  check_cpuid();
+  init_config_cpuid();
   setup_allocator(bootinfo->mmap);
   acpi_init(bootinfo->xsdt_address);
-  clear_screen();
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
   // init_tasks();
   // create_task(idle);
   // create_task(task_1);
-  calibrate_tsc_slow();
   enable_pit();
+  enable_apic();
   init_kb_status();
-  lapic_enable();
-  create_task(test_task, NULL);
-  task_loop();
-  // TODO finish aml parser
-  // dsdt_parse();
+  // lapic_enable();
+  // create_task(test_task, NULL);
+  // task_loop();
+  //  TODO finish aml parser
+  //  dsdt_parse();
   halt_cpu
 }

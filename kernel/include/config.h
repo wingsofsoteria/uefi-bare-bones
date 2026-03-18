@@ -2,20 +2,35 @@
 #define __KERNEL_CONFIG_H__
 
 #include <stdint.h>
-#define KERNEL_DEBUG             0b11110000
-#define INTERRUPT_CONFIG_PIC     0b00000001
-#define INTERRUPT_CONFIG_APIC    0b00000010
-#define INTERRUPT_CONFIG_TASKING 0b00000100
-#define TIMER_CONFIG_PIT         0b0000000100000000
-#define TIMER_CONFIG_APIC_TIMER  0b0000001000000000
-extern uint16_t TICK_RATE;
+
+/*
+ * interrupt_source
+ * 	0 disabled
+ * 	1 pic
+ * 	2 apic
+ * 	3 reserved
+ * timer_source
+ * 	0 none
+ * 	1 pic
+ * 	2 apic + tsc
+ * 	3 reserved
+ * 	4 hpet (unimplemented)
+ * */
+
+struct kernel_config
+{
+  uint8_t interrupt_source : 2;
+  uint8_t apic_tsc_deadline : 1;
+  uint8_t tsc_invariant : 1;
+  uint32_t tsc_freq_khz;
+  uint8_t generic_sleep_available : 1;
+  uint8_t multitasking_enabled : 1;
+  uint8_t timer_source : 3;
+} __attribute__((packed));
 
 void enable_tasking();
 void enable_pit();
 void enable_apic();
-uint16_t is_flag_enabled(uint16_t);
-void enable_flag(uint16_t);
-void init_kernel_config();
-uint16_t is_debug();
-void check_cpuid();
+void init_config_cpuid();
+extern struct kernel_config kernel_config;
 #endif

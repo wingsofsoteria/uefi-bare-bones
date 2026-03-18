@@ -56,11 +56,11 @@ void madt_init()
   if (madt == NULL)
   {
     // Configure PIC
-    enable_flag(INTERRUPT_CONFIG_PIC);
+    kernel_config.interrupt_source = 0b1;
   }
   else
   {
-    enable_flag(INTERRUPT_CONFIG_APIC);
+    kernel_config.interrupt_source = 0b10;
   }
   if ((madt->flags & 0b1) == 1)
   {

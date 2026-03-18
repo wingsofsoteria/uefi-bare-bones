@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-uint64_t TSC_FREQ_KHZ;
-
 uint64_t rdtsc()
 {
   uint64_t low;
@@ -38,7 +36,7 @@ static uint64_t calibrate_tsc_single_pass()
   return delta / ms;
 }
 
-void calibrate_tsc_slow()
+uint64_t calibrate_tsc_slow()
 {
   int acceptable_error = 500;
   uint64_t d0;
@@ -57,8 +55,7 @@ void calibrate_tsc_slow()
       uint64_t avg = (d0 + d1 + d2) / 3;
       printf("found valid tsc frequency in kHz %d, %d MHz, %d GHz\n", avg,
         avg / 1000, avg / 1000000);
-      TSC_FREQ_KHZ = avg;
-      break;
+      return avg;
     }
   }
 }

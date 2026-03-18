@@ -19,7 +19,7 @@ static isr_stack_t* blank_handler(isr_stack_t* stack)
 
 void disable_irq(int irq, int vector)
 {
-  if (is_flag_enabled(INTERRUPT_CONFIG_APIC))
+  if (kernel_config.interrupt_source == 0b10)
   {
     ioapic_disable_irq(irq);
   }
@@ -29,7 +29,7 @@ void disable_irq(int irq, int vector)
 // TODO add support for PIC
 void enable_irq(int irq, int vector, interrupt handler)
 {
-  if (is_flag_enabled(INTERRUPT_CONFIG_APIC))
+  if (kernel_config.interrupt_source == 0b10)
   {
     ioapic_enable_irq(irq, vector);
   }
