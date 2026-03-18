@@ -10,6 +10,20 @@ int printf(const char* __restrict, ...);
 int putchar(int);
 int puts(const char*);
 
+static inline void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
+{
+  asm volatile("rdmsr"
+    : "=a"(*low), "=d"(*high)
+    : "c"(msr));
+}
+
+static inline void write_msr(uint32_t msr, uint32_t low, uint32_t high)
+{
+  asm volatile("wrmsr"
+    :
+    : "a"(low), "d"(high), "c"(msr));
+}
+
 static inline void outb(uint16_t port, uint8_t val)
 {
   __asm__ volatile("outb %b0, %1"

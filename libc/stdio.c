@@ -142,6 +142,30 @@ int printf(const char* restrict format, ...)
       }
       written += size;
     }
+    else if (*format == 'l')
+    {
+      format++;
+      uint64_t value = va_arg(parameters, uint64_t);
+      uint32_t size;
+      size = numlen(value, 10);
+      char out[size + 1];
+      itoa(value, out, 10, size);
+      uint32_t len;
+      if (fmt_len == -1)
+      {
+        len = size;
+      }
+      else
+      {
+        len     = fmt_len;
+        fmt_len = -1;
+      }
+      if (!print(out, len))
+      {
+        return -1;
+      }
+      written += size;
+    }
     else if (*format == 'd')
     {
       format++;
