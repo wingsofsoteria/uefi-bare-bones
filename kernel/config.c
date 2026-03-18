@@ -79,7 +79,17 @@ void enable_apic()
   // TODO faster tsc calibration
   if (kernel_config.tsc_freq_khz == 0)
   {
-    kernel_config.tsc_freq_khz = calibrate_tsc_slow();
+    uint64_t frequency;
+    int error;
+    frequency = calibrate_tsc_slow();
+    error     = frequency - calibrate_tsc_slow();
+    if (error > 1500 || error < -1500)
+    {
+      kernel_config.tsc_unreliable = 0;
+      return;
+    }
+    kernel_config.tsc_unreliable = 1;
+    kernel_config.tsc_freq_khz   = frequency;
   }
   register_handler(32, apic_timer_isr);
   apic_enable_timer();

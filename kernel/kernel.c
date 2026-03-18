@@ -80,6 +80,9 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   enable_pit();
   enable_apic();
   init_kb_status();
+  printf("Testing ksleep with value 10sec\n");
+  ksleep(10000);
+  printf("Test finished\n");
   // lapic_enable();
   // create_task(test_task, NULL);
   // task_loop();

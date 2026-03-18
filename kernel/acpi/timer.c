@@ -5,16 +5,6 @@
 #include <config.h>
 #include <cpu/idt.h>
 
-void apic_sleep(uint64_t duration)
-{
-  ticks = duration;
-
-  while (ticks > 0)
-  {
-    asm volatile("hlt");
-  }
-}
-
 void apic_enable_timer()
 {
   uint32_t initial_state = lapic_read(LAPIC_TIMER_REGISTER);

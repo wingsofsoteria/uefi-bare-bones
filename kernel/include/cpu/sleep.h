@@ -2,6 +2,6 @@
 #define __KERNEL_CPU_SLEEP_H__
 
 #include <stdint.h>
-void ksleep(uint64_t milliseconds);
+void ksleep(uint64_t);
 
 #endif
