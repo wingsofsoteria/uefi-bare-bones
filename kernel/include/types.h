@@ -53,7 +53,6 @@ typedef struct
   mmap_t* mmap;
   uint32_t rsdt_address;
   uint64_t xsdt_address;
-  uint8_t* bitmap;
 } kernel_bootinfo_t;
 
 #endif
