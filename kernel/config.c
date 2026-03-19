@@ -53,6 +53,9 @@ void init_config_cpuid()
     // tsc frequency in khz
     kernel_config.tsc_freq_khz = eax * 1000;
   }
+#ifdef KERNEL_DEBUG
+  kernel_config.tsc_invariant = 0b0;
+#endif
 }
 
 void enable_tasking()
@@ -86,6 +89,7 @@ void enable_apic()
     if (error > 1500 || error < -1500)
     {
       kernel_config.tsc_unreliable = 0;
+      printf("TSC is unreliable\n");
       return;
     }
     kernel_config.tsc_unreliable = 1;

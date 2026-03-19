@@ -2,8 +2,8 @@ STRIP=llvm-strip
 CC=clang
 AR=llvm-ar
 CFLAGS=-Iinclude -I../kernel/include -O2 -ffreestanding -fno-stack-protector -D__is_libk
-ifneq ($(QEMU_DEBUG),)
-CFLAGS += -DQEMU_DEBUG
+ifneq ($(KERNEL_DEBUG),)
+CFLAGS += -DKERNEL_DEBUG
 endif
 all: libk.a
 %.o: %.c

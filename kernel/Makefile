@@ -6,8 +6,8 @@ CPPFLAGS=-mno-mmx -mno-sse -mno-sse2
 LDFLAGS=-T linker.lds -nostdlib --static -Wl,-z,max-page-size=0x1000
 SRC=$(wildcard *.c */*.c */*/*.c *.s */*.s)
 OBJS=$(patsubst %,objs/%.o,$(SRC))
-ifneq ($(QEMU_DEBUG),)
-CFLAGS += -DQEMU_DEBUG
+ifneq ($(KERNEL_DEBUG),)
+CFLAGS += -DKERNEL_DEBUG
 endif
 all:font kernel
 font:
