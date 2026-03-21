@@ -74,19 +74,8 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   acpi_init(bootinfo->xsdt_address);
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
-  // init_tasks();
-  // create_task(idle);
-  // create_task(task_1);
   enable_pit();
   enable_apic();
   init_kb_status();
-  printf("Testing ksleep with value 10sec\n");
-  ksleep(10000);
-  printf("Test finished\n");
-  // lapic_enable();
-  // create_task(test_task, NULL);
-  // task_loop();
-  //  TODO finish aml parser
-  //  dsdt_parse();
   halt_cpu
 }
