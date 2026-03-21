@@ -1,3 +1,4 @@
+// NOLINTBEGIN(misc-use-internal-linkage)
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 
@@ -110,3 +111,4 @@ void load_idt()
   ptr.offset = (uint64_t)&idt;
   set_idt(&ptr);
 }
+// NOLINTEND(misc-use-internal-linkage)

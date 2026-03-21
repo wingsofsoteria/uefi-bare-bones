@@ -10,6 +10,7 @@ int printf(const char* __restrict, ...);
 int putchar(int);
 int puts(const char*);
 
+// NOLINTNEXTLINE(*-const-parameter)
 static inline void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
 {
   asm volatile("rdmsr"

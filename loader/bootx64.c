@@ -24,4 +24,6 @@ int main()
 
   load_page_table();
   ptr(bootinfo, base_address);
+
+  return 1;
 }

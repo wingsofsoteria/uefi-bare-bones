@@ -1,7 +1,7 @@
 #include "keyboard.h"
-#include "cpu/pit.h"
+#include "shell.h"
 #include "stdlib.h"
-
+#include "cpu/sleep.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,12 +10,15 @@
 // TODO find a way to use the loop_print_definition_blocks function without
 // hanging the entire system (possible use for tasking?)
 // | I just stuck it in the main function for now
-char scancode_to_char(uint8_t);
-uint8_t KB_STATUS[88] = {0};
+static char scancode_to_char(uint8_t /*byte*/);
+static uint8_t KB_STATUS[88] = {0};
 
-void test_ascii_table(char ch, uint8_t byte)
+static void test_ascii_table(char ch, uint8_t byte)
 {
-  if (ch < 32 || ch > 96) return;
+  if (ch < 32 || ch > 96)
+  {
+    return;
+  }
   if (ASCII_SCANCODE_1[ch] != byte)
   {
     printf("character mismatch: %d vs %x\n", ch, ASCII_SCANCODE_1[ch]);
@@ -30,15 +33,24 @@ void test_ascii_table(char ch, uint8_t byte)
  * we check if the key was released every 10ms */
 int naive_key_released(char ascii_key)
 {
-  if (ascii_key < 32 || ascii_key > 96) return 0;
+  if (ascii_key < 32 || ascii_key > 96)
+  {
+    return 0;
+  }
   uint8_t scancode   = ASCII_SCANCODE_1[ascii_key];
   uint8_t first_read = KB_STATUS[scancode];
-  if (!first_read) return 0;
+  if (!first_read)
+  {
+    return 0;
+  }
   for (int sleep_counter = 0; sleep_counter < 50; sleep_counter++)
   {
-    pit_sleep(10);
+    ksleep(10);
     uint8_t second_read = KB_STATUS[scancode];
-    if (!second_read) return 1;
+    if (!second_read)
+    {
+      return 1;
+    }
   }
   return 0;
 }
@@ -48,7 +60,10 @@ int naive_key_released(char ascii_key)
 // better way)
 int is_key_pressed(char ascii_key)
 {
-  if (ascii_key < 32 || ascii_key > 96) return 0;
+  if (ascii_key < 32 || ascii_key > 96)
+  {
+    return 0;
+  }
   uint8_t scancode = ASCII_SCANCODE_1[ascii_key];
   return KB_STATUS[scancode];
 }
@@ -56,7 +71,10 @@ int is_key_pressed(char ascii_key)
 void kb_handle_key()
 {
   uint8_t status = inb(0x64);
-  if ((status & 0b1) != 1) return;
+  if ((status & 0b1) != 1)
+  {
+    return;
+  }
   uint8_t byte = inb(0x60);
 
   if (byte <= 0x58)
@@ -70,7 +88,18 @@ void kb_handle_key()
   char ch = scancode_to_char(byte);
   if (ch != 0)
   {
-    putchar(ch);
+    if (ch == '\n')
+    {
+      execute_command();
+    }
+    else if (ch == 0x08)
+    {
+      del_char();
+    }
+    else
+    {
+      push_char(ch);
+    }
   }
 }
 
@@ -93,13 +122,6 @@ char scancode_to_char(uint8_t byte)
     {
       value = SC1_LOWER_CHARS[byte];
     }
-  }
-  switch (byte)
-  {
-    case 0x0E:
-      {
-        tty_delc();
-      }
   }
 
   return value;

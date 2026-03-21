@@ -1,3 +1,4 @@
+#include "shell.h"
 #include <acpi/pic.h>
 #include <config.h>
 #include <cpu/isr.h>
@@ -13,7 +14,6 @@
 #include <memory/alloc.h>
 #include <keyboard.h>
 #include <types.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -38,6 +38,7 @@
 // TODO locking mechanism for tasks + better scheduling (right now I have little
 // ability to quickly edit the tasks in queue since it requires looking through
 // the ENTIRE list starting at the idle task)
+// NOLINTNEXTLINE
 void idle(void* _inner)
 {
   printf("KERNEL IDLE");
@@ -45,6 +46,8 @@ void idle(void* _inner)
   {
   }
 }
+
+// NOLINTNEXTLINE
 void task_1(void* _inner)
 {
   printf("TASK 1");
@@ -53,7 +56,8 @@ void task_1(void* _inner)
   }
 }
 
-void test_task(void* data)
+// NOLINTNEXTLINE
+static void test_task(void* data)
 {
   uint64_t old_cursor = get_cursor();
   set_cursor(79, 1);
@@ -61,6 +65,7 @@ void test_task(void* data)
   set_cursor(old_cursor >> 32, old_cursor & 0xFFFFFFFF);
 }
 
+// NOLINTNEXTLINE
 int _start(kernel_bootinfo_t* bootinfo, void* ptr)
 {
   asm volatile("cli");
@@ -71,11 +76,19 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   clear_screen();
   init_config_cpuid();
   setup_allocator(bootinfo->mmap);
+  init_kb_status();
   acpi_init(bootinfo->xsdt_address);
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
   enable_pit();
   enable_apic();
-  init_kb_status();
-  halt_cpu
+  init_shell();
+  while (kernel_config.kexit == 0)
+  {
+    asm volatile("hlt");
+  }
+
+  printf("Kernel was told to exit, Goodbye!\n");
+  asm volatile("cli");
+  return 1;
 }

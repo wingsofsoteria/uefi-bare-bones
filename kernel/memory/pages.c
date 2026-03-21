@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdint.h>
 typedef struct
 {
   uint64_t pages[512];
@@ -35,11 +35,7 @@ void map_pages(void* v_addr, void* p_addr, uint64_t pages, uint16_t flags)
   // printf("Mapping %x to %x\n", v_addr, p_addr);
   for (int j = 0; j < pages; j++)
   {
-    if ((uint64_t)v_addr % 4096 != 0)
-    {
-      return;
-    }
-    else if ((uint64_t)p_addr % 4096 != 0)
+    if ((uint64_t)v_addr % 4096 != 0 || (uint64_t)p_addr % 4096 != 0)
     {
       return;
     }
@@ -108,7 +104,9 @@ static void copy_existing_pages()
   if (res != 0)
   {
     printf("Failed to copy pages\n");
-    for (;;);
+    for (;;)
+    {
+    }
   }
   printf("Copied tables\n");
 }

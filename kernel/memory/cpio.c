@@ -1,5 +1,5 @@
 #include "memory/cpio.h"
-
+#include <stdint.h>
 #include <stdlib.h>
 #include <types.h>
 #include <string.h>

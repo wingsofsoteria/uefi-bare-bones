@@ -40,7 +40,7 @@ static bool print(const char* data, size_t length)
   }
   return true;
 }
-
+// NOLINTBEGIN(*-cognitive-complexity)
 int printf(const char* restrict format, ...)
 {
   asm volatile("cli");
@@ -116,7 +116,10 @@ int printf(const char* restrict format, ...)
         // TODO: Set errno to EOVERFLOW.
         return -1;
       }
-      if (!print(str, len)) return -1;
+      if (!print(str, len))
+      {
+        return -1;
+      }
       written += len;
     }
     else if (*format == 'x')
@@ -250,7 +253,10 @@ int printf(const char* restrict format, ...)
         // TODO: Set errno to EOVERFLOW.
         return -1;
       }
-      if (!print(format, len)) return -1;
+      if (!print(format, len))
+      {
+        return -1;
+      }
       written += len;
       format  += len;
     }
@@ -259,3 +265,4 @@ int printf(const char* restrict format, ...)
   asm volatile("sti");
   return written;
 }
+// NOLINTEND(*-cognitive-complexity)

@@ -1,3 +1,4 @@
+// NOLINTBEGIN(misc-use-internal-linkage)
 #include "memory/alloc.h"
 
 #include <stdio.h>
@@ -8,14 +9,14 @@ static int page_table_len = 0;
 
 static bool is_usable(int type)
 {
-  return (type > 0 && type < 8) || type == EfiACPIReclaimMemory ||
-    type == EfiACPIMemoryNVS;
+  return ((type > 0 && type < 8) || type == EfiACPIReclaimMemory ||
+           type == EfiACPIMemoryNVS) != 0;
 }
 
 static bool is_available(int type)
 {
-  return type == EfiConventionalMemory || type == EfiLoaderCode ||
-    type == EfiBootServicesCode || type == EfiBootServicesData;
+  return (type == EfiConventionalMemory || type == EfiLoaderCode ||
+           type == EfiBootServicesCode || type == EfiBootServicesData) != 0;
 }
 
 static void dummy_alloc(mmap_t* mmap)
@@ -149,3 +150,4 @@ void setup_allocator(mmap_t* mmap)
     }
   }
 }
+// NOLINTEND(misc-use-internal-linkage)

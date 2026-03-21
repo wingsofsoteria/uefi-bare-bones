@@ -22,6 +22,7 @@
 
 struct kernel_config
 {
+  uint8_t kexit : 1;
   uint8_t interrupt_source : 2;
   uint8_t apic_tsc_deadline : 1;
   uint8_t tsc_invariant : 1;

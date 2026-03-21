@@ -1,3 +1,4 @@
+// NOLINTBEGIN(misc-use-internal-linkage)
 #include "config.h"
 #include "cpu/idt.h"
 #include "cpu/tsc.h"
@@ -17,3 +18,4 @@ void ksleep(uint64_t duration)
     asm volatile("hlt");
   }
 }
+// NOLINTEND(misc-use-internal-linkage)

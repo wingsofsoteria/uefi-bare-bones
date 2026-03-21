@@ -44,7 +44,7 @@ void tty_putc(char ch)
     cursor = 1;
     line   = 1;
   }
-  uint8_t* glyph = (uint8_t*)&_binary_font_psf_start + 32 + ch * 16;
+  uint8_t* glyph = (uint8_t*)&_binary_font_psf_start + 32 + (ch * 16);
 
   int mask = 0b10000000;
   for (int j = line * 16; j < (line * 16) + 16; j++)

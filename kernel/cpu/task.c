@@ -1,9 +1,7 @@
 #include "cpu/task.h"
-#include "config.h"
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
-#include "graphics/tty.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>

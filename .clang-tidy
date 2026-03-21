@@ -1,5 +1,5 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,misc-*,readability-*,performance-*,linuxkernel-*'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,misc-*,readability-*,performance-*,linuxkernel-*,-readability-magic-numbers,-performance-no-int-to-ptr,-readability-identifier-length,-misc-no-recursion'
 WarningsAsErrors: ''
 HeaderFileExtensions:
   - ''

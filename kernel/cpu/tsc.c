@@ -1,4 +1,3 @@
-#include "config.h"
 #include "cpu/pit.h"
 #include "cpu/tsc.h"
 
