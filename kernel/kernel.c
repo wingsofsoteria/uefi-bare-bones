@@ -80,9 +80,14 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   acpi_init(bootinfo->xsdt_address);
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
-  enable_pit();
+  // enable_pit();
   enable_apic();
+  lapic_enable();
+  printf("TSC TEST\n");
+  ksleep((kernel_duration_t){.seconds = 10});
+  printf("TEST DONE\n");
   init_shell();
+
   while (kernel_config.kexit == 0)
   {
     asm volatile("hlt");

@@ -15,9 +15,6 @@
  * 	2 apic + tsc
  * 	3 reserved
  * 	4 hpet (unimplemented)
- * tsc_unreliable
- * 	0 two calibration runs returned values with error > 1500
- * 	1 two calibration runs returned values with error < 1500
  * */
 
 struct kernel_config
@@ -27,10 +24,8 @@ struct kernel_config
   uint8_t apic_tsc_deadline : 1;
   uint8_t tsc_invariant : 1;
   uint32_t tsc_freq_khz;
-  uint8_t generic_sleep_available : 1;
   uint8_t multitasking_enabled : 1;
   uint8_t timer_source : 3;
-  uint8_t tsc_unreliable : 1;
 } __attribute__((packed));
 
 void enable_tasking();

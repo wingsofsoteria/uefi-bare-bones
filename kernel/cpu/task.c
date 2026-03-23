@@ -179,7 +179,7 @@ void task_loop()
 {
   while (1)
   {
-    ksleep(10000);
+    ksleep((kernel_duration_t){.milliseconds = 20});
     asm volatile("int $128");
   }
 }

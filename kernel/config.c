@@ -89,15 +89,15 @@ void enable_apic()
     printf("CALIBRATION RESULT %l %d\n", frequency, error);
     if (error > 1500 || error < -1500)
     {
-      kernel_config.tsc_unreliable = 0;
       printf("TSC is unreliable\n");
       return;
     }
-    kernel_config.tsc_unreliable = 1;
-    kernel_config.tsc_freq_khz   = frequency;
+    kernel_config.tsc_freq_khz = frequency;
   }
   register_handler(32, apic_timer_isr);
   apic_enable_timer();
   disable_irq(0, 34);
+  // tell the kernel that the PIT is no longer usable for interrupts
+  kernel_config.timer_source &= ~(0b001);
   kernel_config.timer_source |= 0b010;
 }

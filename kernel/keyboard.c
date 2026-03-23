@@ -45,7 +45,7 @@ int naive_key_released(char ascii_key)
   }
   for (int sleep_counter = 0; sleep_counter < 50; sleep_counter++)
   {
-    ksleep(10);
+    ksleep((kernel_duration_t){.milliseconds = 10});
     uint8_t second_read = KB_STATUS[scancode];
     if (!second_read)
     {
