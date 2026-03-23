@@ -54,7 +54,7 @@ void init_config_cpuid()
     kernel_config.tsc_freq_khz = eax * 1000;
   }
 #ifdef KERNEL_DEBUG
-  kernel_config.tsc_invariant = 0b0;
+  // kernel_config.tsc_invariant = 0b0;
 #endif
 }
 
@@ -86,6 +86,7 @@ void enable_apic()
     int error;
     frequency = calibrate_tsc_slow();
     error     = frequency - calibrate_tsc_slow();
+    printf("CALIBRATION RESULT %l %d\n", frequency, error);
     if (error > 1500 || error < -1500)
     {
       kernel_config.tsc_unreliable = 0;
