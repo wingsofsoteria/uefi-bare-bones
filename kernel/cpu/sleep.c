@@ -2,6 +2,7 @@
 #include "cpu/sleep.h"
 #include "config.h"
 #include "cpu/idt.h"
+#include "cpu/task.h"
 #include "cpu/tsc.h"
 #include <stdint.h>
 
@@ -24,8 +25,9 @@ void ksleep(kernel_duration_t duration)
   {
     ticks          = 1;
     uint64_t nanos = duration_to_ns(duration);
-    set_tsc_deadline(
-      deadline + (nanos * (kernel_config.tsc_freq_khz / MS_PER_NS)));
+    deadline = deadline + (nanos * kernel_config.tsc_freq_khz / MS_PER_NS);
+    signal_idle(deadline);
+    set_tsc_deadline(deadline);
   }
   else
   {

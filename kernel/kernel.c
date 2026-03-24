@@ -26,14 +26,11 @@
 // I also only ever comment things after the fact so that doesn't help either
 
 // TODO theres a bug *somewhere* that seems to be caused by printing too many
-// lines to the screen
+// lines to the screen (maybe fixed by removing the cli / sti instructions?)
 
 // TODO syscalls, porting a c library, better interrupt handling, actually
 // support framebuffer formats instead of assuming 32bpp
-// TODO use cpuid to calibrate TSC if available
 // TODO have abort dump the task stack data structures
-// TODO finish handling keyboard tasks + basic shell
-// TODO finish TSC for APIC timer
 // TODO finish AML interpreter OR switch to ACPICA
 // TODO locking mechanism for tasks + better scheduling (right now I have little
 // ability to quickly edit the tasks in queue since it requires looking through
@@ -82,7 +79,7 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   enable_tasking();
   // enable_pit();
   enable_apic();
-  lapic_enable();
+  enable_interrupts();
   printf("TSC TEST\n");
   ksleep((kernel_duration_t){.seconds = 10});
   printf("TEST DONE\n");

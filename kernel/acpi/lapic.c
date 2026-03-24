@@ -30,13 +30,10 @@ void lapic_enable()
   write_msr(0x1B, (lapic_low | 0x800) & ~(0x100), lapic_high);
 
   lapic_write(0xF0, lapic_read(0xF0) | 0x100);
-  // lapic_write(0x320, lapic_read(0x320) & ~(0x10000));
-  asm volatile("sti");
 }
 
-static void lapic_disable()
+void lapic_disable()
 {
-  asm volatile("cli");
   lapic_write(0xF0, lapic_read(0xF0) & ~(0x100));
 }
 

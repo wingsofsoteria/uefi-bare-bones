@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "config.h"
+#include "acpi/acpi.h"
 #include "acpi/pic.h"
+#include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/pit.h"
 #include "cpu/task.h"
@@ -58,21 +60,52 @@ void init_config_cpuid()
 #endif
 }
 
+void cli()
+{
+  asm volatile("cli");
+  if (kernel_config.interrupt_source & 0b10)
+  {
+    lapic_disable();
+  }
+}
+
+void sti()
+{
+  if (kernel_config.interrupt_source & 0b10)
+  {
+    lapic_enable();
+  }
+  // TODO Legacy PIC support
+
+  asm volatile("sti");
+}
+
+void enable_interrupts()
+{
+  sti();
+  kernel_config.interrupts_enabled = 0b1;
+}
+
 void enable_tasking()
 {
+  MAYBE_CLI;
   init_tasks();
   kernel_config.multitasking_enabled = 0b1;
+  MAYBE_STI;
 }
 
 void enable_pit()
 {
+  MAYBE_CLI;
   pit_init();
   enable_irq(0, 34, pic_timer_isr);
   kernel_config.timer_source |= 0b001;
+  MAYBE_STI;
 }
 
 void enable_apic()
 {
+  MAYBE_CLI;
   if (kernel_config.interrupt_source != 0b10 ||
     !kernel_config.apic_tsc_deadline || !kernel_config.tsc_invariant)
   {
@@ -100,4 +133,5 @@ void enable_apic()
   // tell the kernel that the PIT is no longer usable for interrupts
   kernel_config.timer_source &= ~(0b001);
   kernel_config.timer_source |= 0b010;
+  MAYBE_STI;
 }

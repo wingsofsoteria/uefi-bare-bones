@@ -71,7 +71,7 @@ void init_tasks()
   kernel->ctx->err    = 0;
   kernel->ctx->cs     = 0x08;
   kernel->task_id     = TASK_COUNT++;
-  kernel->finished    = 0;
+  kernel->deadline    = 0;
   current             = kernel;
 }
 
@@ -129,9 +129,14 @@ static task_t* remove_task(task_queue_t* queue, int id)
   return NULL;
 }
 
-void signal_idle()
+void signal_idle(uint64_t deadline)
 {
   task_t* self = remove_task(LIVE_QUEUE, get_task_id());
+  if (self == NULL)
+  {
+    return;
+  }
+  self->deadline = deadline;
   push_queue(IDLE_QUEUE, self);
 }
 
@@ -160,18 +165,19 @@ static void task_wrapper(int id, task_function fn_ptr, void* fn_args)
 
 void create_task(task_function rip, void* data)
 {
-  task_t* new_task  = calloc(1, sizeof(task_t));
-  isr_stack_t* ctx  = calloc(1, sizeof(isr_stack_t));
-  new_task->task_id = TASK_COUNT++;
-  ctx->rdi          = new_task->task_id;
-  ctx->rsi          = (uint64_t)rip;
-  ctx->rdx          = (uint64_t)data;
-  ctx->rip          = (uint64_t)task_wrapper;
-  ctx->rflags       = 0x202;
-  ctx->isr          = 2;
-  ctx->err          = 0;
-  ctx->cs           = 0x08;
-  new_task->ctx     = ctx;
+  task_t* new_task   = calloc(1, sizeof(task_t));
+  isr_stack_t* ctx   = calloc(1, sizeof(isr_stack_t));
+  new_task->task_id  = TASK_COUNT++;
+  new_task->deadline = 0;
+  ctx->rdi           = new_task->task_id;
+  ctx->rsi           = (uint64_t)rip;
+  ctx->rdx           = (uint64_t)data;
+  ctx->rip           = (uint64_t)task_wrapper;
+  ctx->rflags        = 0x202;
+  ctx->isr           = 2;
+  ctx->err           = 0;
+  ctx->cs            = 0x08;
+  new_task->ctx      = ctx;
   push_queue(LIVE_QUEUE, new_task);
 }
 

@@ -20,6 +20,7 @@
 struct kernel_config
 {
   uint8_t kexit : 1;
+  uint8_t interrupts_enabled : 1;
   uint8_t interrupt_source : 2;
   uint8_t apic_tsc_deadline : 1;
   uint8_t tsc_invariant : 1;
@@ -28,6 +29,20 @@ struct kernel_config
   uint8_t timer_source : 3;
 } __attribute__((packed));
 
+#define MAYBE_STI                              \
+  if (kernel_config.interrupts_enabled == 0b1) \
+  {                                            \
+    sti();                                     \
+  }
+
+#define MAYBE_CLI                              \
+  if (kernel_config.interrupts_enabled == 0b1) \
+  {                                            \
+    cli();                                     \
+  }
+void sti();
+void cli();
+void enable_interrupts();
 void enable_tasking();
 void enable_pit();
 void enable_apic();
