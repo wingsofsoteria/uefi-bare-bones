@@ -6,6 +6,14 @@
 #include <sys/cdefs.h>
 
 #define EOF (-1)
+#ifdef KERNEL_DEBUG
+  #define LOG_DEBUG(fmt, ...)   \
+    printf("[%s] ", __func__);  \
+    printf(fmt, ##__VA_ARGS__);
+#else
+  #define LOG_DEBUG(fmt, ...)
+#endif
+
 int printf(const char* __restrict, ...);
 int putchar(int);
 int puts(const char*);
