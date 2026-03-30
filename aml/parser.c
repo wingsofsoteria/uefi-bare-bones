@@ -2,10 +2,11 @@
 #include "aml.h"
 #include "host.h"
 #include "stdlib.h"
+#include <stdint.h>
 static int MAX_BLOCKS = 0;
 
-static int pointer = 0;
-int __current_anchor__ = 0;
+static int pointer             = 0;
+int __current_anchor__         = 0;
 static acpi_aml_table_t* TABLE = NULL;
 void aml_parser_init(void* address)
 {
@@ -287,6 +288,11 @@ static aml_ptr_t lookup_scope(const char scope[4])
     break;
   }
   return status;
+}
+
+int table_length()
+{
+  return MAX_BLOCKS;
 }
 
 int get_pointer()

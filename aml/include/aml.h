@@ -61,21 +61,24 @@
 #define LEAD_CHAR_OOB(x) x < 0x41 || (x > 0x5A && x != 0x5F)
 #define NAME_CHAR_OOB(x) x < 0x30 || (x > 0x39 && LEAD_CHAR_OOB(x))
 #define AML_SET_ANCHOR   __current_anchor__ = get_pointer()
-#define AML_ERR_CHECK_ABRT(x)                                         \
+#define return_TO_ANCHOR(x)        \
+  set_pointer(__current_anchor__); \
+  return x;
+#define AML_ERR_CHECK_ABRT(x)                                    \
   if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
   {                                                              \
     set_pointer(__current_anchor__);                             \
-    AML_LOG("ERR Check Failed");                                 \
-print_next_definition_block();\
-AML_EXIT()\
-}
+    AML_LOG("ERR Check Failed\n");                               \
+    print_next_definition_block();                               \
+    AML_EXIT()                                                   \
+  }
 #define AML_ERR_CHECK(x)                                         \
-if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
-{                                                              \
-set_pointer(__current_anchor__);                             \
-AML_LOG("ERR Check Failed");                                 \
-return x;\
-}
+  if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
+  {                                                              \
+    set_pointer(__current_anchor__);                             \
+    AML_LOG("ERR Check Failed\n");                               \
+    return x;                                                    \
+  }
 #define AML_PREFIX_ERROR \
   (aml_ptr_t)            \
   {                      \
@@ -173,15 +176,10 @@ typedef struct
 } aml_alias_t;
 
 void aml_parser_init(void*);
-
 void aml_parser_run(void);
-
 aml_node_t* aml_root_node();
-
 void aml_append_node(aml_node_t* parent, aml_node_t* this);
-
 aml_node_t* aml_create_node();
-
 void aml_node_init();
 
 typedef aml_ptr_t (*aml_parser_fn)(void);

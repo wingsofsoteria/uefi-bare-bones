@@ -35,6 +35,7 @@ void print_next_definition_block();
 char* name_string_to_cstring(aml_ptr_t);
 uint32_t parse_pkg_length();
 int get_pointer();
+int table_length();
 // move_pointer will add (int) to the current pointer
 void move_pointer(int);
 // set_pointer will replace pointer with (int)
