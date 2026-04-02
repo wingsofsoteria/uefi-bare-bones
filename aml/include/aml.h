@@ -2,6 +2,7 @@
 #define __AML_INTERNAL_H__
 
 #include "host.h"
+#include <stdint.h>
 // misc prefixes
 #define EXT_OP_PREFIX 0x5B
 #define EXT_DEBUG_OP  0x31
@@ -61,9 +62,27 @@
 #define LEAD_CHAR_OOB(x) x < 0x41 || (x > 0x5A && x != 0x5F)
 #define NAME_CHAR_OOB(x) x < 0x30 || (x > 0x39 && LEAD_CHAR_OOB(x))
 #define AML_SET_ANCHOR   __current_anchor__ = get_pointer()
-#define return_TO_ANCHOR(x)        \
-  set_pointer(__current_anchor__); \
-  return x;
+#define AML_RESET_ANCHOR set_pointer(__current_anchor__)
+#define TRY_PARSE_CONTINUE(x, ...) \
+  AML_SET_ANCHOR;                  \
+  status = x(__VA_ARGS__);         \
+  IF_SUCCESS(status)               \
+  {                                \
+    continue;                      \
+  }                                \
+  AML_RESET_ANCHOR;
+
+#define TRY_PARSE(x, ...)  \
+  AML_SET_ANCHOR;          \
+  status = x(__VA_ARGS__); \
+  IF_SUCCESS(status)       \
+  {                        \
+    return status;         \
+  }                        \
+  AML_RESET_ANCHOR;
+
+#define IF_SUCCESS(x)                                            \
+  if (x.prefix_byte != ERR_PARSE && x.prefix_byte != ERR_PREFIX)
 #define AML_ERR_CHECK_ABRT(x)                                    \
   if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
   {                                                              \
@@ -117,34 +136,8 @@ typedef struct
 
 typedef struct
 {
-  char lead_char;
-  char name_char_1;
-  char name_char_2;
-  char name_char_3;
-} __attribute__((packed)) aml_name_segment_t;
-
-typedef struct
-{
-  aml_name_segment_t first;
-  aml_name_segment_t second;
-} aml_dual_name_path_t;
-
-typedef struct
-{
-  uint8_t length;
-  aml_name_segment_t* segments;
-} aml_multi_name_path_t;
-
-typedef struct
-{
-  uint8_t name_prefix;
-
-  union
-  {
-    aml_name_segment_t name_seg;
-    aml_dual_name_path_t dual_seg;
-    aml_multi_name_path_t multi_seg;
-  };
+  int length;
+  char* string;
 } aml_name_string_t;
 
 typedef struct
@@ -152,14 +145,6 @@ typedef struct
   uint8_t prefix_byte;
   void* __ptr;
 } __attribute__((packed)) aml_ptr_t;
-
-typedef struct AmlNode
-{
-  aml_ptr_t data;
-  char* name;
-  struct AmlNode* parent;
-  struct AmlNode* child;
-} aml_node_t;
 
 typedef struct
 {
@@ -175,13 +160,14 @@ typedef struct
   aml_ptr_t alias;
 } aml_alias_t;
 
+void* root();
+void init_map();
+void append(void* map, const char key[4], void* value);
+void* new_map(const char key[4], int capacity);
+
 void aml_parser_init(void*);
 void aml_parser_run(void);
-aml_node_t* aml_root_node();
-void aml_append_node(aml_node_t* parent, aml_node_t* this);
-aml_node_t* aml_create_node();
-void aml_node_init();
 
-typedef aml_ptr_t (*aml_parser_fn)(void);
+typedef aml_ptr_t (*aml_parser_fn)(void*);
 extern int __current_anchor__;
 #endif

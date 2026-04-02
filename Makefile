@@ -16,10 +16,10 @@ kernel: aml libc
 
 test:
 	AML_TEST=1 make -C aml
-	$(CC) aml_driver/driver.c aml/objs/aml_interpreter.a -g -o aml_test
+	$(CC) aml_driver/driver.c aml/objs/aml_interpreter.a -g -o aml_driver/driver
 
 clean: 
-	rm -f fat.img $(EXEC) $(wildcard *.o)
+	rm -f fat.img $(EXEC) $(wildcard *.o) aml_driver/driver
 	make -C loader clean
 	make -C kernel clean
 	make -C libc clean

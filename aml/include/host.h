@@ -5,16 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void host_exit() {
-    abort();
+static void host_exit()
+{
+  abort();
 }
-
-#ifndef AML_TEST // AML_TEST means we're working with the host libc not the
-                 // kernel libc
-  #define HOST_EXIT() abort()
-#else
-  #define HOST_EXIT() exit(1)
-#endif
 
 #ifdef AML_DEBUG // AML_DEBUG can be defined for the host OS and the kernel so
                  // we can't make any assumptions beyond the existence of a

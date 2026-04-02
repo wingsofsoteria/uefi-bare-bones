@@ -1,6 +1,6 @@
 CC=clang
 AR=llvm-ar
-CFLAGS=-Iinclude 
+CFLAGS=-I../third_party -Iinclude 
 ifneq ($(AML_DEBUG),)
 CFLAGS += -DAML_DEBUG
 else ifneq ($(AML_TEST),)
@@ -16,8 +16,9 @@ all: objs/aml_interpreter.a
 
 objs/%.c.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
-
-objs/aml_interpreter.a: $(OBJS)
+../third_party/fnv/hash_32a.o: 
+	make -C ../third_party/fnv/ hash_32a.o
+objs/aml_interpreter.a: $(OBJS) ../third_party/fnv/hash_32a.o
 	$(AR) rc $@ $^
 
 clean: 

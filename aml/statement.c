@@ -35,7 +35,9 @@ static aml_ptr_t def_if_else()
   AML_ERR_CHECK_ABRT(term_arg);
   int new_pointer = get_pointer();
   move_pointer(length - (new_pointer - old_pointer));
-  aml_ptr_t _else = one_of(1, def_else);
+  aml_ptr_t status;
+  TRY_PARSE(def_else);
+  // aml_ptr_t _else = one_of(NULL, 1, def_else);
 
   return (aml_ptr_t){IF_OP, NULL};
 }

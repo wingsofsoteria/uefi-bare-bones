@@ -192,16 +192,17 @@ static aml_ptr_t def_or()
 // TODO sanity check PkgLength against NumElements
 aml_ptr_t def_package()
 {
-AML_PRELUDE(PACKAGE_OP);
+  AML_PRELUDE(PACKAGE_OP);
   int old_pointer       = get_pointer();
   uint32_t length       = parse_pkg_length();
   uint8_t num_elements  = next_byte();
   int new_pointer       = get_pointer();
   length               -= (new_pointer - old_pointer);
+  aml_ptr_t status;
   for (int i = 0; i < num_elements; i++)
   {
-    aml_ptr_t status = one_of(2, parse_data_ref_object, parse_name_string);
-    AML_ERR_CHECK_ABRT(status);
+    TRY_PARSE_CONTINUE(parse_data_ref_object);
+    TRY_PARSE_CONTINUE(parse_name_string);
   }
   return (aml_ptr_t){PACKAGE_OP, NULL};
 }
@@ -262,7 +263,11 @@ static aml_ptr_t def_to_decimal_string()
 
 aml_ptr_t reference_type_opcode()
 {
-  return one_of(3, def_ref_of, def_deref_of, def_index);
+  aml_ptr_t status;
+  TRY_PARSE(def_ref_of);
+  TRY_PARSE(def_deref_of);
+  TRY_PARSE(def_index);
+  return AML_PREFIX_ERROR;
 }
 
 static aml_ptr_t def_to_hex_string()
@@ -292,13 +297,17 @@ static aml_ptr_t def_xor()
 
 static aml_ptr_t method_invocation()
 {
+  return AML_PREFIX_ERROR;
   aml_ptr_t method_name = parse_name_string();
-  if (method_name.prefix_byte == ERR_PARSE || method_name.prefix_byte == ERR_PREFIX) {
+  if (method_name.prefix_byte == ERR_PARSE ||
+    method_name.prefix_byte == ERR_PREFIX)
+  {
     return AML_PREFIX_ERROR;
   }
   aml_ptr_t status = parse_term_arg();
   AML_ERR_CHECK(status);
-  while (status.prefix_byte != ERR_PARSE && status.prefix_byte != ERR_PREFIX) {
+  while (status.prefix_byte != ERR_PARSE && status.prefix_byte != ERR_PREFIX)
+  {
     status = parse_term_arg();
   }
   return (aml_ptr_t){NULL_NAME, NULL};
@@ -316,8 +325,9 @@ aml_ptr_t parse_expression_opcode()
       return def_buffer();
     default:
       {
-      move_pointer(-1);
-        return method_invocation(); // default to method invocation since it has no prefix
+        move_pointer(-1);
+        return method_invocation(); // default to method invocation since it has
+                                    // no prefix
       }
   }
 }

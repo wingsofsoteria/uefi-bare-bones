@@ -2,69 +2,47 @@
 #include "parser.h"
 #include "stdlib.h"
 
-// returns aml_ptr UNUSED, name_segments(1)
-aml_ptr_t parse_name_seg()
+char* last_segment(char* segment)
 {
-  uint8_t lead_char       = next_byte();
-  uint8_t first_namechar  = next_byte();
-  uint8_t second_namechar = next_byte();
-  uint8_t third_namechar  = next_byte();
-  if (LEAD_CHAR_OOB(lead_char) || NAME_CHAR_OOB(first_namechar) ||
-    NAME_CHAR_OOB(second_namechar) || NAME_CHAR_OOB(third_namechar))
-  {
-    return AML_PREFIX_ERROR;
-  }
-  aml_name_segment_t name_segment;
-  aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
-
-  name_segment.lead_char   = lead_char;
-  name_segment.name_char_1 = first_namechar;
-  name_segment.name_char_2 = second_namechar;
-  name_segment.name_char_3 = third_namechar;
-
-  name_string->name_prefix = NAME_SEG_PREFIX;
-  name_string->name_seg    = name_segment;
-  return (aml_ptr_t){NAME_SEG_PREFIX, name_string};
+  int length  = __builtin_strlen(segment);
+  length     -= 4;
+  return (char*)(segment + length);
 }
 
-// returns aml_ptr DUAL_NAME_PREFIX, name_segments(2)
-static aml_ptr_t parse_dual_name_path()
+static char* parse_name_seg()
 {
-  aml_ptr_t first_seg = parse_name_seg();
-  AML_ERR_CHECK_ABRT(first_seg);
-  aml_ptr_t second_seg = parse_name_seg();
-  AML_ERR_CHECK_ABRT(second_seg);
-  aml_dual_name_path_t dual_seg;
-  aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
-  dual_seg.first           = ((aml_name_string_t*)first_seg.__ptr)->name_seg;
-  dual_seg.second          = ((aml_name_string_t*)second_seg.__ptr)->name_seg;
-  name_string->name_prefix = DUAL_NAME_PREFIX;
-  name_string->dual_seg    = dual_seg;
-  free(first_seg.__ptr);
-  free(second_seg.__ptr);
-  return (aml_ptr_t){DUAL_NAME_PREFIX, name_string};
+  if (LEAD_CHAR_OOB(peek_byte(0)) || NAME_CHAR_OOB(peek_byte(1)) ||
+    NAME_CHAR_OOB(peek_byte(2)) || NAME_CHAR_OOB(peek_byte(3)))
+  {
+    return NULL;
+  }
+
+  char* segment = malloc(5 * sizeof(char));
+  for (int i = 0; i < 4; i++)
+  {
+    segment[i] = next_byte();
+  }
+  segment[4] = 0;
+  return segment;
 }
 
-// returns aml_ptr MULTI_NAME_PREFIX, name_segment(n) where n is an arbitrary
-// number of name segments
-static aml_ptr_t parse_multi_name_path()
+static char* parse_dual_name_path()
 {
-  uint8_t num_name_segs = next_byte();
+  void* table    = table_ptr();
+  char* dual_seg = malloc(9 * sizeof(char));
+  __builtin_memcpy(dual_seg, table, 8);
+  dual_seg[8] = 0;
+  return dual_seg;
+}
 
-  aml_multi_name_path_t multi_seg;
-  multi_seg.segments = calloc(num_name_segs, sizeof(aml_name_segment_t));
-  for (int i = 0; i < num_name_segs; i++)
-  {
-    aml_ptr_t name_segment = parse_name_seg();
-    AML_ERR_CHECK_ABRT(name_segment);
-    multi_seg.segments[i] = ((aml_name_string_t*)name_segment.__ptr)->name_seg;
-    free(name_segment.__ptr);
-  }
-  multi_seg.length               = num_name_segs;
-  aml_name_string_t* name_string = calloc(1, sizeof(aml_name_string_t));
-  name_string->name_prefix       = MULTI_NAME_PREFIX;
-  name_string->multi_seg         = multi_seg;
-  return (aml_ptr_t){MULTI_NAME_PREFIX, name_string};
+static char* parse_multi_name_path()
+{
+  uint8_t segment_count = next_byte();
+  int char_count        = segment_count * 4;
+  char* multi_seg       = malloc((char_count + 1) * sizeof(char));
+  __builtin_memcpy(multi_seg, table_ptr(), char_count);
+  multi_seg[char_count] = 0;
+  return multi_seg;
 }
 
 static aml_ptr_t parse_null_name()
@@ -75,13 +53,13 @@ static aml_ptr_t parse_null_name()
 
 static aml_ptr_t parse_name_path()
 {
-  uint8_t token   = next_byte();
+  uint8_t token = next_byte();
   switch (token)
   {
     case MULTI_NAME_PREFIX:
-      return parse_multi_name_path();
+      return (aml_ptr_t){MULTI_NAME_PREFIX, parse_multi_name_path()};
     case DUAL_NAME_PREFIX:
-      return parse_dual_name_path();
+      return (aml_ptr_t){DUAL_NAME_PREFIX, parse_dual_name_path()};
     case NULL_NAME:
       {
         return (aml_ptr_t){NULL_NAME, NULL};
@@ -89,19 +67,23 @@ static aml_ptr_t parse_name_path()
     default:
       {
         move_pointer(-1);
-        return parse_name_seg();
+        return (aml_ptr_t){NAME_SEG_PREFIX, parse_name_seg()};
       }
   }
 }
 
 aml_ptr_t parse_super_name()
 {
-  return one_of(3, parse_misc_obj, reference_type_opcode, parse_name_string);
+  aml_ptr_t status;
+  TRY_PARSE(parse_misc_obj);
+  TRY_PARSE(reference_type_opcode);
+  TRY_PARSE(parse_name_string);
+  return AML_PREFIX_ERROR;
 }
 
 aml_ptr_t parse_target()
 {
-  uint8_t token   = next_byte();
+  uint8_t token = next_byte();
   if (token == NULL_NAME)
   {
     return (aml_ptr_t){NULL_NAME, NULL};
@@ -113,12 +95,12 @@ aml_ptr_t parse_target()
 
 aml_ptr_t parse_name_string()
 {
-  uint8_t token = peek_byte();
+  uint8_t token = peek_byte(0);
   if (token == ROOT_CHAR)
   {
     next_byte(); // consume ROOT_CHAR byte
     aml_ptr_t name_path = parse_name_path();
-AML_ERR_CHECK(name_path);
+    AML_ERR_CHECK(name_path);
 
     return (aml_ptr_t){ROOT_CHAR, name_path.__ptr};
   }
@@ -128,121 +110,6 @@ AML_ERR_CHECK(name_path);
     token = next_byte();
   }
   aml_ptr_t name_path = parse_name_path();
-AML_ERR_CHECK(name_path);
+  AML_ERR_CHECK(name_path);
   return (aml_ptr_t){PREFIX_CHAR, name_path.__ptr};
-}
-
-char* name_string_to_cstring(aml_ptr_t name_string)
-{
-  if (name_string.prefix_byte != PREFIX_CHAR &&
-    name_string.prefix_byte != ROOT_CHAR)
-  {
-    return NULL;
-  }
-  if (name_string.__ptr == NULL)
-  {
-    return "\\";
-  }
-  aml_name_string_t name_path = *((aml_name_string_t*)name_string.__ptr);
-  switch (name_path.name_prefix)
-  {
-    case MULTI_NAME_PREFIX:
-      {
-        aml_multi_name_path_t multi = name_path.multi_seg;
-        char* cstring = calloc((multi.length * 4) + 1, sizeof(char));
-        for (int i = 0; i < multi.length; i++)
-        {
-          cstring[(i * 4) + 0] = multi.segments[i].lead_char;
-          cstring[(i * 4) + 1] = multi.segments[i].name_char_1;
-          cstring[(i * 4) + 2] = multi.segments[i].name_char_2;
-          cstring[(i * 4) + 3] = multi.segments[i].name_char_3;
-        }
-        cstring[multi.length * 4] = 0;
-        return cstring;
-      }
-    case DUAL_NAME_PREFIX:
-      {
-        aml_dual_name_path_t dual = name_path.dual_seg;
-
-        char* cstring = calloc(9, sizeof(char));
-        cstring[0]    = dual.first.lead_char;
-        cstring[1]    = dual.first.name_char_1;
-        cstring[2]    = dual.first.name_char_2;
-        cstring[3]    = dual.first.name_char_3;
-
-        cstring[4] = dual.second.lead_char;
-        cstring[5] = dual.second.name_char_1;
-        cstring[6] = dual.second.name_char_2;
-        cstring[7] = dual.second.name_char_3;
-        cstring[8] = 0;
-        return cstring;
-      }
-    case NAME_SEG_PREFIX:
-      {
-        aml_name_segment_t segment = name_path.name_seg;
-
-        char* cstring = calloc(5, sizeof(char));
-        cstring[0]    = segment.lead_char;
-        cstring[1]    = segment.name_char_1;
-        cstring[2]    = segment.name_char_2;
-        cstring[3]    = segment.name_char_3;
-        cstring[4]    = 0;
-        return cstring;
-      }
-    default:
-      {
-        return NULL;
-      }
-  }
-}
-
-static void print_name_seg(aml_name_segment_t segment)
-{
-  AML_LOG("%c%c%c%c", segment.lead_char, segment.name_char_1,
-    segment.name_char_2, segment.name_char_3);
-}
-
-void print_name_string(aml_ptr_t string)
-{
-  AML_LOG("%c",
-    string.prefix_byte == ROOT_CHAR || string.prefix_byte == PREFIX_CHAR
-      ? string.prefix_byte
-      : ' ');
-  aml_name_string_t name_string = *((aml_name_string_t*)string.__ptr);
-  switch (name_string.name_prefix)
-  {
-    case NAME_SEG_PREFIX:
-      {
-        print_name_seg(name_string.name_seg);
-        break;
-      }
-    case DUAL_NAME_PREFIX:
-      {
-        print_name_seg(name_string.dual_seg.first);
-        AML_LOG(".");
-        print_name_seg(name_string.dual_seg.second);
-        break;
-      }
-    case MULTI_NAME_PREFIX:
-      {
-        for (int i = 0; i < name_string.multi_seg.length; i++)
-        {
-          print_name_seg(name_string.multi_seg.segments[i]);
-          AML_LOG(".");
-        }
-        break;
-      }
-    case NULL_NAME:
-      {
-        AML_LOG("NullName");
-        break;
-      }
-    default:
-      {
-        // Name might be SuperName
-        // try evaluating it
-        AML_LOG("Unknown");
-        break;
-      }
-  }
 }

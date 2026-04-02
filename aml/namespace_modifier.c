@@ -16,12 +16,13 @@ aml_ptr_t parse_data_ref_object()
   return parse_data_object();
 }
 
-static aml_ptr_t parse_def_name()
+static aml_ptr_t parse_def_name(void* map)
 {
   aml_ptr_t name = parse_name_string();
   AML_ERR_CHECK_ABRT(name);
   aml_ptr_t object = parse_data_ref_object();
   AML_ERR_CHECK_ABRT(object);
+  append(map, last_segment(name.__ptr), object.__ptr);
   return (aml_ptr_t){NAME_OP, NULL};
 }
 
@@ -52,7 +53,7 @@ uint32_t parse_pkg_length()
   return pkg_length;
 }
 
-aml_ptr_t parse_def_scope()
+static aml_ptr_t parse_def_scope(void* parent_map)
 {
   int current_pointer   = get_pointer();
   uint32_t length       = parse_pkg_length();
@@ -60,16 +61,16 @@ aml_ptr_t parse_def_scope()
   int new_pointer       = get_pointer();
   length               -= (new_pointer - current_pointer);
   AML_ERR_CHECK_ABRT(scope_name);
-  aml_ptr_t term_list = parse_term_list(length);
+  char* key = last_segment(scope_name.__ptr);
+
+  void* scope_map     = new_map(key, 5);
+  aml_ptr_t term_list = parse_term_list(scope_map, length);
   AML_ERR_CHECK_ABRT(term_list);
-  void* scope_node = NULL;
-  // aml_node_t* scope_node = aml_create_node();
-  // aml_append_node(scope_node, term_list.__ptr);
-  // scope_node->name = name_string_to_cstring(scope_name);
-  return (aml_ptr_t){SCOPE_OP, scope_node};
+  append(parent_map, key, scope_map);
+  return (aml_ptr_t){SCOPE_OP, NULL};
 }
 
-aml_ptr_t parse_namespace_modifier_obj()
+aml_ptr_t parse_namespace_modifier_obj(void* ptr)
 {
   uint8_t token = next_byte();
   switch (token)
@@ -77,9 +78,9 @@ aml_ptr_t parse_namespace_modifier_obj()
     case ALIAS_OP:
       return parse_def_alias();
     case NAME_OP:
-      return parse_def_name();
+      return parse_def_name(ptr);
     case SCOPE_OP:
-      return parse_def_scope();
+      return parse_def_scope(ptr);
     default:
       return AML_PREFIX_ERROR;
   }

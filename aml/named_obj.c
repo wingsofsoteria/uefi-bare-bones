@@ -5,11 +5,7 @@
 
 static aml_ptr_t named_field()
 {
-  aml_ptr_t name_seg = parse_name_seg();
-  if (name_seg.prefix_byte == ERR_PREFIX || name_seg.prefix_byte == ERR_PARSE)
-  {
-    return AML_PREFIX_ERROR;
-  }
+  move_pointer(4);
   uint32_t length = parse_pkg_length();
   return (aml_ptr_t){NAME_OP, NULL};
 }
@@ -192,23 +188,19 @@ static aml_ptr_t def_field()
   int new_pointer      = get_pointer();
   length              -= (new_pointer - old_pointer);
   aml_ptr_t status;
-  while (length > 0)
+  while ((get_pointer() - new_pointer) < length)
   {
-    status = one_of(5, named_field, reserved_field, access_field,
-      extended_access_field, connect_field);
+    TRY_PARSE_CONTINUE(named_field);
+    TRY_PARSE_CONTINUE(reserved_field);
+    TRY_PARSE_CONTINUE(access_field);
+    TRY_PARSE_CONTINUE(extended_access_field);
+    TRY_PARSE_CONTINUE(connect_field);
     AML_ERR_CHECK_ABRT(status);
-    old_pointer = new_pointer;
-    new_pointer = get_pointer();
-    if ((new_pointer - old_pointer) > length)
-    {
-      AML_EXIT();
-    }
-    length -= (new_pointer - old_pointer);
   }
   return (aml_ptr_t){EXT_FIELD_OP, NULL};
 }
 
-static aml_ptr_t def_device()
+static aml_ptr_t def_device(void* map_ptr)
 {
   int current_pointer   = get_pointer();
   uint32_t length       = parse_pkg_length();
@@ -216,7 +208,7 @@ static aml_ptr_t def_device()
   AML_ERR_CHECK_ABRT(name_string);
   int new_pointer      = get_pointer();
   length              -= (new_pointer - current_pointer);
-  aml_ptr_t term_list  = parse_term_list(length);
+  aml_ptr_t term_list  = parse_term_list(map_ptr, length);
   AML_ERR_CHECK_ABRT(term_list);
   return (aml_ptr_t){EXT_DEVICE_OP, NULL};
 }
@@ -263,27 +255,24 @@ static aml_ptr_t def_processor()
 
 static aml_ptr_t def_index_field()
 {
-  int old_pointer = get_pointer();
-  uint32_t length = parse_pkg_length();
+  int old_pointer      = get_pointer();
+  uint32_t length      = parse_pkg_length();
   aml_ptr_t index_name = parse_name_string();
   AML_ERR_CHECK_ABRT(index_name);
   aml_ptr_t data_name = parse_name_string();
   AML_ERR_CHECK_ABRT(data_name);
-  uint8_t field_flags = next_byte();
-  int new_pointer = get_pointer();
-  length -= (new_pointer - old_pointer);
-  while (length > 0)
+  uint8_t field_flags  = next_byte();
+  int new_pointer      = get_pointer();
+  length              -= (new_pointer - old_pointer);
+  aml_ptr_t status;
+  while ((get_pointer() - new_pointer) < length)
   {
-    aml_ptr_t status = one_of(5, named_field, reserved_field, access_field,
-      extended_access_field, connect_field);
+    TRY_PARSE_CONTINUE(named_field);
+    TRY_PARSE_CONTINUE(reserved_field);
+    TRY_PARSE_CONTINUE(access_field);
+    TRY_PARSE_CONTINUE(extended_access_field);
+    TRY_PARSE_CONTINUE(connect_field);
     AML_ERR_CHECK_ABRT(status);
-    old_pointer = new_pointer;
-    new_pointer = get_pointer();
-    if ((new_pointer - old_pointer) > length)
-    {
-      AML_EXIT();
-    }
-    length -= (new_pointer - old_pointer);
   }
   return (aml_ptr_t){EXT_INDEX_FIELD_OP, NULL};
 }
@@ -293,10 +282,10 @@ static aml_ptr_t def_event()
   return AML_PREFIX_ERROR;
 }
 
-aml_ptr_t parse_named_obj()
+aml_ptr_t parse_named_obj(void* map_ptr)
 {
   aml_ptr_t status;
-  uint8_t token   = next_byte();
+  uint8_t token = next_byte();
   switch (token)
   {
     case EXT_OP_PREFIX:
@@ -311,7 +300,7 @@ aml_ptr_t parse_named_obj()
           case EXT_DATA_REGION_OP:
             return def_data_region();
           case EXT_DEVICE_OP:
-            return def_device();
+            return def_device(map_ptr);
           case EXT_EVENT_OP:
             return def_event();
           case EXT_FIELD_OP:

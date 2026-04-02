@@ -1,30 +1,65 @@
 #include "aml.h"
+#include "host.h"
 #include "stdlib.h"
-static aml_node_t* aml_root = NULL;
-
-aml_node_t* aml_root_node()
+#include "fnv/fnv.h"
+struct MapNode
 {
-  return aml_root;
+  int __flag;
+  const char* key;
+  void* __data;
+};
+
+struct Map
+{
+  const char* key;
+  int capacity;
+  int count;
+  struct MapNode* __inner;
+};
+
+static struct Map* __root = NULL;
+
+void* new_map(const char key[4], int capacity)
+{
+  struct Map* map = malloc(sizeof(struct Map));
+  map->__inner    = calloc(capacity, sizeof(struct MapNode));
+  map->key        = key;
+  map->capacity   = capacity;
+  map->count      = 0;
+  return map;
 }
 
-void aml_append_node(aml_node_t* parent, aml_node_t* this)
+void append(void* map_ptr, const char key[4], void* value)
 {
-  this->parent  = parent;
-  this->child   = parent->child;
-  parent->child = this;
+  struct Map* map     = (struct Map*)map_ptr;
+  int slot            = fnv_32a_buf(key, 4); // turn key into slot?
+  struct MapNode node = {1, key, value};
+
+  if (map->count >= map->capacity)
+  {
+    map->capacity *= 2;
+    void* ptr = realloc(map->__inner, map->capacity * sizeof(struct MapNode));
+    if (ptr == NULL)
+    {
+      AML_LOG("Failed to resize map");
+      AML_EXIT();
+    }
+    map->__inner = ptr;
+  }
+  if (map->__inner[slot].__flag == 1)
+  {
+    AML_LOG("Collision in Node %.4s with key %.4s\n", map->key, node.key);
+    AML_EXIT();
+  }
+  map->__inner[slot] = node;
 }
 
-aml_node_t* aml_create_node()
+void init_map()
 {
-  aml_node_t* node = calloc(1, sizeof(aml_node_t));
-  node->name       = NULL;
-  node->child      = NULL;
-  node->parent     = NULL;
-  node->data       = (aml_ptr_t){0, NULL};
-  return node;
+  __root = new_map("\\", 10);
 }
 
-void aml_node_init()
+void* root()
 {
-  aml_root = aml_create_node();
+  return __root;
 }
