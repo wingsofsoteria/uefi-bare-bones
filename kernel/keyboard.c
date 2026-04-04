@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "cpu/isr.h"
 #include "shell.h"
 #include "stdlib.h"
 #include "cpu/sleep.h"
@@ -103,9 +104,11 @@ void kb_handle_key()
   }
 }
 
-void init_kb_status()
+static void init_kb_status()
 {
+  printf("==KEYBOARD==\n");
   memset(KB_STATUS, 0, 88 * sizeof(uint8_t));
+  enable_irq(1, 33, keyboard_isr);
 }
 
 char scancode_to_char(uint8_t byte)
@@ -126,3 +129,7 @@ char scancode_to_char(uint8_t byte)
 
   return value;
 }
+// clang-format off
+// NOLINTNEXTLINE
+void __attribute__((section(".kernel_init"))) (*const keyboard_init_ptr)() = init_kb_status;
+// clang-format on

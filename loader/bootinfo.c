@@ -80,7 +80,9 @@ efi_status_t get_rsdp(kernel_bootinfo_t* bootinfo)
       fallback = true;
     }
   }
+  bootinfo->rsdp_address                = acpi_table;
   acpi_rsdp_structure_t* rsdp_structure = (acpi_rsdp_structure_t*)acpi_table;
+
   printf("RSDP_STRUCTURE: %x, %d, %x, %d, %x\n", rsdp_structure->signature,
     rsdp_structure->checksum, rsdp_structure->oemid, rsdp_structure->revision,
     rsdp_structure->rsdt_address);
