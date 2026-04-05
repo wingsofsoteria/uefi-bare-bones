@@ -10,6 +10,7 @@
 #include "aml_opcodes.h"
 #include "eval.h"
 #include "exec_impl.h"
+#include "lai/internal-util.h"
 #include "libc.h"
 #include "ns_impl.h"
 #include "util-hash.h"
@@ -480,7 +481,6 @@ lai_nsnode_t *lai_create_root(void) {
 void lai_create_namespace(void) {
     if (!laihost_scan)
         lai_panic("lai_create_namespace() needs table management functions");
-
     struct lai_instance *instance = lai_current_instance();
 
     // we need the FADT

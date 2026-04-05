@@ -1,13 +1,7 @@
 #include "uefi/uefi.h"
-#include <stdint.h>
-#include <stdbool.h>
 #include "loader.h"
 #define ADDR_TO_ENTRY(ADDR, FLAG)                               \
   (((uint64_t)ADDR >> 12) & 0xFFFFFFFFFF) << 12 | (0b1 | FLAG);
-typedef struct
-{
-  uint64_t pages[512];
-} page_table_t;
 
 static page_table_t* p4_table;
 

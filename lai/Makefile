@@ -1,6 +1,6 @@
 CC=clang
 AR=llvm-ar
-CFLAGS=-Iinclude -O2 -ffreestanding -mcmodel=large -fno-stack-protector
+CFLAGS=-Iinclude -O2 -ffreestanding -mcmodel=large -fno-PIC -fno-PIE -fno-stack-protector
 SRC=$(wildcard core/*.c drivers/*.c helpers/*.c)
 OBJS=$(patsubst %,objs/%.o,$(SRC))
 all: lai.a

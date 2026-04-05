@@ -32,6 +32,7 @@ typedef struct
   uint64_t page_count;
   uint64_t __attrib;
 } loader_memory_descriptor_t;
+
 typedef struct
 {
   loader_memory_descriptor_t* addr;
@@ -40,6 +41,7 @@ typedef struct
   uint32_t version;
   uint64_t key;
 } mmap_t;
+
 typedef struct
 {
   char magic[5];

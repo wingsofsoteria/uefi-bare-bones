@@ -6,8 +6,8 @@
 #include "cpu/sleep.h"
 #include "lai/core.h"
 #include "lai/helpers/sci.h"
+#include "lai/host.h"
 #include <stdint.h>
-#include <lai/host.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -92,7 +92,21 @@ void* acpi_get_table(const char id[4])
 
 void* laihost_scan(const char* sig, size_t index)
 {
-  return acpi_get_table(sig);
+  if (__builtin_strncmp(sig, "DSDT", 4) == 0)
+  {
+    acpi_fadt_t* fadt = laihost_scan("FACP", 0);
+    return (void*)fadt->x_dsdt;
+  }
+  int entries = (XSDT->header.length - sizeof(acpi_header_t)) / 8;
+  for (int i = 0; i < entries; i++)
+  {
+    acpi_header_t* sdt = (void*)XSDT->tables[i];
+    if (__builtin_strncmp(sig, sdt->signature, 4) == 0)
+    {
+      return sdt;
+    }
+  }
+  abort();
 }
 
 void laihost_outb(uint16_t port, uint8_t val)
@@ -168,8 +182,8 @@ int acpi_init(void* rsdp_pointer)
     printf("Failed to parse ACPI tables\n");
     abort();
   }
-  // lai_set_acpi_revision(rsdp->revision);
-  // lai_create_namespace();
+  lai_set_acpi_revision(rsdp->revision);
+  lai_create_namespace();
   //  ignore scis
   // lai_set_sci_event(0);
   // lai_enable_acpi(1);

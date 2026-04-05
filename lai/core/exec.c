@@ -1313,7 +1313,7 @@ static lai_api_error_t lai_exec_reduce_op(int opcode, lai_state_t *state,
 // lai_exec_run(): This is the main AML interpreter function.
 static lai_api_error_t lai_exec_run(lai_state_t *state) {
     while (lai_exec_peek_stack_back(state)) {
-        if (debug_stack)
+        /*if (debug_stack)
             for (int i = 0;; i++) {
                 lai_stackitem_t *trace_item = lai_exec_peek_stack(state, i);
                 if (!trace_item)
@@ -1327,7 +1327,7 @@ static lai_api_error_t lai_exec_run(lai_state_t *state) {
                         lai_debug("stack item %d is of type %d", i, trace_item->kind);
                 }
             }
-
+*/
         lai_api_error_t e;
         if ((e = lai_exec_process(state)))
             return e;
@@ -1376,6 +1376,7 @@ static int lai_parse_name(struct lai_amlname *out, uint8_t *code, int *pc, int l
 
 // Process the top-most item of the execution stack.
 static lai_api_error_t lai_exec_process(lai_state_t *state) {
+
     lai_stackitem_t *item = lai_exec_peek_stack_back(state);
     struct lai_ctxitem *ctxitem = lai_exec_peek_ctxstack_back(state);
     struct lai_blkitem *block = lai_exec_peek_blkstack_back(state);

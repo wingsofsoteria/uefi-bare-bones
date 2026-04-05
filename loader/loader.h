@@ -3,6 +3,11 @@
 #include "../kernel/include/types.h"
 #include <stdint.h>
 
+typedef struct
+{
+  uint64_t pages[512];
+} page_table_t;
+
 extern void* base_address;
 mmap_t quick_memory_map();
 kernel_bootinfo_t* get_bootinfo();

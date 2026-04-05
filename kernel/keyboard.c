@@ -107,8 +107,8 @@ void kb_handle_key()
 void init_kb_status()
 {
   printf("==KEYBOARD==\n");
-  // memset(KB_STATUS, 0, 88 * sizeof(uint8_t));
-  // enable_irq(1, 33, keyboard_isr);
+  memset(KB_STATUS, 0, 88 * sizeof(uint8_t));
+  enable_irq(1, 33, keyboard_isr);
 }
 
 char scancode_to_char(uint8_t byte)

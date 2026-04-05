@@ -24,5 +24,6 @@ kernel_end.o: kernel_end.c
 	$(CC) -c $< -o $@
 kernel:kernel_init.o $(OBJS) ../lai/lai.a ../libc/libk.a objs/font.o kernel_end.o
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
+	$(STRIP) $@
 clean: 
 	rm -fv $(OBJS) kernel objs/font.o

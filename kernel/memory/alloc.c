@@ -142,14 +142,14 @@ void setup_allocator(mmap_t* mmap)
       continue;
     }
     int j = 0;
-    if (desc->p_addr == 0)
+    /*if (desc->p_addr == 0)
     {
       page_table[current_page].start = desc->v_addr;
       page_table[current_page].free  = false;
 
       j = 1;
       current_page++;
-    }
+    }*/
     for (; j < desc->page_count; j++, current_page++)
     {
       page_table[current_page].start = desc->v_addr + (4096 * j);
