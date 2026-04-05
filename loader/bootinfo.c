@@ -80,27 +80,7 @@ efi_status_t get_rsdp(kernel_bootinfo_t* bootinfo)
       fallback = true;
     }
   }
-  bootinfo->rsdp_address                = acpi_table;
-  acpi_rsdp_structure_t* rsdp_structure = (acpi_rsdp_structure_t*)acpi_table;
-
-  printf("RSDP_STRUCTURE: %x, %d, %x, %d, %x\n", rsdp_structure->signature,
-    rsdp_structure->checksum, rsdp_structure->oemid, rsdp_structure->revision,
-    rsdp_structure->rsdt_address);
-  if (!strcmp(rsdp_structure->signature, "RSD PTR ") ||
-    !rsdp_checksum(rsdp_structure))
-  {
-    return EFI_NOT_FOUND;
-  }
-  if (rsdp_structure->revision > 0)
-  {
-    bootinfo->xsdt_address = rsdp_structure->xsdt_address;
-    bootinfo->rsdt_address = 0;
-  }
-  else
-  {
-    bootinfo->xsdt_address = 0;
-    bootinfo->rsdt_address = rsdp_structure->rsdt_address;
-  }
+  bootinfo->rsdp_address = acpi_table;
   return EFI_SUCCESS;
 }
 

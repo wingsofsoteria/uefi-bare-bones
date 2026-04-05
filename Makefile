@@ -3,15 +3,15 @@ EXEC=bootx64.efi
 
 
 all: $(EXEC)
-.PHONY: test aml kernel uacpi libc initfs
+.PHONY: test aml kernel lai libc initfs
 
 $(EXEC): kernel
 	make -C loader
-uacpi:
-	make -C uacpi
+lai:
+	make -C lai
 libc:
 	make -C libc
-kernel: uacpi libc
+kernel: lai libc
 	make -C kernel
 clean: 
 	rm -f fat.img $(EXEC) $(wildcard *.o) aml_driver/driver
@@ -19,7 +19,7 @@ clean:
 	make -C kernel clean
 	make -C libc clean
 	make -C loader/uefi clean
-	make -C uacpi clean
+	make -C lai clean
 images:
 	dd if=/dev/zero of=fat.img bs=1M count=100
 	losetup -P loop100 fat.img

@@ -28,11 +28,5 @@ SECTIONS
 		*(.bss)
 		. = ALIGN(4096);
 	}
-	.kernel_init : AT(ADDR(.kernel_init) - 0xFFFF800000000000)
-	{
-	_kernel_init_start_ = .;
-	*(.kernel_init)
-	_kernel_init_end_ = .;
-	. = ALIGN(4096);
-	}
+
 }

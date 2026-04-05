@@ -141,12 +141,20 @@ void setup_allocator(mmap_t* mmap)
     {
       continue;
     }
+    int j = 0;
+    if (desc->p_addr == 0)
+    {
+      page_table[current_page].start = desc->v_addr;
+      page_table[current_page].free  = false;
 
-    for (int j = 0; j < desc->page_count; j++, current_page++)
+      j = 1;
+      current_page++;
+    }
+    for (; j < desc->page_count; j++, current_page++)
     {
       page_table[current_page].start = desc->v_addr + (4096 * j);
 
-      page_table->free = is_available(desc->type);
+      page_table[current_page].free = is_available(desc->type);
     }
   }
 }

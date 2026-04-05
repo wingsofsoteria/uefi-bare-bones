@@ -2,12 +2,67 @@
 // possible BGRT is purely for cosmetic reasons
 
 #include "acpi.h"
-#include "uacpi/event.h"
-#include "uacpi/uacpi.h"
+#include "acpispec/tables.h"
+#include "cpu/sleep.h"
+#include "lai/core.h"
+#include "lai/helpers/sci.h"
 #include <stdint.h>
-/*static acpi_xsdt_t* XSDT = NULL;
+#include <lai/host.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-static bool sdt_checksum(acpi_sdt_header_t* sdt)
+static acpi_xsdt_t* XSDT = NULL;
+
+void laihost_log(int level, const char* msg)
+{
+  char* level_str = "";
+  switch (level)
+  {
+    case LAI_DEBUG_LOG:
+      {
+        level_str = "DEBUG: ";
+        break;
+      }
+    case LAI_WARN_LOG:
+      {
+        level_str = "WARN: ";
+        break;
+      }
+  }
+  printf("%s%s\n", level_str, msg);
+}
+
+__attribute__((noreturn)) void laihost_panic(const char* msg)
+{
+  printf("PANIC: %s\n", msg);
+  abort();
+}
+
+void* laihost_malloc(size_t size)
+{
+  return malloc(size);
+}
+
+void* laihost_realloc(void* oldptr, size_t newsize, size_t oldsize)
+{
+  return realloc(oldptr, newsize);
+}
+
+void laihost_free(void* ptr, size_t size)
+{
+  return free(ptr);
+}
+
+void* laihost_map(size_t address, size_t count)
+{
+  return (void*)address;
+}
+
+void laihost_unmap(void* ptr, size_t count)
+{
+}
+
+static bool sdt_checksum(acpi_header_t* sdt)
 {
   uint8_t* bytes = (uint8_t*)sdt;
   uint8_t sum    = 0;
@@ -17,55 +72,109 @@ static bool sdt_checksum(acpi_sdt_header_t* sdt)
   }
   return sum == 0;
 }
-*/
-acpi_sdt_header_t* acpi_get_table(const char id[4])
+
+void* acpi_get_table(const char id[4])
 {
-  return NULL;
-  //  int entries = (XSDT->header.length - sizeof(acpi_sdt_header_t)) / 8;
-  // for (int i = 0; i < entries; i++)
-  //{
-  //  acpi_sdt_header_t* sdt = (void*)XSDT->entry[i];
-  // if (id[0] != sdt->signature[0] || id[1] != sdt->signature[1] ||
-  // id[2] != sdt->signature[2] || id[3] != sdt->signature[3])
-  //{
-  // continue;
-  //}
-  // return sdt;
-  //}
+  int entries = (XSDT->header.length - sizeof(acpi_header_t)) / 8;
+  for (int i = 0; i < entries; i++)
+  {
+    acpi_header_t* sdt = (void*)XSDT->tables[i];
+    if (id[0] != sdt->signature[0] || id[1] != sdt->signature[1] ||
+      id[2] != sdt->signature[2] || id[3] != sdt->signature[3])
+    {
+      continue;
+    }
+    return sdt;
+  }
 
   return NULL;
 }
 
-int acpi_init(uint64_t xsdt)
+void* laihost_scan(const char* sig, size_t index)
 {
-  uacpi_status ret = uacpi_initialize(0);
-  if (uacpi_unlikely_error(ret))
-  {
-    return 1;
-  }
-  ret = uacpi_namespace_load();
-  if (uacpi_unlikely_error(ret))
-  {
-    return 1;
-  }
-  ret = uacpi_namespace_initialize();
-  if (uacpi_unlikely_error(ret))
-  {
-    return 1;
-  }
-  ret = uacpi_finalize_gpe_initialization();
-  if (uacpi_unlikely_error(ret))
-  {
-    return 1;
-  }
-  return 0;
+  return acpi_get_table(sig);
+}
 
-  /*  XSDT = (void*)VIRTUAL(xsdt_address);
-    if (!sdt_checksum(&XSDT->header))
-    {
-      printf("Failed to parse ACPI tables\n");
-      abort();
-    }
-    madt_init();
-    lapic_init();*/
+void laihost_outb(uint16_t port, uint8_t val)
+{
+  asm volatile("outb %b0, %1"
+    :
+    : "a"(val), "Nd"(port)
+    : "memory");
+}
+
+void laihost_outw(uint16_t port, uint16_t val)
+{
+  asm volatile("outw %w0, %1"
+    :
+    : "a"(val), "Nd"(port)
+    : "memory");
+}
+
+void laihost_outd(uint16_t port, uint32_t val)
+{
+  asm volatile("out %0,%1"
+    :
+    : "a"(val), "Nd"(port)
+    : "memory");
+}
+
+uint8_t laihost_inb(uint16_t port)
+{
+  uint8_t val;
+  asm volatile("inb %1, %b0"
+    : "=a"(val)
+    : "Nd"(port)
+    : "memory");
+  return val;
+}
+
+uint16_t laihost_inw(uint16_t port)
+{
+  uint16_t val;
+  asm volatile("inw %1, %w0"
+    : "=a"(val)
+    : "Nd"(port)
+    : "memory");
+  return val;
+}
+
+uint32_t laihost_ind(uint16_t port)
+{
+  uint32_t val;
+  asm volatile("in %1, %0"
+    : "=a"(val)
+    : "Nd"(port)
+    : "memory");
+  return val;
+}
+
+/* TODO PCI host functions */
+
+void laihost_sleep(uint64_t ms)
+{
+  ksleep((kernel_duration_t){.milliseconds = ms});
+}
+
+/* TODO laihost_timer, laihost_handle_global_notify, laihost_handle_amldebug */
+
+int acpi_init(void* rsdp_pointer)
+{
+  acpi_xsdp_t* rsdp = rsdp_pointer;
+
+  XSDT = (void*)VIRTUAL(rsdp->xsdt);
+  if (!sdt_checksum(&XSDT->header))
+  {
+    printf("Failed to parse ACPI tables\n");
+    abort();
+  }
+  // lai_set_acpi_revision(rsdp->revision);
+  // lai_create_namespace();
+  //  ignore scis
+  // lai_set_sci_event(0);
+  // lai_enable_acpi(1);
+  printf("ACPI initialization finished\n");
+  madt_init();
+  lapic_init();
+  return 0;
 }

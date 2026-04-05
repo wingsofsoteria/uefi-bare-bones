@@ -18,9 +18,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-extern void* _kernel_init_start_;
-extern void* _kernel_init_end_;
-
 // BTW if anyone ever actually tries to read this code, it might be some of the
 // worst code I have ever or will ever write
 // my methodology for actually writing this damn thing was (random burst of
@@ -66,15 +63,7 @@ static void test_task(void* data)
   set_cursor(old_cursor >> 32, old_cursor & 0xFFFFFFFF);
 }
 
-static void kernel_init()
-{
-  void (*const* fn)() = _kernel_init_start_ + 1;
-  while (fn != _kernel_init_end_)
-  {
-    (*fn)();
-    fn++;
-  }
-}
+extern void kernel_init_code();
 
 // NOLINTNEXTLINE
 int _start(kernel_bootinfo_t* bootinfo, void* ptr)
@@ -84,14 +73,13 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   load_idt();
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution,
     bootinfo->vertical_resolution);
-  kernel_rsdp_from_bootinfo(bootinfo);
+  clear_screen();
+  printf("==KERNEL START==\n");
   init_config_cpuid();
   setup_allocator(bootinfo->mmap);
-  // kernel_init();
-  clear_screen();
-  acpi_init(bootinfo->xsdt_address);
-  halt_cpu;
-  enable_irq(1, 33, keyboard_isr);
+  acpi_init(bootinfo->rsdp_address);
+  kernel_init_code();
+  abort();
   enable_tasking();
   // enable_pit();
   enable_apic();

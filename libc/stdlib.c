@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <memory/liballoc.h>
 
-__attribute__((__noreturn__)) void abort(void)
+__attribute__((__noreturn__)) void abort_msg(const char* msg)
 {
   asm("cli");
-  printf("kernel panicked\n");
+  printf("%s: kernel panicked\n", msg);
   halt_cpu;
   __builtin_unreachable();
 }
