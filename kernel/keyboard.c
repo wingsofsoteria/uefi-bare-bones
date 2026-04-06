@@ -1,4 +1,6 @@
 #include "keyboard.h"
+#include "cpu/idt.h"
+#include "cpu/isr.h"
 #include "shell.h"
 #include "stdlib.h"
 #include "cpu/sleep.h"

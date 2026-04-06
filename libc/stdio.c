@@ -40,12 +40,10 @@ static bool print(const char* data, size_t length)
   }
   return true;
 }
-// NOLINTBEGIN(*-cognitive-complexity)
-int printf(const char* restrict format, ...)
-{
-  va_list parameters;
-  va_start(parameters, format);
 
+// NOLINTBEGIN(*-cognitive-complexity)
+int vprintf(const char* restrict format, va_list parameters)
+{
   int written      = 0;
   int fmt_len      = -1;
   bool skip_to_fmt = false;
@@ -260,6 +258,15 @@ int printf(const char* restrict format, ...)
       format  += len;
     }
   }
+  va_end(parameters);
+  return written;
+}
+
+int printf(const char* restrict format, ...)
+{
+  va_list parameters;
+  va_start(parameters, format);
+  int written = vprintf(format, parameters);
   va_end(parameters);
   return written;
 }

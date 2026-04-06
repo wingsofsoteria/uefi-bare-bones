@@ -4,13 +4,14 @@
 
 #include <stddef.h>
 #include <sys/cdefs.h>
-
 #define halt_cpu         \
   for (;;)               \
   {                      \
     asm volatile("hlt"); \
   }
-__attribute__((__noreturn__)) void abort(void);
+
+__attribute__((__noreturn__)) void __abort_msg(const char* restrict fmt, ...);
+__attribute__((__noreturn__)) void __abort();
 void* malloc(size_t size);
 
 void free(void* ptr);

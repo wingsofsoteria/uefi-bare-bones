@@ -16,7 +16,6 @@
 #include <types.h>
 #include <stdint.h>
 #include <stdio.h>
-
 // BTW if anyone ever actually tries to read this code, it might be some of the
 // worst code I have ever or will ever write
 // my methodology for actually writing this damn thing was (random burst of

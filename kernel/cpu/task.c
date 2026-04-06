@@ -3,10 +3,9 @@
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <keyboard.h>
-
+#include <stdio.h>
 static task_t* current = NULL;
 static task_t* kernel  = NULL;
 

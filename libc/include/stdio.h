@@ -4,7 +4,8 @@
 
 #include <stdint.h>
 #include <sys/cdefs.h>
-
+#include "stdarg.h"
+#include <stdlib.h>
 #define EOF (-1)
 #ifdef KERNEL_DEBUG
   #define LOG_DEBUG(fmt, ...)   \
@@ -14,7 +15,16 @@
   #define LOG_DEBUG(fmt, ...)
 #endif
 
-int printf(const char* __restrict, ...);
+#define abort_msg(format, ...)      \
+  printf("ABORT [%s]: ", __func__); \
+  __abort_msg(format, __VA_ARGS__);
+
+#define abort()                   \
+  printf("ABORT [%s]", __func__); \
+  __abort();
+
+int vprintf(const char* restrict format, va_list parameters);
+int printf(const char* restrict format, ...);
 int putchar(int);
 int puts(const char*);
 
