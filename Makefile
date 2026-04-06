@@ -3,10 +3,17 @@ EXEC=bootx64.efi
 
 
 all: $(EXEC)
-.PHONY: test aml kernel lai libc initfs
+.PHONY: objs test aml kernel lai libc initfs
 
-$(EXEC): kernel
+$(EXEC): objs kernel
 	make -C loader
+
+compiledb: clean
+	bear -- make
+objs:
+	mkdir -p lai/objs/{core,drivers,helpers}
+	mkdir -p kernel/objs/{acpi,cpu,graphics,memory}
+
 lai:
 	make -C lai
 libc:
