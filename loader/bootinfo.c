@@ -148,6 +148,8 @@ efi_status_t get_gop(kernel_bootinfo_t* bootinfo)
   return EFI_SUCCESS;
 }
 
+#define KERNEL_MEMORY_MAX 18446744073709551615ULL
+
 kernel_bootinfo_t* get_bootinfo()
 {
   void* p_addr;
@@ -162,14 +164,42 @@ kernel_bootinfo_t* get_bootinfo()
 
   get_initfs(bootinfo);
   BS->AllocatePool(EfiLoaderData, sizeof(mmap_t), (void**)&bootinfo->mmap);
-  mmap_t mmap = quick_memory_map();
-  mmap.addr   = (void*)((uint64_t)mmap.addr);
+  mmap_t mmap          = quick_memory_map();
+  mmap.addr            = (void*)((uint64_t)mmap.addr);
+  uint64_t min_pages   = KERNEL_MEMORY_MAX;
+  uint64_t min_offset  = KERNEL_MEMORY_MAX;
+  uint32_t stack_size  = 100 * 1024;
+  uint32_t stack_pages = (stack_size / EFI_PAGE_SIZE) + 1;
   for (int i = 0; i < (mmap.size / mmap.desc_size); i++)
   {
     efi_memory_descriptor_t* desc =
       (efi_memory_descriptor_t*)((uint8_t*)mmap.addr + (i * mmap.desc_size));
     desc->VirtualStart = KERNEL_START + desc->PhysicalStart;
+    if (desc->NumberOfPages >= stack_pages)
+    {
+      if (desc->NumberOfPages < min_pages)
+      {
+        min_pages  = desc->NumberOfPages;
+        min_offset = i;
+      }
+    }
   }
+
+  if (min_offset == KERNEL_MEMORY_MAX)
+  {
+    printf("Failed to allocate memory for stack\n");
+    for (;;);
+  }
+  efi_memory_descriptor_t* stack_descriptor =
+    (efi_memory_descriptor_t*)((uint8_t*)mmap.addr +
+      (min_offset * mmap.desc_size));
+  uint64_t stack_start = stack_descriptor->VirtualStart + EFI_PAGE_SIZE;
+  uint64_t stack_end   = stack_start + ((stack_pages - 1) * EFI_PAGE_SIZE);
+  stack_descriptor->PhysicalStart = stack_end;
+  stack_descriptor->VirtualStart =
+    KERNEL_START + stack_descriptor->PhysicalStart;
+  bootinfo->stack_bottom = stack_start;
+  bootinfo->stack_top    = stack_end & ~15;
   memcpy(bootinfo->mmap, &mmap, sizeof(mmap_t));
   return bootinfo;
 }

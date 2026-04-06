@@ -63,7 +63,7 @@ static void test_task(void* data)
 }
 
 // NOLINTNEXTLINE
-int _start(kernel_bootinfo_t* bootinfo, void* ptr)
+int _start(kernel_bootinfo_t* bootinfo)
 {
   asm volatile("cli");
   load_gdt();
@@ -73,16 +73,13 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   clear_screen();
   init_config_cpuid();
   setup_allocator(bootinfo->mmap);
-  init_kb_status();
-  acpi_init(bootinfo->xsdt_address);
-  enable_irq(1, 33, keyboard_isr);
+  // acpi_init(bootinfo->rsdp_address);
+  // kernel_init_code();
+  abort();
   enable_tasking();
   // enable_pit();
   enable_apic();
   enable_interrupts();
-  printf("TSC TEST\n");
-  ksleep((kernel_duration_t){.seconds = 10});
-  printf("TEST DONE\n");
   init_shell();
 
   while (kernel_config.kexit == 0)
