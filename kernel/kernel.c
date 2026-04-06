@@ -66,7 +66,23 @@ __attribute__((used,
   section(".limine_requests"))) static volatile struct limine_memmap_request
   memmap_request = {.id = LIMINE_MEMMAP_REQUEST_ID, .revision = 0};
 
-;
+struct Frame next_usable(void* memory_map_ptr)
+{
+  struct limine_memmap_response* memory_map = memory_map_ptr;
+  struct limine_memmap_entry** entries      = memory_map->entries;
+  for (int i = 0; i < memory_map->entry_count; i++)
+  {
+    struct limine_memmap_entry* entry = entries[i];
+    if (entry->type == LIMINE_MEMMAP_USABLE)
+    {
+      LOG_DEBUG(
+        "Valid entry found: addr: %x size: %d\n", entry->base, entry->length);
+      return (struct Frame){
+        .start = false, .base = entry->base, .length = entry->length};
+    }
+  }
+  return (struct Frame){.start = true, .base = 0, .length = 0};
+}
 
 // NOLINTNEXTLINE
 int _start()
@@ -93,7 +109,8 @@ int _start()
   common_init_start();
   init_fb((uint64_t)framebuffer->address, framebuffer->pitch,
     framebuffer->width, framebuffer->height);
-  printf("Testing Limine Loader\n");
+  LOG_DEBUG("Testing Limine Loader\n");
+  setup_allocator(next_usable, memmap_request.response);
   halt_cpu;
 }
 #else
