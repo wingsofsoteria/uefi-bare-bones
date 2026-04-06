@@ -53,9 +53,9 @@ typedef struct
   void* initfs;
   int initfs_size;
   mmap_t* mmap;
-  uint32_t rsdt_address;
-  uint64_t xsdt_address;
   void* rsdp_address;
+  uint64_t stack_bottom;
+  uint64_t stack_top;
 } kernel_bootinfo_t;
 
 #endif

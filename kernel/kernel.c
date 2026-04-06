@@ -66,7 +66,7 @@ static void test_task(void* data)
 extern void kernel_init_code();
 
 // NOLINTNEXTLINE
-int _start(kernel_bootinfo_t* bootinfo, void* ptr)
+int _start(kernel_bootinfo_t* bootinfo)
 {
   asm volatile("cli");
   load_gdt();
@@ -77,8 +77,8 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   printf("==KERNEL START==\n");
   init_config_cpuid();
   setup_allocator(bootinfo->mmap);
-  // acpi_init(bootinfo->rsdp_address);
-  // kernel_init_code();
+  acpi_init(bootinfo->rsdp_address);
+  kernel_init_code();
   abort();
   enable_tasking();
   // enable_pit();
