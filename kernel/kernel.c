@@ -62,6 +62,8 @@ static void test_task(void* data)
   set_cursor(old_cursor >> 32, old_cursor & 0xFFFFFFFF);
 }
 
+extern void kernel_init_code();
+
 // NOLINTNEXTLINE
 int _start(kernel_bootinfo_t* bootinfo)
 {
@@ -71,6 +73,7 @@ int _start(kernel_bootinfo_t* bootinfo)
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution,
     bootinfo->vertical_resolution);
   clear_screen();
+  printf("==KERNEL START==\n");
   init_config_cpuid();
   setup_allocator(bootinfo->mmap);
   // acpi_init(bootinfo->rsdp_address);

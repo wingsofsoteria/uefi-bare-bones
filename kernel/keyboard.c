@@ -105,9 +105,10 @@ void kb_handle_key()
 
 void init_kb_status()
 {
+  printf("==KEYBOARD==\n");
   memset(KB_STATUS, 0, 88 * sizeof(uint8_t));
+  enable_irq(1, 33, keyboard_isr);
 }
-
 char scancode_to_char(uint8_t byte)
 {
   uint8_t shift = KB_STATUS[0x36] | KB_STATUS[0x2A];
@@ -126,3 +127,7 @@ char scancode_to_char(uint8_t byte)
 
   return value;
 }
+// clang-format off
+// NOLINTNEXTLINE
+void __attribute__((section("kernel_init"))) (*const keyboard_init_ptr)(void) = init_kb_status;
+// clang-format on
