@@ -10,7 +10,9 @@
   {                      \
     asm volatile("hlt"); \
   }
-__attribute__((__noreturn__)) void abort(void);
+
+__attribute__((__noreturn__)) void __abort(void);
+__attribute__((__noreturn__)) void __abort_msg(const char* fmt, ...);
 void* malloc(size_t size);
 
 void free(void* ptr);

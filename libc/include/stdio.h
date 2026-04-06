@@ -2,6 +2,7 @@
 #ifndef _STDIO_H
 #define _STDIO_H
 
+#include <stdarg.h>
 #include <stdint.h>
 #include <sys/cdefs.h>
 
@@ -13,7 +14,15 @@
 #else
   #define LOG_DEBUG(fmt, ...)
 #endif
+#define abort_msg(format, ...)      \
+  printf("ABORT [%s]: ", __func__); \
+  __abort_msg(format, __VA_ARGS__);
 
+#define abort()                   \
+  printf("ABORT [%s]", __func__); \
+  __abort();
+
+int vprintf(const char* restrict format, va_list parameters);
 int printf(const char* __restrict, ...);
 int putchar(int);
 int puts(const char*);
