@@ -131,5 +131,5 @@ char scancode_to_char(uint8_t byte)
 }
 // clang-format off
 // NOLINTNEXTLINE
-void __attribute__((section(".kernel_init"))) (*const keyboard_init_ptr)() = init_kb_status;
+void __attribute__((section("kernel_init"))) (*const keyboard_init_ptr)() = init_kb_status;
 // clang-format on

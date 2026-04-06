@@ -8,7 +8,7 @@ aml_test
 aml_driver/dsdt.dat
 aml_driver/dsdt.dsl
 aml_driver/dsdt.h
-
+limine/
 kernel/kernel
 loader/uefi
 loader/bootx64.efi

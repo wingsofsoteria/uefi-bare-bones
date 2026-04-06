@@ -3,6 +3,7 @@
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <keyboard.h>
@@ -13,6 +14,14 @@ static task_t* kernel  = NULL;
 static int TASK_COUNT;
 static task_queue_t* LIVE_QUEUE = NULL;
 static task_queue_t* IDLE_QUEUE = NULL;
+
+static void idle()
+{
+  while (1)
+  {
+    asm volatile("hlt");
+  }
+}
 
 static void push_queue(task_queue_t* queue, task_t* task)
 {

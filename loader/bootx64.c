@@ -23,7 +23,12 @@ int main()
   }
 
   load_page_table();
-  ptr(bootinfo, base_address);
+  asm volatile("xor %%rbp,%%rbp\n"
+               "mov %0, %%rsp\n"
+               "mov %1, %%rdi\n"
+               "jmp *%2"
+    :
+    : "a"(bootinfo->stack_top), "b"(bootinfo), "c"(ptr));
 
   return 1;
 }

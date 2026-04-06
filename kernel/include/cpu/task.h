@@ -33,6 +33,5 @@ void task_loop();
 int get_task_id();
 void signal_idle(uint64_t);
 void signal_live();
-extern void idle(void*);
 
 #endif

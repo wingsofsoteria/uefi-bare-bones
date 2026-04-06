@@ -1,7 +1,6 @@
 #ifndef __KERNEL_ACPI_H__
 #define __KERNEL_ACPI_H__
 
-#include "types.h"
 #include <stdint.h>
 
 int acpi_init(uint64_t);
@@ -11,5 +10,5 @@ void lapic_send_eoi();
 void lapic_enable();
 void lapic_disable();
 int uacpi_acpi_init();
-void kernel_rsdp_from_bootinfo(kernel_bootinfo_t*);
+void kernel_rsdp_from_bootinfo(void*);
 #endif

@@ -4,8 +4,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-
-#define KERNEL_START  0xFFFF800000000000
+#ifdef KERNEL_USE_LIMINE
+  #define KERNEL_START 0xffffffff80000000
+#else
+  #define KERNEL_START 0xFFFF800000000000
+#endif
 #define VIRTUAL(phys) (phys + KERNEL_START)
 
 typedef struct
@@ -22,38 +25,4 @@ typedef struct
   uint16_t c_namesize;
   uint16_t c_filesize[2];
 } cpio_header_t;
-
-typedef struct
-{
-  uint32_t type;
-  uint32_t __pad;
-  uint64_t p_addr;
-  uint64_t v_addr;
-  uint64_t page_count;
-  uint64_t __attrib;
-} loader_memory_descriptor_t;
-typedef struct
-{
-  loader_memory_descriptor_t* addr;
-  uint64_t size;
-  uint64_t desc_size;
-  uint32_t version;
-  uint64_t key;
-} mmap_t;
-typedef struct
-{
-  char magic[5];
-  uint64_t base;
-  uint64_t size;
-  uint32_t pitch;
-  uint32_t horizontal_resolution;
-  uint32_t vertical_resolution;
-  void* initfs;
-  int initfs_size;
-  mmap_t* mmap;
-  uint32_t rsdt_address;
-  uint64_t xsdt_address;
-  void* rsdp_address;
-} kernel_bootinfo_t;
-
 #endif

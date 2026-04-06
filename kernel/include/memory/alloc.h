@@ -31,7 +31,9 @@ typedef struct
   bool free;
 
 } kernel_page_table_t;
-
+#ifdef KERNEL_USE_LIMINE
+typedef void mmap_t;
+#endif
 void setup_allocator(mmap_t* mmap);
 
 #endif

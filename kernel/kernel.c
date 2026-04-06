@@ -17,10 +17,7 @@
 #include <types.h>
 #include <stdint.h>
 #include <stdio.h>
-
-extern void* _kernel_init_start_;
-extern void* _kernel_init_end_;
-
+#include <loaders/loader.h>
 // BTW if anyone ever actually tries to read this code, it might be some of the
 // worst code I have ever or will ever write
 // my methodology for actually writing this damn thing was (random burst of
@@ -40,56 +37,88 @@ extern void* _kernel_init_end_;
 // ability to quickly edit the tasks in queue since it requires looking through
 // the ENTIRE list starting at the idle task)
 // NOLINTNEXTLINE
-void idle(void* _inner)
-{
-  printf("KERNEL IDLE");
-  for (;;)
-  {
-  }
-}
 
-// NOLINTNEXTLINE
-void task_1(void* _inner)
-{
-  printf("TASK 1");
-  for (;;)
-  {
-  }
-}
+extern void kernel_init_code();
 
-// NOLINTNEXTLINE
-static void test_task(void* data)
-{
-  uint64_t old_cursor = get_cursor();
-  set_cursor(79, 1);
-  tty_putc(1);
-  set_cursor(old_cursor >> 32, old_cursor & 0xFFFFFFFF);
-}
-
-static void kernel_init()
-{
-  void (*const* fn)() = _kernel_init_start_ + 1;
-  while (fn != _kernel_init_end_)
-  {
-    (*fn)();
-    fn++;
-  }
-}
-
-// NOLINTNEXTLINE
-int _start(kernel_bootinfo_t* bootinfo, void* ptr)
+void common_init_start()
 {
   asm volatile("cli");
   load_gdt();
   load_idt();
+}
+
+#ifdef KERNEL_USE_LIMINE
+
+__attribute__((used,
+  section(
+    ".limine_requests"))) static volatile uint64_t limine_base_revision[] =
+  LIMINE_BASE_REVISION(6);
+
+__attribute__((used,
+  section(
+    ".limine_requests"))) static volatile struct limine_framebuffer_request
+  framebuffer_request = {
+    .id       = LIMINE_FRAMEBUFFER_REQUEST_ID,
+    .revision = 0,
+};
+
+__attribute__((used,
+  section(".limine_requests"))) static volatile struct limine_memmap_request
+  memmap_request = {.id = LIMINE_MEMMAP_REQUEST_ID, .revision = 0};
+
+;
+
+// NOLINTNEXTLINE
+int _start()
+{
+  if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false)
+  {
+    halt_cpu;
+  }
+  if (framebuffer_request.response == NULL ||
+    framebuffer_request.response->framebuffer_count < 1)
+  {
+    halt_cpu;
+  }
+  if (memmap_request.response == NULL)
+  {
+    halt_cpu;
+  }
+  struct limine_framebuffer* framebuffer =
+    framebuffer_request.response->framebuffers[0];
+  if (framebuffer->bpp != 32)
+  {
+    halt_cpu;
+  }
+  common_init_start();
+  init_fb((uint64_t)framebuffer->address, framebuffer->pitch,
+    framebuffer->width, framebuffer->height);
+  printf("Testing Limine Loader\n");
+  halt_cpu;
+}
+#else
+// NOLINTNEXTLINE
+int _start(kernel_bootinfo_t* bootinfo, void* ptr)
+{
+  common_init_start();
   init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution,
     bootinfo->vertical_resolution);
   kernel_rsdp_from_bootinfo(bootinfo);
   init_config_cpuid();
   setup_allocator(bootinfo->mmap);
+
+  uint64_t rsp = 0;
+  asm volatile("mov %%rsp, %0"
+    : "=a"(rsp));
+  printf(
+    "provided stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\nactive stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\n",
+    bootinfo->stack_top, bootinfo->stack_bottom,
+    bootinfo->stack_top - bootinfo->stack_bottom, rsp, bootinfo->stack_bottom,
+    rsp - bootinfo->stack_bottom);
+
   // kernel_init();
   clear_screen();
-  acpi_init(bootinfo->xsdt_address);
+  acpi_init(0);
   halt_cpu;
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
@@ -106,3 +135,4 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   asm volatile("cli");
   return 1;
 }
+#endif

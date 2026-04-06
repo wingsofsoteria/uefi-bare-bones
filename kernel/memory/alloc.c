@@ -18,10 +18,9 @@ static bool is_available(int type)
   return (type == EfiConventionalMemory || type == EfiLoaderCode ||
            type == EfiBootServicesCode || type == EfiBootServicesData) != 0;
 }
-
 static void dummy_alloc(mmap_t* mmap)
 {
-  uint64_t total_pages = 0;
+/*  uint64_t total_pages = 0;
   for (int i = 0; i < (mmap->size / mmap->desc_size); i++)
   {
     loader_memory_descriptor_t* desc =
@@ -54,7 +53,7 @@ static void dummy_alloc(mmap_t* mmap)
       return;
     }
   }
-}
+*/}
 
 int liballoc_lock()
 {
@@ -122,7 +121,7 @@ int liballoc_free(void* addr, int pages)
 
 void setup_allocator(mmap_t* mmap)
 {
-  dummy_alloc(mmap);
+  /*dummy_alloc(mmap);
 
   if (page_table == (void*)-1)
   {
@@ -148,6 +147,6 @@ void setup_allocator(mmap_t* mmap)
 
       page_table->free = is_available(desc->type);
     }
-  }
+  }*/
 }
 // NOLINTEND(misc-use-internal-linkage)
