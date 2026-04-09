@@ -5,10 +5,7 @@
 #include <types.h>
 typedef struct
 {
-  uint64_t start;
-
-  bool free;
-
+  uint64_t pages[512];
 } kernel_page_table_t;
 
 struct Frame

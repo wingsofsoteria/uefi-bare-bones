@@ -57,4 +57,4 @@ limine_image: common_image
 	sudo umount /mnt
 	sudo losetup -d /dev/loop100
 qemu:
-	qemu-system-x86_64 -m 4G -drive if=pflash,format=raw,readonly,file=bin/OVMF.fd -drive file=fat.img -net none -no-reboot -debugcon stdio 2> >(tee log >&2)
+	qemu-system-x86_64 -enable-kvm -cpu host,+invtsc -m 48G -drive if=pflash,format=raw,readonly,file=bin/OVMF.fd -drive file=fat.img -net none -no-reboot -debugcon stdio 2> >(tee log >&2)

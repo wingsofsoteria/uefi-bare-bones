@@ -39,7 +39,7 @@
 // NOLINTNEXTLINE
 
 extern void kernel_init_code();
-
+uint64_t hhdm_mapping = 0;
 void common_init_start()
 {
   asm volatile("cli");
@@ -65,6 +65,10 @@ __attribute__((used,
 __attribute__((used,
   section(".limine_requests"))) static volatile struct limine_memmap_request
   memmap_request = {.id = LIMINE_MEMMAP_REQUEST_ID, .revision = 0};
+
+__attribute__((
+  used, section(".limine_requests"))) static volatile struct limine_hhdm_request
+  hhdm_request = {.id = LIMINE_HHDM_REQUEST_ID, .revision = 0};
 
 struct Frame next_usable(void* memory_map_ptr)
 {
@@ -100,6 +104,12 @@ int _start()
   {
     halt_cpu;
   }
+  if (hhdm_request.response == NULL)
+  {
+    halt_cpu;
+  }
+  struct limine_hhdm_response* hhdm_response = hhdm_request.response;
+  hhdm_mapping                               = hhdm_response->offset;
   struct limine_framebuffer* framebuffer =
     framebuffer_request.response->framebuffers[0];
   if (framebuffer->bpp != 32)
@@ -122,7 +132,7 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
     bootinfo->vertical_resolution);
   kernel_rsdp_from_bootinfo(bootinfo);
   init_config_cpuid();
-  setup_allocator(bootinfo->mmap);
+  // setup_allocator(bootinfo->mmap);
 
   uint64_t rsp = 0;
   asm volatile("mov %%rsp, %0"

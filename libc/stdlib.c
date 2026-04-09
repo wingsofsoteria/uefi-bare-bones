@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory/liballoc.h>
 
 __attribute__((__noreturn__)) void __abort_msg(const char* fmt, ...)
 {
@@ -22,20 +21,20 @@ __attribute__((__noreturn__)) void __abort()
 
 void* malloc(size_t size)
 {
-  return kernel_malloc(size);
+  return NULL;
+  // return kernel_malloc(size);
 }
 
 void free(void* ptr)
 {
-  kernel_free(ptr);
 }
 
 void* calloc(size_t nobj, size_t size)
 {
-  return kernel_calloc(nobj, size);
+  return NULL;
 }
 
 void* realloc(void* p, size_t size)
 {
-  return kernel_realloc(p, size);
+  return NULL;
 }

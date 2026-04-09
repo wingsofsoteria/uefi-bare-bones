@@ -11,7 +11,8 @@
 #ifdef KERNEL_DEBUG
   #define LOG_DEBUG(fmt, ...)   \
     printf("[%s] ", __func__);  \
-    printf(fmt, ##__VA_ARGS__);
+    printf(fmt, ##__VA_ARGS__); \
+    putchar('\n');
 #else
   #define LOG_DEBUG(fmt, ...)
 #endif
@@ -27,6 +28,14 @@ int vprintf(const char* restrict format, va_list parameters);
 int printf(const char* __restrict, ...);
 int putchar(int);
 int puts(const char*);
+
+static inline uint64_t read_cr3()
+{
+  uint64_t cr3;
+  asm volatile("mov %%cr3, %0"
+    : "=r"(cr3));
+  return cr3;
+}
 
 // NOLINTNEXTLINE(*-const-parameter)
 static inline void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
