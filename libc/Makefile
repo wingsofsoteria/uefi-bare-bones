@@ -1,4 +1,3 @@
-STRIP=llvm-strip
 CC=clang
 AR=llvm-ar
 CFLAGS=-Iinclude -I../kernel/include -O2 -ffreestanding -fno-stack-protector -D__is_libk
