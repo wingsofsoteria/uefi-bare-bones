@@ -1,4 +1,3 @@
-// NOLINTBEGIN(misc-use-internal-linkage)
 #include "memory/alloc.h"
 #include "log.h"
 #include "paging_internal.h"
@@ -27,4 +26,3 @@ void setup_allocator(struct limine_memmap_response* memory_map)
   add_region(HEAP_START, HEAP_SIZE);
 }
 #endif
-// NOLINTEND(misc-use-internal-linkage)

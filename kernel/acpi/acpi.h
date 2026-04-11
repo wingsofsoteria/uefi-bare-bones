@@ -1,6 +1,4 @@
-#ifndef __KERNEL_ACPI_INTERNAL_H__
-#define __KERNEL_ACPI_INTERNAL_H__
-
+#pragma once
 #include "acpi/acpi.h"
 #include "acpi/tables.h"
 
@@ -25,4 +23,3 @@ void lapic_write(uint16_t offset, uint32_t value);
 void dsdt_init();
 void aml_parser_init(void*);
 void aml_parser_run();
-#endif
