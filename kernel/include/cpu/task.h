@@ -1,6 +1,4 @@
-#ifndef __KERNEL_CPU_TASK_H__
-#define __KERNEL_CPU_TASK_H__
-
+#pragma once
 #include <cpu/idt.h>
 #include <stdint.h>
 #define TASK_QUEUE_SIZE 10
@@ -33,5 +31,3 @@ void task_loop();
 int get_task_id();
 void signal_idle(uint64_t);
 void signal_live();
-
-#endif

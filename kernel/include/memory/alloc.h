@@ -1,6 +1,4 @@
-#ifndef __KERNEL_MEMORY_ALLOC_H__
-#define __KERNEL_MEMORY_ALLOC_H__
-
+#pragma once
 #include "loaders/loader.h"
 #include <stdint.h>
 #include <types.h>
@@ -12,5 +10,4 @@
 void setup_allocator(struct limine_memmap_response*);
 #else
 void setup_allocator(mmap_t*);
-#endif
 #endif

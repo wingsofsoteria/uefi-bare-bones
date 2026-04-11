@@ -1,6 +1,4 @@
-#ifndef __KERNEL_LOG_H__
-#define __KERNEL_LOG_H__
-
+#pragma once
 enum
 {
   KERNEL_LOG_SILENT = 0,
@@ -11,4 +9,3 @@ enum
 int kernel_log_debug(char*, ...);
 int kernel_log_error(char*, ...);
 void kernel_init_logging(int);
-#endif

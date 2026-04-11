@@ -1,5 +1,4 @@
-#ifndef __KERNEL_ACPI_H__
-#define __KERNEL_ACPI_H__
+#pragma once
 
 #include <stdint.h>
 
@@ -11,4 +10,3 @@ void lapic_enable();
 void lapic_disable();
 int uacpi_acpi_init();
 void kernel_rsdp_from_bootinfo(void*);
-#endif

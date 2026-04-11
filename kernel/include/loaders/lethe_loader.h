@@ -1,6 +1,4 @@
-#ifndef __KERNEL_LOADERS_LETHE_LOADER_H__
-#define __KERNEL_LOADERS_LETHE_LOADER_H__
-
+#pragma once
 #include <stdint.h>
 #ifndef __KERNEL_LOADERS_LOADER_H__
   #error "Do not use lethe_loader.h directly, use loader.h instead"
@@ -61,5 +59,3 @@ typedef struct
   uint64_t stack_top;
   uint64_t stack_bottom;
 } kernel_bootinfo_t;
-
-#endif

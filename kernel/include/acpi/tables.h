@@ -1,6 +1,4 @@
-#ifndef __KERNEL_ACPI_TABLES_H__
-#define __KERNEL_ACPI_TABLES_H__
-
+#pragma once
 #include <stdint.h>
 
 typedef struct
@@ -89,5 +87,3 @@ typedef struct
   uint8_t trigger_mode : 2;
   uint16_t reserved : 12;
 } __attribute__((packed)) madt_interrupt_source_override_t;
-
-#endif

@@ -1,6 +1,4 @@
-#ifndef __KERNEL_ACPI_PIC_H__
-#define __KERNEL_ACPI_PIC_H__
-
+#pragma once
 #include <stdint.h>
 
 #define PIC1         0x20 /* IO base address for master PIC */
@@ -69,5 +67,3 @@ typedef struct
 
 void apic_enable_timer();
 void apic_sleep(uint64_t duration);
-
-#endif

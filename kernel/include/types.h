@@ -1,6 +1,4 @@
-#ifndef __KERNEL_TYPES_H__
-#define __KERNEL_TYPES_H__
-
+#pragma once
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -29,4 +27,3 @@ typedef struct
   uint16_t c_namesize;
   uint16_t c_filesize[2];
 } cpio_header_t;
-#endif

@@ -1,6 +1,4 @@
-#ifndef __KERNEL_CONFIG_H__
-#define __KERNEL_CONFIG_H__
-
+#pragma once
 #include <stdint.h>
 
 /*
@@ -48,4 +46,3 @@ void enable_pit();
 void enable_apic();
 void init_config_cpuid();
 extern struct kernel_config kernel_config;
-#endif

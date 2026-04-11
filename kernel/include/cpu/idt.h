@@ -1,6 +1,4 @@
-#ifndef __KERNEL_CPU_IDT_H__
-#define __KERNEL_CPU_IDT_H__
-
+#pragma once
 #include <stdint.h>
 
 #define IDT_ENTRY_COUNT 256
@@ -44,4 +42,3 @@ void disable_irq(int irq, int vector);
 void enable_irq(int irq, int vector, interrupt handler);
 extern volatile uint64_t ticks;
 extern volatile uint8_t tsc_waiting;
-#endif
