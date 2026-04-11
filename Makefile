@@ -27,10 +27,8 @@ kernel: uacpi libc
 	make -C kernel
 clean: 
 	rm -f fat.img $(EXEC) $(wildcard *.o) aml_driver/driver
-	make -C loader clean
 	make -C kernel clean
 	make -C libc clean
-	make -C loader/uefi clean
 	make -C uacpi clean
 common_image:
 	dd if=/dev/zero of=fat.img bs=1M count=100
@@ -57,4 +55,4 @@ limine_image: common_image
 	sudo umount /mnt
 	sudo losetup -d /dev/loop100
 qemu:
-	qemu-system-x86_64 -enable-kvm -cpu host,+invtsc -m 48G -drive if=pflash,format=raw,readonly,file=bin/OVMF.fd -drive file=fat.img -net none -no-reboot -debugcon stdio 2> >(tee log >&2)
+	qemu-system-x86_64 -enable-kvm -cpu host,+invtsc -m 48G -drive if=pflash,format=raw,readonly,file=bin/OVMF.fd -drive file=fat.img -net none -no-reboot -debugcon stdio 1> >(tee log >&2)

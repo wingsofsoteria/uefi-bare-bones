@@ -8,14 +8,6 @@
 #include <sys/cdefs.h>
 
 #define EOF (-1)
-#ifdef KERNEL_DEBUG
-  #define LOG_DEBUG(fmt, ...)   \
-    printf("[%s] ", __func__);  \
-    printf(fmt, ##__VA_ARGS__); \
-    putchar('\n');
-#else
-  #define LOG_DEBUG(fmt, ...)
-#endif
 #define abort_msg(format, ...)        \
   printf("ABORT [%s]: ", __func__);   \
   __abort_msg(format, ##__VA_ARGS__);
@@ -34,9 +26,20 @@ static inline uint64_t read_cr3()
   uint64_t cr3;
   asm volatile("mov %%cr3, %0"
     : "=r"(cr3));
-  return cr3;
+  return (cr3 >> 12) << 12;
 }
-
+static inline uint64_t read_cr2()
+{
+  uint64_t cr2;
+  asm volatile("mov %%cr2, %0"
+    : "=r"(cr2));
+  return cr2;
+}
+static inline void flush_tlb(uint64_t page)
+{
+  asm volatile("invlpg (%0)" ::"b"(page)
+    : "memory");
+}
 // NOLINTNEXTLINE(*-const-parameter)
 static inline void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
 {

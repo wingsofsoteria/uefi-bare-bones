@@ -2,6 +2,7 @@
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <config.h>
@@ -56,7 +57,6 @@ static isr_stack_t* interrupt_handler(isr_stack_t* stack)
   lapic_send_eoi();
   return modified_stack;
 }
-
 isr_stack_t* exception_handler(isr_stack_t* stack)
 {
   if (stack->isr >= 32)
@@ -72,6 +72,7 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
       }
     case 6:
       {
+        printf("???\n");
         break;
       }
     case 8:

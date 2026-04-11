@@ -1,4 +1,3 @@
-#include "shell.h"
 #include "stdlib.h"
 #include <acpi/pic.h>
 #include <config.h>
@@ -16,8 +15,8 @@
 #include <keyboard.h>
 #include <types.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <loaders/loader.h>
+#include <log.h>
 // BTW if anyone ever actually tries to read this code, it might be some of the
 // worst code I have ever or will ever write
 // my methodology for actually writing this damn thing was (random burst of
@@ -40,7 +39,8 @@
 
 extern void kernel_init_code();
 uint64_t hhdm_mapping = 0;
-void common_init_start()
+
+static void common_init_start()
 {
   asm volatile("cli");
   load_gdt();
@@ -70,23 +70,14 @@ __attribute__((
   used, section(".limine_requests"))) static volatile struct limine_hhdm_request
   hhdm_request = {.id = LIMINE_HHDM_REQUEST_ID, .revision = 0};
 
-struct Frame next_usable(void* memory_map_ptr)
-{
-  struct limine_memmap_response* memory_map = memory_map_ptr;
-  struct limine_memmap_entry** entries      = memory_map->entries;
-  for (int i = 0; i < memory_map->entry_count; i++)
-  {
-    struct limine_memmap_entry* entry = entries[i];
-    if (entry->type == LIMINE_MEMMAP_USABLE)
-    {
-      LOG_DEBUG(
-        "Valid entry found: addr: %x size: %d\n", entry->base, entry->length);
-      return (struct Frame){
-        .start = false, .base = entry->base, .length = entry->length};
-    }
-  }
-  return (struct Frame){.start = true, .base = 0, .length = 0};
-}
+__attribute__((used,
+  section(
+    ".limine_requests"))) static volatile struct limine_paging_mode_request
+  paging_mode_request = {.id = LIMINE_PAGING_MODE_REQUEST_ID,
+    .revision                = 1,
+    .mode                    = LIMINE_PAGING_MODE_X86_64_4LVL,
+    .max_mode                = LIMINE_PAGING_MODE_X86_64_4LVL,
+    .min_mode                = LIMINE_PAGING_MODE_X86_64_4LVL};
 
 // NOLINTNEXTLINE
 int _start()
@@ -104,12 +95,13 @@ int _start()
   {
     halt_cpu;
   }
-  if (hhdm_request.response == NULL)
+  hhdm_mapping = 0;
+  if (hhdm_request.response != NULL)
   {
-    halt_cpu;
+    struct limine_hhdm_response* hhdm_response = hhdm_request.response;
+    hhdm_mapping                               = hhdm_response->offset;
   }
-  struct limine_hhdm_response* hhdm_response = hhdm_request.response;
-  hhdm_mapping                               = hhdm_response->offset;
+
   struct limine_framebuffer* framebuffer =
     framebuffer_request.response->framebuffers[0];
   if (framebuffer->bpp != 32)
@@ -119,8 +111,9 @@ int _start()
   common_init_start();
   init_fb((uint64_t)framebuffer->address, framebuffer->pitch,
     framebuffer->width, framebuffer->height);
-  LOG_DEBUG("Testing Limine Loader\n");
-  setup_allocator(next_usable, memmap_request.response);
+  kernel_init_logging(KERNEL_LOG_DEBUG);
+  kernel_log_debug("Kernel offset set to %x", hhdm_mapping);
+  setup_allocator(memmap_request.response);
   halt_cpu;
 }
 #else

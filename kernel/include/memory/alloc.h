@@ -1,21 +1,16 @@
 #ifndef __KERNEL_MEMORY_ALLOC_H__
 #define __KERNEL_MEMORY_ALLOC_H__
 
+#include "loaders/loader.h"
 #include <stdint.h>
 #include <types.h>
-typedef struct
-{
-  uint64_t pages[512];
-} kernel_page_table_t;
 
-struct Frame
-{
-  bool start;
-  uint64_t base;
-  uint64_t length;
-};
-
-typedef struct Frame (*next_usable_ptr)(void*);
-void setup_allocator(next_usable_ptr, void*);
-
+#define HEAP_START 0xffffffff81000000
+#define HEAP_SIZE  0x19000
+#define HEAP_END   0xffffffff81019000
+#ifdef KERNEL_USE_LIMINE
+void setup_allocator(struct limine_memmap_response*);
+#else
+void setup_allocator(mmap_t*);
+#endif
 #endif
