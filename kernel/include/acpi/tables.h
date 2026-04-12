@@ -1,56 +1,31 @@
-#ifndef __KERNEL_ACPI_TABLES_H__
-#define __KERNEL_ACPI_TABLES_H__
-
+#pragma once
+#include "acpispec/tables.h"
 #include <stdint.h>
 
-// If lai is getting built into the kernel we won't need to provide our own
-// table definitions
-#ifndef KERNEL_USE_LAI
-typedef struct
-{
-  char signature[4];
-  uint32_t length;
-  uint8_t revision;
-  uint8_t checksum;
-  uint8_t oem_id[6];
-  uint64_t oem_table_id;
-  uint32_t oem_revision;
-  uint32_t creator_id;
-  uint32_t creator_revision;
-} __attribute__((packed)) acpi_header_t;
-
-typedef struct
-{
-  char signature[8];
-  uint8_t checksum;
-  uint8_t oem_id[6];
-  uint8_t revision;
-  uint32_t rsdt_address;
-  uint32_t length;
-  uint64_t xsdt_address;
-  uint8_t ext_checksum;
-  uint8_t reserved[3];
-} __attribute__((packed)) acpi_rsdp_t;
-
 typedef struct
 {
   acpi_header_t header;
-  uint64_t tables[];
-} __attribute__((packed)) acpi_xsdt_t;
+  uint8_t hardware_rev_id;
+  uint8_t comparator_count : 5;
+  uint8_t counter_size : 1;
+  uint8_t reserved : 1;
+  uint8_t legacy_replacement : 1;
+  uint16_t pci_vendor_id;
 
-typedef struct
-{
-  acpi_header_t header;
-  uint32_t firmware_ctrl;
-  uint32_t dsdt;
-  uint8_t __unused_block_1[96];
-  uint64_t x_dsdt;
-  uint8_t __unused_block_2[120];
-} __attribute__((packed)) acpi_fadt_t;
+  uint8_t address_space_id;
+  uint8_t register_bit_width;
+  uint8_t register_bit_offset;
+  uint8_t _reserved;
+  uint64_t address;
 
-#else
-  #include "acpispec/tables.h"
-#endif
+  uint8_t hpet_number;
+  uint16_t min_clock_tick;
+  uint8_t page_protection;
+} __attribute__((packed)) acpi_hpet_t;
+
+// TODO i'm saving my fingers from manually typing out all members of the FADT
+// table by just shoving it all in arrays. I'll add them as needed
+
 typedef struct
 {
   acpi_header_t header;
@@ -84,26 +59,3 @@ typedef struct
   uint8_t trigger_mode : 2;
   uint16_t reserved : 12;
 } __attribute__((packed)) madt_interrupt_source_override_t;
-
-typedef struct
-{
-  acpi_header_t header;
-  uint8_t hardware_rev_id;
-  uint8_t comparator_count : 5;
-  uint8_t counter_size : 1;
-  uint8_t reserved : 1;
-  uint8_t legacy_replacement : 1;
-  uint16_t pci_vendor_id;
-
-  uint8_t address_space_id;
-  uint8_t register_bit_width;
-  uint8_t register_bit_offset;
-  uint8_t _reserved;
-  uint64_t address;
-
-  uint8_t hpet_number;
-  uint16_t min_clock_tick;
-  uint8_t page_protection;
-} __attribute__((packed)) acpi_hpet_t;
-
-#endif

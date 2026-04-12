@@ -1,3 +1,4 @@
+#include "stdio.h"
 #include <string.h>
 
 void* memcpy(void* dest, const void* src, size_t size)
@@ -87,6 +88,7 @@ void* memset(void* mem, int val, size_t size)
   {
     buf[i] = val;
   }
+  abort();
   return mem;
 }
 

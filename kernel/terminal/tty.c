@@ -1,5 +1,5 @@
-#include "graphics/tty.h"
-#include "graphics/pixel.h"
+#include "terminal/tty.h"
+#include "terminal/pixel.h"
 
 #include <stdint.h>
 

@@ -1,31 +1,17 @@
 #include "keyboard.h"
 #include "cpu/isr.h"
+#include "log.h"
 #include "shell.h"
-#include "stdlib.h"
 #include "cpu/sleep.h"
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-#include <graphics/tty.h>
+#include <terminal/tty.h>
 #include <scancodes.h>
 // TODO find a way to use the loop_print_definition_blocks function without
 // hanging the entire system (possible use for tasking?)
 // | I just stuck it in the main function for now
 static char scancode_to_char(uint8_t /*byte*/);
 static uint8_t KB_STATUS[88] = {0};
-
-static void test_ascii_table(char ch, uint8_t byte)
-{
-  if (ch < 32 || ch > 96)
-  {
-    return;
-  }
-  if (ASCII_SCANCODE_1[ch] != byte)
-  {
-    printf("character mismatch: %d vs %x\n", ch, ASCII_SCANCODE_1[ch]);
-    abort();
-  }
-}
 
 /* theres gotta be a better way to do this than just waiting
  * basically we just read the keyboard the first time and fail early if the key
@@ -104,10 +90,10 @@ void kb_handle_key()
   }
 }
 
-void init_kb_status()
+static void init_kb_status()
 {
-  printf("==KEYBOARD==\n");
-  memset(KB_STATUS, 0, 88 * sizeof(uint8_t));
+  kernel_log_debug("Initialized PS2 Keyboard");
+  // memset(KB_STATUS, 0, 88 * sizeof(uint8_t));
   enable_irq(1, 33, keyboard_isr);
 }
 
@@ -129,8 +115,7 @@ char scancode_to_char(uint8_t byte)
 
   return value;
 }
-
 // clang-format off
 // NOLINTNEXTLINE
-void __attribute__((section("kernel_init"))) (*const keyboard_init_ptr)(void) = init_kb_status;
+void __attribute__((section("kernel_init"))) (*const keyboard_init_ptr)() = init_kb_status;
 // clang-format on

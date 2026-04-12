@@ -10,8 +10,8 @@ aml_driver/dsdt.dsl
 aml_driver/dsdt.h
 
 kernel/kernel
-loader/uefi
-loader/bootx64.efi
+limine/
+lai/
 fat.img
 test.vdi
 fs.dmp

@@ -8,6 +8,7 @@
 #include "cpu/task.h"
 #include "cpu/tsc.h"
 #include "cpuid.h"
+#include "log.h"
 #include <stdio.h>
 struct kernel_config kernel_config;
 
@@ -22,12 +23,12 @@ void init_config_cpuid()
   int supported   = __get_cpuid(1, &eax, &ebx, &ecx, &edx);
   if (!supported)
   {
-    printf("Could not get CPU information\n");
+    kernel_log_error("Could not get CPU information\n");
     return;
   }
   if (!(edx & bit_MSR)) // I'm not sure this is even needed
   {
-    printf("MSRs unsupported\n");
+    kernel_log_error("MSRs unsupported\n");
   }
 
   if (ecx & bit_TSCDeadline)
@@ -50,14 +51,12 @@ void init_config_cpuid()
   supported = __get_cpuid(0x16, &eax, &ebx, &ecx, &edx);
   if (supported)
   {
-    printf("CPUID 0x16: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
+    kernel_log_debug(
+      "CPUID 0x16: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
     // leaf 16 gives the processor base frequency in mhz so multiply by 1000 for
     // tsc frequency in khz
     kernel_config.tsc_freq_khz = eax * 1000;
   }
-#ifdef KERNEL_DEBUG
-  // kernel_config.tsc_invariant = 0b0;
-#endif
 }
 
 void cli()
@@ -109,7 +108,7 @@ void enable_apic()
   if (kernel_config.interrupt_source != 0b10 ||
     !kernel_config.apic_tsc_deadline || !kernel_config.tsc_invariant)
   {
-    printf("APIC timer unsupported\n");
+    kernel_log_error("APIC timer unsupported\n");
     return;
   }
   // TODO faster tsc calibration
@@ -119,10 +118,10 @@ void enable_apic()
     int error;
     frequency = calibrate_tsc_slow();
     error     = frequency - calibrate_tsc_slow();
-    printf("CALIBRATION RESULT %l %d\n", frequency, error);
+    kernel_log_debug("CALIBRATION RESULT %l %d\n", frequency, error);
     if (error > 1500 || error < -1500)
     {
-      printf("TSC is unreliable\n");
+      kernel_log_error("TSC is unreliable\n");
       return;
     }
     kernel_config.tsc_freq_khz = frequency;

@@ -1,5 +1,5 @@
-#include "graphics/pixel.h"
-#include "graphics/tty.h"
+#include "terminal/pixel.h"
+#include "terminal/tty.h"
 
 static uint64_t fb_base;
 static uint32_t fb_pitch;

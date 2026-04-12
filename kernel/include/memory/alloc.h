@@ -1,37 +1,17 @@
-#ifndef __KERNEL_MEMORY_ALLOC_H__
-#define __KERNEL_MEMORY_ALLOC_H__
-
+#pragma once
+#include "loaders/loader.h"
+#include <stdint.h>
 #include <types.h>
 
-enum
-{
-  EfiReservedMemoryType  = 0,  // unusable
-  EfiLoaderCode          = 1,  // usable
-  EfiLoaderData          = 2,  // usable after kernel init
-  EfiBootServicesCode    = 3,  // usable
-  EfiBootServicesData    = 4,  // usable
-  EfiRuntimeServicesCode = 5,  // maybe usable (runtime services aren't needed)
-  EfiRuntimeServicesData = 6,  // maybe usable (runtime services aren't needed)
-  EfiConventionalMemory  = 7,  // usable
-  EfiUnusableMemory      = 8,  // unusable
-  EfiACPIReclaimMemory   = 9,  // usable after init
-  EfiACPIMemoryNVS       = 10, // unusable
-  EfiMemoryMappedIO      = 11, // unusable
-  EfiMemoryMappedIOPortSpace = 12, // unusable
-  EfiPalCode                 = 13, // unusable
-  EfiPersistentMemory        = 14, // usable
-  EfiUnacceptedMemoryType    = 15, // unusable
-  EfiMaxMemoryType           = 16, // undefined
-};
+#define HEAP_START 0xffffffff81000000
+#define HEAP_SIZE  0x19000
+#define HEAP_END   0xffffffff81019000
 
-typedef struct
-{
-  uint64_t start;
+void* kmalloc(size_t);
+void kfree(void*);
 
-  bool free;
-
-} kernel_page_table_t;
-
-void setup_allocator(mmap_t* mmap);
-
+#ifdef KERNEL_USE_LIMINE
+void setup_allocator(struct limine_memmap_response*);
+#else
+void setup_allocator(mmap_t*);
 #endif

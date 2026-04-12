@@ -1,6 +1,4 @@
-#ifndef __KERNEL_SCANCODES_H__
-#define __KERNEL_SCANCODES_H__
-
+#pragma once
 const char SC1_LOWER_CHARS[58] = {
   0,
   0,
@@ -223,5 +221,3 @@ const char ASCII_SCANCODE_1[97] = {
   0x0C, // '-'
   0x29, // '`'
 };
-
-#endif

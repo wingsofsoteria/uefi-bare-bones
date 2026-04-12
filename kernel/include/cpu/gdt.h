@@ -1,5 +1,4 @@
-#ifndef __KERNEL_CPU_GDT_H__
-#define __KERNEL_CPU_GDT_H__
+#pragma once
 
 #include <types.h>
 
@@ -31,5 +30,3 @@ typedef struct
 extern void set_gdt(gdt_ptr_t*);
 
 void load_gdt();
-
-#endif

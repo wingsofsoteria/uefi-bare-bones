@@ -1,7 +1,8 @@
 #include "config.h"
 #include "cpu/task.h"
-#include "graphics/tty.h"
+#include "terminal/tty.h"
 #include "keyboard.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +21,7 @@ static const task_function commands[COMMAND_COUNT] = {test, exit, rem};
 
 void checkpoint(char* name)
 {
-  printf("CHECKPOINT %s [yN]", name);
+  kernel_log_debug("CHECKPOINT %s [yN]", name);
 
   while (1)
   {
@@ -43,7 +44,7 @@ void rem(void* comment)
 {
   if (comment == NULL)
   {
-    printf("ERROR!\n");
+    kernel_log_error("Rem command needs an argument\n");
     return;
   }
   printf("REM %s\n", (char*)comment);
@@ -99,12 +100,10 @@ void execute_command()
       {
         args = (void*)(shell_cmd + count);
       }
-#ifdef KERNEL_DEBUG
-      printf(
+      kernel_log_debug(
         "SHELL COMMAND: %s, count %d, shell_cur: %d, args: %x, args_triggered? %s\n",
         command_list[index], count, shell_cur, args,
         count < shell_cur ? "true" : "false");
-#endif
       commands[index](args);
       goto fini;
     }

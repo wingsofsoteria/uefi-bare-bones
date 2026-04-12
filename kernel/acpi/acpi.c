@@ -7,6 +7,9 @@
 #include "lai/core.h"
 #include "lai/helpers/sci.h"
 #include "lai/host.h"
+#include "log.h"
+#include "memory/alloc.h"
+#include "types.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,42 +18,30 @@ static acpi_xsdt_t* XSDT = NULL;
 
 void laihost_log(int level, const char* msg)
 {
-  char* level_str = "";
-  switch (level)
-  {
-    case LAI_DEBUG_LOG:
-      {
-        level_str = "DEBUG: ";
-        break;
-      }
-    case LAI_WARN_LOG:
-      {
-        level_str = "WARN: ";
-        break;
-      }
-  }
-  printf("%s%s\n", level_str, msg);
+  kernel_log_debug(msg);
 }
 
 __attribute__((noreturn)) void laihost_panic(const char* msg)
 {
-  printf("PANIC: %s\n", msg);
-  abort();
+  abort_msg("PANIC: %s\n", msg);
 }
 
 void* laihost_malloc(size_t size)
 {
-  return malloc(size);
+  kernel_log_debug("Allocating %d bytes", size);
+  void* addr = kmalloc(size);
+  kernel_log_debug("Got valid allocation %x", addr);
+  return addr;
 }
 
 void* laihost_realloc(void* oldptr, size_t newsize, size_t oldsize)
 {
-  return realloc(oldptr, newsize);
+  abort();
 }
 
 void laihost_free(void* ptr, size_t size)
 {
-  return free(ptr);
+  kfree(ptr);
 }
 
 void* laihost_map(size_t address, size_t count)
@@ -100,7 +91,8 @@ void* laihost_scan(const char* sig, size_t index)
   int entries = (XSDT->header.length - sizeof(acpi_header_t)) / 8;
   for (int i = 0; i < entries; i++)
   {
-    acpi_header_t* sdt = (void*)XSDT->tables[i];
+    kernel_log_debug("ping");
+    acpi_header_t* sdt = (void*)(XSDT->tables[i] + hhdm_mapping);
     if (__builtin_strncmp(sig, sdt->signature, 4) == 0)
     {
       return sdt;
@@ -176,7 +168,7 @@ int acpi_init(void* rsdp_pointer)
 {
   acpi_xsdp_t* rsdp = rsdp_pointer;
 
-  XSDT = (void*)VIRTUAL(rsdp->xsdt);
+  XSDT = (void*)(rsdp->xsdt + hhdm_mapping);
   if (!sdt_checksum(&XSDT->header))
   {
     printf("Failed to parse ACPI tables\n");

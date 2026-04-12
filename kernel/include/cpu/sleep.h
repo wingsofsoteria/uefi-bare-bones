@@ -1,6 +1,4 @@
-#ifndef __KERNEL_CPU_SLEEP_H__
-#define __KERNEL_CPU_SLEEP_H__
-
+#pragma once
 #include <stdint.h>
 
 #define MS_PER_SECOND 1000
@@ -17,5 +15,3 @@ typedef struct
 
 } kernel_duration_t;
 void ksleep(kernel_duration_t);
-
-#endif

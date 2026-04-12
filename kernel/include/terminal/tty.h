@@ -1,6 +1,4 @@
-#ifndef __KERNEL_GRAPHICS_TTY_H__
-#define __KERNEL_GRAPHICS_TTY_H__
-
+#pragma once
 #include <stdint.h>
 
 typedef struct
@@ -21,5 +19,3 @@ void tty_delc();
 void set_cursor(uint32_t new_cursor, uint32_t new_line);
 uint64_t get_cursor();
 extern char _binary_font_psf_start;
-
-#endif
