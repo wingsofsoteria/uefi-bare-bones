@@ -1,7 +1,7 @@
 #include "stdio.h"
 #include <string.h>
 
-void* memcpy(void* dest, const void* src, size_t size)
+void* memcpy(void* restrict dest, const void* restrict src, size_t size)
 {
   char* destp      = dest;
   const char* srcp = src;
@@ -12,6 +12,7 @@ void* memcpy(void* dest, const void* src, size_t size)
 
   return dest;
 }
+
 int memcmp(const void* aptr, const void* bptr, size_t size)
 {
   const unsigned char* a = (const unsigned char*)aptr;
@@ -30,7 +31,7 @@ int memcmp(const void* aptr, const void* bptr, size_t size)
   return 0;
 }
 
-void* memmove(void* dst, void* src, size_t size)
+void* memmove(void* dst, const void* src, size_t size)
 {
   unsigned char* char_dst = (unsigned char*)dst;
   unsigned char* char_src = (unsigned char*)src;
@@ -88,7 +89,6 @@ void* memset(void* mem, int val, size_t size)
   {
     buf[i] = val;
   }
-  abort();
   return mem;
 }
 

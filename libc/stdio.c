@@ -12,7 +12,7 @@
 
 int puts(const char* string)
 {
-  return printf("%s", string);
+  return printf(string);
 }
 
 int putchar(int ic)
