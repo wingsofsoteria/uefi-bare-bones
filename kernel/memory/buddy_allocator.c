@@ -1,12 +1,16 @@
 #include "log.h"
+#include "memory/alloc.h"
+#include "stdio.h"
 #include "stdlib.h"
 #include "types.h"
 #include <stdalign.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include "buddy_allocator.h"
 
+#define MIN_ALLOC_SIZE 256
 struct AllocatorBlock
 {
   size_t size;
@@ -26,6 +30,17 @@ static struct AllocatorBlock* next_block(struct AllocatorBlock* this)
   return (struct AllocatorBlock*)((char*)this + this->size);
 }
 
+static void debug()
+{
+  struct AllocatorBlock* block = allocator.head;
+  while (block < allocator.tail && block->size > 0)
+  {
+    kernel_log_debug(
+      "%x %d %s", block, block->size, block->free ? "free" : "used");
+    block = next_block(block);
+  }
+}
+
 static struct AllocatorBlock* split_block(
   struct AllocatorBlock* block, size_t size)
 {
@@ -34,16 +49,17 @@ static struct AllocatorBlock* split_block(
     kernel_log_debug("Invalid block or size: %x %d", block, size);
     return NULL;
   }
-  while (size < (block->size >> 1))
+  while (size <= (block->size >> 1))
   {
     size_t half_size = block->size >> 1;
-    kernel_log_debug("Size change %d - %d", block->size, half_size);
-    block->size                  = half_size;
-    struct AllocatorBlock* buddy = next_block(block);
-    buddy->size                  = half_size;
-    buddy->free                  = true;
+    kernel_log_debug("Split block %x into %d", block, half_size);
+    block->size = half_size;
+    block       = next_block(block);
+    block->size = half_size;
+    block->free = true;
   }
   kernel_log_debug("New block %x %d", block, block->size);
+  debug();
   if (size <= block->size)
   {
     return block;
@@ -146,20 +162,59 @@ static void merge_blocks()
   }
 }
 
+void* buddy_realloc(void* ptr, size_t size)
+{
+  kernel_log_debug("Reallocating block %x", ptr);
+  struct AllocatorBlock* block =
+    (struct AllocatorBlock*)((char*)ptr - sizeof(struct AllocatorBlock));
+  kernel_log_debug(
+    "Found block %x %d %s", block, block->size, block->free ? "free" : "used");
+  struct AllocatorBlock* new_block = find_best(size);
+  if (new_block == NULL)
+  {
+    kernel_log_debug("Could not find new block, merging");
+    merge_blocks();
+    new_block = find_best(size);
+    debug();
+  }
+  if (new_block == NULL)
+  {
+    kernel_log_error("Failed to find any valid blocks");
+    return NULL;
+  }
+  kernel_log_debug("Found replacement block %x %d %s", new_block,
+    new_block->size, new_block->free ? "free" : "used");
+
+  memmove(new_block, block, block->size);
+  size_t block_size = block->size;
+  block->size       = block_size;
+  block->free       = true;
+  kernel_log_debug("Merging blocks");
+  merge_blocks();
+  debug();
+  return new_block;
+}
+
 void* buddy_alloc(size_t size)
 {
   if (size == 0)
   {
     return NULL;
   }
-  size_t min_required_size           = (size + sizeof(struct AllocatorBlock));
-  size_t aligned_size                = ALIGN_UP(min_required_size, 2);
-  struct AllocatorBlock* valid_block = find_best(aligned_size);
+  if (size > MIN_ALLOC_SIZE)
+  {
+    size = ALIGN_UP((size + sizeof(struct AllocatorBlock)), MIN_ALLOC_SIZE);
+  }
+  else
+  {
+    size = MIN_ALLOC_SIZE;
+  }
+  struct AllocatorBlock* valid_block = find_best(size);
   if (valid_block == NULL)
   {
     kernel_log_debug("Could not find a valid block, trying again");
     merge_blocks();
-    valid_block = find_best(aligned_size);
+    valid_block = find_best(size);
   }
   if (valid_block == NULL)
   {
@@ -192,11 +247,10 @@ void buddy_free(void* ptr)
 void init_buddy_allocator(uint64_t heap_start, uint64_t heap_size)
 {
   struct AllocatorBlock* head = (void*)heap_start;
-  head->size                  = heap_size - sizeof(struct AllocatorBlock);
-  head->size                  = ALIGN_DOWN(head->size, 2);
+  head->size                  = heap_size;
   head->free                  = true;
   allocator.head              = head;
-  allocator.tail              = next_block(head);
+  allocator.tail              = (struct AllocatorBlock*)(HEAP_END);
   kernel_log_debug(
     "Initialized Buddy Allocator\n\tHead: %x\n\tTail: %x\n\tTag size: %d",
     allocator.head, allocator.tail, sizeof(struct AllocatorBlock));

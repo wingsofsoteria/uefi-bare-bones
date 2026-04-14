@@ -18,6 +18,15 @@ void kfree(void* ptr)
   return buddy_free(ptr);
 }
 
+void* krealloc(void* ptr, size_t size)
+{
+  if (ptr == NULL)
+  {
+    return kmalloc(size);
+  }
+  return buddy_realloc(ptr, size);
+}
+
 void setup_allocator(struct limine_memmap_response* memory_map)
 {
   init_frame_allocator(memory_map);
