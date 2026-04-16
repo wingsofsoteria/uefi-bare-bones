@@ -1,5 +1,6 @@
 #include "memory/alloc.h"
 #include "buddy_allocator.h"
+#include "list_allocator.h"
 #include "log.h"
 #include "paging_internal.h"
 #include "stdio.h"
@@ -20,10 +21,6 @@ void kfree(void* ptr)
 
 void* krealloc(void* ptr, size_t size)
 {
-  if (ptr == NULL)
-  {
-    return kmalloc(size);
-  }
   return buddy_realloc(ptr, size);
 }
 

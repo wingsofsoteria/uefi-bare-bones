@@ -2,9 +2,9 @@
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
+#include "memory/alloc.h"
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <keyboard.h>
 
@@ -50,11 +50,11 @@ static task_t* pop_queue(task_queue_t* queue)
 
 static task_queue_t* new_queue()
 {
-  task_queue_t* queue = malloc(sizeof(task_queue_t));
+  task_queue_t* queue = kmalloc(sizeof(task_queue_t));
   queue->head         = 0;
   queue->tail         = 0;
   queue->capacity     = TASK_QUEUE_SIZE;
-  queue->_inner       = malloc(queue->capacity * sizeof(task_t*));
+  queue->_inner       = kmalloc(queue->capacity * sizeof(task_t*));
 
   return queue;
 }
@@ -72,8 +72,8 @@ void init_tasks()
   LIVE_QUEUE          = new_queue();
   IDLE_QUEUE          = new_queue();
   TASK_COUNT          = 0;
-  kernel              = calloc(1, sizeof(task_t));
-  kernel->ctx         = calloc(1, sizeof(isr_stack_t));
+  kernel              = kmalloc(sizeof(task_t));
+  kernel->ctx         = kmalloc(sizeof(isr_stack_t));
   kernel->ctx->rip    = (uint64_t)idle;
   kernel->ctx->rflags = 0x202;
   kernel->ctx->isr    = 2;
@@ -168,14 +168,14 @@ static void task_wrapper(int id, task_function fn_ptr, void* fn_args)
   {
     return;
   }
-  free(self->ctx);
-  free(self);
+  kfree(self->ctx);
+  kfree(self);
 }
 
 void create_task(task_function rip, void* data)
 {
-  task_t* new_task   = calloc(1, sizeof(task_t));
-  isr_stack_t* ctx   = calloc(1, sizeof(isr_stack_t));
+  task_t* new_task   = kmalloc(sizeof(task_t));
+  isr_stack_t* ctx   = kmalloc(sizeof(isr_stack_t));
   new_task->task_id  = TASK_COUNT++;
   new_task->deadline = 0;
   ctx->rdi           = new_task->task_id;

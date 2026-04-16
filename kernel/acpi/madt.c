@@ -1,14 +1,15 @@
-#include "acpi.h"
-#include "acpi/pic.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <config.h>
 // TODO better helper functions (for each of the interrupt controller
 // structures, etc)
 // TODO better data structures
 // TODO properly support old PIC
 
+#include "acpi.h"
+#include "acpi/pic.h"
+#include "acpi/tables.h"
+#include "config.h"
+#include "log.h"
+#include "stdio.h"
+#include "stdlib.h"
 static acpi_madt_t* madt = NULL;
 
 static inline void io_wait(void)
@@ -104,6 +105,6 @@ uint32_t madt_get_ioapic(uint32_t gsi)
     return MADT_ADDR32(i + 4);
   }
 
-  printf("No IO APIC with GSI base %d\n", gsi);
+  kernel_log_error("No IO APIC with GSI base %d\n", gsi);
   abort();
 }

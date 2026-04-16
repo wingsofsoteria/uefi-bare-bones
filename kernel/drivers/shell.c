@@ -1,5 +1,6 @@
 #include "config.h"
 #include "cpu/task.h"
+#include "memory/alloc.h"
 #include "terminal/tty.h"
 #include "keyboard.h"
 #include "log.h"
@@ -61,7 +62,7 @@ void push_char(char ch)
   if (shell_cur >= shell_size)
   {
     shell_size += 80;
-    shell_cmd   = realloc(shell_cmd, shell_size);
+    shell_cmd   = krealloc(shell_cmd, shell_size);
   }
   shell_cmd[shell_cur++] = ch;
   putchar(ch);
@@ -77,7 +78,7 @@ void init_shell()
 {
   shell_cur  = 0;
   shell_size = 80;
-  shell_cmd  = malloc(shell_size * sizeof(char));
+  shell_cmd  = kmalloc(shell_size * sizeof(char));
   putchar('>');
 }
 

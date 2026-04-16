@@ -1,13 +1,12 @@
-#include "acpi.h"
-#include "acpi/pic.h"
-
-#include <stdlib.h>
-#include <stdint.h>
-
 // TODO better helper functions / properly configure each IO APIC
 // TODO get correct ioapic instead of defaulting to 0 (and figure out if qemu
 // can emulate more than one ioapic)
 
+#include "acpi.h"
+#include "acpi/pic.h"
+#include "acpi/tables.h"
+#include "stdlib.h"
+#include <stdint.h>
 static void write_ioapic(
   uint64_t ioregsel, const uint8_t offset, const uint32_t value)
 {

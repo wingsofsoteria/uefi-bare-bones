@@ -39,6 +39,31 @@ void enable_irq(int irq, int vector, interrupt handler)
   register_handler(vector, handler);
 }
 
+static void dump_stack(isr_stack_t* stack)
+{
+  printf("STACK:%x\n", stack);
+  printf("\tRFLAGS:%x\n", stack->rflags);
+  printf("\t    CS:%x\n", stack->cs);
+  printf("\t   RIP:%x\n", stack->rip);
+  printf("\t   ERR:%x\n", stack->err);
+  printf("\t   ISR:%x\n", stack->isr);
+  printf("\t   RAX:%x\n", stack->rax);
+  printf("\t   RBX:%x\n", stack->rbx);
+  printf("\t   RCX:%x\n", stack->rcx);
+  printf("\t   RDX:%x\n", stack->rdx);
+  printf("\t   RSI:%x\n", stack->rsi);
+  printf("\t   RDI:%x\n", stack->rdi);
+  printf("\t   RBP:%x\n", stack->rbp);
+  printf("\t    R8:%x\n", stack->r8);
+  printf("\t    R9:%x\n", stack->r9);
+  printf("\t   R10:%x\n", stack->r10);
+  printf("\t   R11:%x\n", stack->r11);
+  printf("\t   R12:%x\n", stack->r12);
+  printf("\t   R13:%x\n", stack->r13);
+  printf("\t   R14:%x\n", stack->r14);
+  printf("\t   R15:%x\n", stack->r15);
+}
+
 static void set_idt_entry_simple(uint8_t vector, void* handler)
 {
   idt_entry_t* entry      = &(idt.entries[vector]);
@@ -82,7 +107,8 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
       }
     case 14:
       {
-        printf("PAGE FAULT:\n\tErr: %b", stack->err);
+        printf("PAGE FAULT\n");
+        dump_stack(stack);
         halt_cpu
       }
 

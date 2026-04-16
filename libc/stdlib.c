@@ -18,23 +18,3 @@ __attribute__((__noreturn__)) void __abort()
   halt_cpu;
   __builtin_unreachable();
 }
-
-void* malloc(size_t size)
-{
-  return NULL;
-  // return kernel_malloc(size);
-}
-
-void free(void* ptr)
-{
-}
-
-void* calloc(size_t nobj, size_t size)
-{
-  return NULL;
-}
-
-void* realloc(void* p, size_t size)
-{
-  return NULL;
-}

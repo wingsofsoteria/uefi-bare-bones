@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "types.h"
 #include <stdalign.h>
+#include <stdint.h>
 static list_allocator_t allocator = {0};
 void add_region(uint64_t start, uint64_t size)
 {
@@ -14,7 +15,7 @@ void add_region(uint64_t start, uint64_t size)
   {
     abort_msg("Address %x is not aligned", start);
   }
-  kernel_log_debug("Adding region %x to %x", start, start + size);
+  kernel_log_debug("Adding region %x - %x", start, start + size);
   list_node_t node      = {0};
   node.next             = allocator.head.next;
   node.size             = size;
@@ -31,7 +32,7 @@ static void* try_alloc(list_node_t* region, uint64_t size, uint64_t alignment)
   uint64_t end        = start + size;
   if (end > region_end)
   {
-    kernel_log_debug("Region is too small for allocation of size %d\n", size);
+    kernel_log_error("Region is too small for allocation of size %d\n", size);
     return NULL;
   }
   uint64_t excess = end - region_end;
@@ -41,7 +42,6 @@ static void* try_alloc(list_node_t* region, uint64_t size, uint64_t alignment)
       "Region does not have enough excess space for a ListNode\n");
     return NULL;
   }
-  kernel_log_debug("Alloc: addr:%x size:%d excess:%d\n", start, size, excess);
   return (void*)start;
 }
 
@@ -67,6 +67,7 @@ static list_node_t* get_valid_region(uint64_t size, uint64_t alignment)
 
 void* list_alloc(uint64_t size)
 {
+  kernel_log_debug("Alloc: %d", size);
   uint64_t required_size = size + sizeof(list_node_t);
   uint64_t alignment     = alignof(list_node_t);
   list_node_t* region    = get_valid_region(size, alignment);

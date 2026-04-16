@@ -5,20 +5,16 @@
 #include "acpispec/tables.h"
 #include "cpu/sleep.h"
 #include "lai/core.h"
-#include "lai/helpers/sci.h"
-#include "lai/host.h"
 #include "log.h"
 #include "memory/alloc.h"
-#include "types.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include "stdio.h"
+#include "stdlib.h"
+#include <string.h>
 static acpi_xsdt_t* XSDT = NULL;
 
 void laihost_log(int level, const char* msg)
 {
-  kernel_log_debug(msg);
+  kernel_log(level, msg);
 }
 
 __attribute__((noreturn)) void laihost_panic(const char* msg)
@@ -28,9 +24,7 @@ __attribute__((noreturn)) void laihost_panic(const char* msg)
 
 void* laihost_malloc(size_t size)
 {
-  kernel_log_debug("Allocating %d bytes", size);
   void* addr = kmalloc(size);
-  kernel_log_debug("Got valid allocation %x", addr);
   return addr;
 }
 
@@ -46,11 +40,13 @@ void laihost_free(void* ptr, size_t size)
 
 void* laihost_map(size_t address, size_t count)
 {
+  abort();
   return (void*)address;
 }
 
 void laihost_unmap(void* ptr, size_t count)
 {
+  abort();
 }
 
 static bool sdt_checksum(acpi_header_t* sdt)
@@ -83,17 +79,16 @@ void* acpi_get_table(const char id[4])
 
 void* laihost_scan(const char* sig, size_t index)
 {
-  if (__builtin_strncmp(sig, "DSDT", 4) == 0)
+  if (strncmp(sig, "DSDT", 4) == 0)
   {
     acpi_fadt_t* fadt = laihost_scan("FACP", 0);
-    return (void*)fadt->x_dsdt;
+    return (void*)(fadt->x_dsdt + hhdm_mapping);
   }
   int entries = (XSDT->header.length - sizeof(acpi_header_t)) / 8;
   for (int i = 0; i < entries; i++)
   {
-    kernel_log_debug("ping");
     acpi_header_t* sdt = (void*)(XSDT->tables[i] + hhdm_mapping);
-    if (__builtin_strncmp(sig, sdt->signature, 4) == 0)
+    if (strncmp(sig, sdt->signature, 4) == 0)
     {
       return sdt;
     }
@@ -171,7 +166,7 @@ int acpi_init(void* rsdp_pointer)
   XSDT = (void*)(rsdp->xsdt + hhdm_mapping);
   if (!sdt_checksum(&XSDT->header))
   {
-    printf("Failed to parse ACPI tables\n");
+    kernel_log_error("Failed to parse ACPI tables\n");
     abort();
   }
   lai_set_acpi_revision(rsdp->revision);
@@ -179,7 +174,7 @@ int acpi_init(void* rsdp_pointer)
   //  ignore scis
   // lai_set_sci_event(0);
   // lai_enable_acpi(1);
-  printf("ACPI initialization finished\n");
+  kernel_log_debug("ACPI initialization finished\n");
   madt_init();
   lapic_init();
   return 0;

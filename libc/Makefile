@@ -1,8 +1,10 @@
 CC=clang
 AR=llvm-ar
-CFLAGS=-Iinclude -I../kernel/include -O2 -ffreestanding -fno-stack-protector -D__is_libk -mno-mmx -mno-sse -mno-sse2
+CFLAGS=-Iinclude -I../kernel/include -ffreestanding -fno-stack-protector -D__is_libk -mno-mmx -mno-sse -mno-sse2
 ifneq ($(FEATURE_DEBUG),)
-CFLAGS += -DKERNEL_DEBUG
+CFLAGS += -DKERNEL_DEBUG -g
+else
+CFLAGS += -O2
 endif
 all: libk.a
 %.o: %.c

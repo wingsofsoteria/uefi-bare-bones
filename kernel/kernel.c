@@ -119,7 +119,11 @@ int _start()
   common_init_start();
   init_fb((uint64_t)framebuffer->address, framebuffer->pitch,
     framebuffer->width, framebuffer->height);
-  kernel_init_logging(KERNEL_LOG_DEBUG);
+  #ifdef KERNEL_DEBUG
+  kernel_init_logging(1);
+  #else
+  kernel_init_logging(5);
+  #endif
   kernel_log_debug("Kernel offset set to %x", hhdm_mapping);
   setup_allocator(memmap_request.response);
   kernel_init_code();

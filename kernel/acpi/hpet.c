@@ -1,5 +1,4 @@
 #include "acpi.h"
-#include "acpi/tables.h"
 #include "stdlib.h"
 void hpet_init()
 {

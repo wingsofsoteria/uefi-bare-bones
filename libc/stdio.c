@@ -1,5 +1,4 @@
 #include <limits.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -166,7 +165,7 @@ int vprintf(const char* restrict format, va_list parameters)
       }
       written += size;
     }
-    else if (*format == 'd')
+    else if (*format == 'd' || *format == 'i')
     {
       format++;
       int value = va_arg(parameters, int);

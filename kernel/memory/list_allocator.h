@@ -1,9 +1,10 @@
 #pragma once
 #include <stdint.h>
-typedef struct __list_node
+
+typedef struct list_node
 {
   uint64_t size;
-  struct __list_node* next;
+  struct list_node* next;
 } list_node_t;
 
 typedef struct

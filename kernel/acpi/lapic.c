@@ -1,10 +1,8 @@
-#include "acpi.h"
-#include "stdio.h"
-
-#include <stdint.h>
-
 // TODO properly configure LAPIC
 
+#include "acpi.h"
+#include "stdio.h"
+#include <stdint.h>
 static uint32_t lapic_addr;
 
 void lapic_write(uint16_t offset, uint32_t value)

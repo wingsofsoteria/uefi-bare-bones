@@ -1,10 +1,6 @@
 #include "acpi.h"
 #include "acpi/pic.h"
-
-#include <cpu/pit.h>
-#include <config.h>
-#include <cpu/idt.h>
-
+#include <stdint.h>
 void apic_enable_timer()
 {
   uint32_t initial_state = lapic_read(LAPIC_TIMER_REGISTER);

@@ -9,6 +9,7 @@ aml_driver/dsdt.dat
 aml_driver/dsdt.dsl
 aml_driver/dsdt.h
 
+kernel/debug_kernel
 kernel/kernel
 limine/
 lai/
