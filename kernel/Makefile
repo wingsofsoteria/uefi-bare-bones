@@ -6,7 +6,7 @@ CAT=cat
 DECOMPRESS=gunzip -c > font.psf
 WARNINGS=-Wno-pointer-to-int-cast -Wno-void-pointer-to-int-cast -Wno-tautological-pointer-compare
 INCLUDE=-Iinclude -I../lai/include -I../libc/include
-CFLAGS=$(INCLUDE) $(WARNINGS) -O2 -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=large -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fno-PIC -fno-PIE
+CFLAGS=$(INCLUDE) $(WARNINGS) -ffreestanding -fshort-wchar -mno-red-zone  -mcmodel=large -fno-stack-protector -mno-mmx -mno-sse -mno-sse2 -fno-PIC -fno-PIE
 CPPFLAGS=-mno-mmx -mno-sse -mno-sse2
 LDFLAGS=-nostdlib --static -Wl,-z,max-page-size=0x1000
 #SRC := $(wildcard *.c */*.c */*/*.c *.s */*.s)
@@ -14,7 +14,9 @@ LDFLAGS=-nostdlib --static -Wl,-z,max-page-size=0x1000
 #SRC := $(filter-out kernel_init.c, $(SRC))
 #OBJS=$(patsubst %,objs/%.o,$(SRC))
 ifneq ($(FEATURE_DEBUG),)
-KERNEL_CFLAGS += -DKERNEL_DEBUG
+CFLAGS += -DKERNEL_DEBUG -g
+else
+CFLAGS += -O2
 endif
 ifneq ($(FEATURE_LIMINE),)
 CFLAGS += -DKERNEL_USE_LIMINE
@@ -23,7 +25,7 @@ else
 LDFLAGS += -T scripts/lethe_loader.lds
 endif
 FONT=/usr/share/consolefonts/default8x16.psfu.gz
-all:kernel
+all:kernel debug_kernel
 %.c.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 %.s.o: %.s
@@ -42,5 +44,7 @@ kernel_end.o: kernel_end.c
 kernel:$(OBJS)
 	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
 	$(STRIP) $@
+debug_kernel:$(OBJS)
+	$(CC) $(LDFLAGS) $(CFLAGS) $^ -o $@
 clean: 
 	$(RM) -fv $(CLEAN_OBJS)
