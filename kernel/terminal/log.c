@@ -34,7 +34,7 @@ int kernel_vlog(int kernel_log_level, char* fmt, va_list args)
   return written;
 }
 
-int kernel_log_debug(char* fmt, ...)
+/*int kernel_log_debug(char* fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -50,4 +50,4 @@ int kernel_log_error(char* fmt, ...)
   int written = kernel_vlog(KERNEL_LOG_ERROR, fmt, args);
   va_end(args);
   return written;
-}
+}*/

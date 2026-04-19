@@ -7,6 +7,10 @@ all: limine_loader
 images: limine_image
 endif
 
+IMAGE=kernel/kernel
+ifneq ($(FEATURE_DEBUG),)
+IMAGE=kernel/debug_kernel
+endif
 
 .PHONY: objs test aml lethe_loader lethe_image limine_image limine_loader common_image kernel lai libc initfs
 lethe_loader: objs kernel
@@ -35,14 +39,14 @@ common_image:
 	sudo mkdir -p /mnt/efi/boot
 lethe_image: common_image
 	sudo cp loader/bootx64.efi /mnt/efi/boot
-	sudo cp kernel/kernel /mnt/
+	sudo cp $(IMAGE) /mnt/kernel
 	sudo cp initfs /mnt/
 	tree /mnt
 	sudo umount /mnt
 	sudo losetup -d /dev/loop100
 limine_image: common_image
 	sudo mkdir -p /mnt/boot/limine
-	sudo cp kernel/kernel /mnt/boot
+	sudo cp $(IMAGE) /mnt/boot/kernel
 	sudo cp limine.conf /mnt/boot/limine
 	sudo cp limine/limine-bios.sys /mnt/boot/limine
 	sudo cp limine/BOOTX64.EFI /mnt/efi/boot

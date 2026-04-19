@@ -20,7 +20,7 @@ uint64_t virtual_to_physical(uint64_t virtual)
       virtual);
     return 0;
   }
-  page_table_t* p3     = (void*)(p3_physical);
+  page_table_t* p3     = (void*)(p3_physical + hhdm_mapping);
   uint64_t p2_physical = p3->pages[p3_index].address << 12;
   if (p2_physical == 0)
   {
@@ -29,7 +29,7 @@ uint64_t virtual_to_physical(uint64_t virtual)
       virtual);
     return 0;
   }
-  page_table_t* p2     = (void*)(p2_physical);
+  page_table_t* p2     = (void*)(p2_physical + hhdm_mapping);
   uint64_t p1_physical = p2->pages[p2_index].address << 12;
   if (p1_physical == 0)
   {
@@ -38,7 +38,7 @@ uint64_t virtual_to_physical(uint64_t virtual)
       virtual);
     return 0;
   }
-  page_table_t* p1    = (void*)(p1_physical);
+  page_table_t* p1    = (void*)(p1_physical + hhdm_mapping);
   uint64_t page_entry = p1->pages[p1_index].address << 12;
   if (page_entry == 0)
   {
@@ -47,7 +47,7 @@ uint64_t virtual_to_physical(uint64_t virtual)
       virtual);
     return 0;
   }
-  kernel_log_debug("%x is mapped to %x", virtual, page_entry);
+  // kernel_log_debug("%x is mapped to %x", virtual, page_entry);
   return page_entry;
 }
 

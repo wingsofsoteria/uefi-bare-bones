@@ -1,6 +1,5 @@
 #include "memory/alloc.h"
 #include "buddy_allocator.h"
-#include "list_allocator.h"
 #include "log.h"
 #include "paging_internal.h"
 #include "stdio.h"

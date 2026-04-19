@@ -8,12 +8,12 @@
 #include <sys/cdefs.h>
 
 #define EOF (-1)
-#define abort_msg(format, ...)        \
-  printf("ABORT [%s]: ", __func__);   \
+#define abort_msg(format, ...)                   \
+  printf("ABORT [%s:%d]: ", __func__, __LINE__); \
   __abort_msg(format, ##__VA_ARGS__);
 
-#define abort()                   \
-  printf("ABORT [%s]", __func__); \
+#define abort()                                \
+  printf("ABORT [%s:%d]", __func__, __LINE__); \
   __abort();
 
 int vprintf(const char* restrict format, va_list parameters);

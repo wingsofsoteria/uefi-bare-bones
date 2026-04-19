@@ -31,9 +31,9 @@ all:kernel debug_kernel
 %.s.o: %.s
 	nasm -felf64 -i include $< -o $@
 OBJS=kernel_init.o font.o
-CLEAN_OBJS = kernel_init.o kernel.o kernel_end.o
+CLEAN_OBJS = kernel_init.o entry.s.o kernel.o kernel_end.o
 include makefiles/*.mk
-OBJS += kernel.o ../lai/lai.a ../libc/libk.a kernel_end.o
+OBJS += entry.s.o kernel.o ../lai/lai.a ../libc/libk.a kernel_end.o
 font.o:
 	$(CAT) $(FONT) | $(DECOMPRESS)
 	$(OBJCOPY) -O elf64-x86-64 -B i386 -I binary font.psf font.o 

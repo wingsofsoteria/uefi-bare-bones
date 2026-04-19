@@ -83,8 +83,15 @@ __attribute__((
   used, section(".limine_requests"))) static volatile struct limine_rsdp_request
   rsdp_request = {.id = LIMINE_RSDP_REQUEST_ID, .revision = 0};
 
+__attribute__((used,
+  section(
+    ".limine_requests"))) static volatile struct limine_executable_file_request
+  executable_request = {.id = LIMINE_EXECUTABLE_FILE_REQUEST_ID, .revision = 0};
+
+void* kernel_file_address;
+
 // NOLINTNEXTLINE
-int _start()
+int kmain()
 {
   if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false)
   {
@@ -115,7 +122,11 @@ int _start()
   {
     halt_cpu;
   }
-
+  if (executable_request.response == NULL)
+  {
+    halt_cpu;
+  }
+  kernel_file_address = executable_request.response->executable_file->address;
   common_init_start();
   init_fb((uint64_t)framebuffer->address, framebuffer->pitch,
     framebuffer->width, framebuffer->height);

@@ -1,5 +1,4 @@
 #include "log.h"
-#include "memory/alloc.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "types.h"
@@ -9,8 +8,13 @@
 #include <stdint.h>
 #include <string.h>
 #include "buddy_allocator.h"
-
 #define MIN_ALLOC_SIZE 256
+#define abort_if_null(x) \
+  if (x == NULL)         \
+  {                      \
+    debug();             \
+    abort();             \
+  }
 struct AllocatorBlock
 {
   size_t size;
@@ -20,19 +24,30 @@ struct AllocatorBlock
 struct BuddyAllocator
 {
   struct AllocatorBlock* head;
+  size_t size;
+  struct AllocatorBlock* tail;
 };
 
 static struct BuddyAllocator allocator = {0};
 
 static struct AllocatorBlock* next_block(struct AllocatorBlock* this)
 {
+  if (this == NULL || this < allocator.head || this >= allocator.tail)
+  {
+    abort_msg("block is out of bounds");
+  }
+  if (this->size > allocator.size ||
+    this->size <= sizeof(struct AllocatorBlock))
+  {
+    abort_msg("block has invalid size: %d", this->size);
+  }
   return (struct AllocatorBlock*)((char*)this + this->size);
 }
 
 static void debug()
 {
   struct AllocatorBlock* block = allocator.head;
-  while ((uint64_t)block < HEAP_END && block->size > 0)
+  while (block < allocator.tail && block->size > 0)
   {
     kernel_log_debug(
       "%x %d %s", block, block->size, block->free ? "free" : "used");
@@ -79,14 +94,12 @@ static struct AllocatorBlock* find_best(size_t size)
   struct AllocatorBlock* block = allocator.head;
   struct AllocatorBlock* next  = next_block(block);
   struct AllocatorBlock* best  = NULL;
-  kernel_log_debug("Block: %x - Next: %x", block, next);
-  if ((uint64_t)next == HEAP_END && block->free)
+  if (next == allocator.tail && block->free)
   {
-    kernel_log_debug("Splitting block into %d halves", size);
     return split_block(block, size);
   }
 
-  while ((uint64_t)block < HEAP_END && (uint64_t)next < HEAP_END)
+  while (block < allocator.tail && next < allocator.tail)
   {
     if (can_merge(block, next))
     {
@@ -96,7 +109,7 @@ static struct AllocatorBlock* find_best(size_t size)
         best = block;
       }
       block = next_block(next);
-      if ((uint64_t)block < HEAP_END)
+      if (block < allocator.tail)
       {
         next = next_block(block);
       }
@@ -110,7 +123,7 @@ static struct AllocatorBlock* find_best(size_t size)
     if (next->size > block->size)
     {
       block = next_block(next);
-      if ((uint64_t)block < HEAP_END)
+      if (block < allocator.tail)
       {
         next = next_block(block);
       }
@@ -118,24 +131,26 @@ static struct AllocatorBlock* find_best(size_t size)
     }
     block = next;
     next  = next_block(block);
+    abort_if_null(next);
   }
   return split_block(best, size);
 }
 
 static void merge_blocks()
 {
+  kernel_log_debug("merging blocks");
   struct AllocatorBlock* block = allocator.head;
   struct AllocatorBlock* next  = next_block(block);
   while (true)
   {
     bool can_break = true;
-    while ((uint64_t)block < HEAP_END && (uint64_t)next < HEAP_END)
+    while (block < allocator.tail && next < allocator.tail)
     {
       if (can_merge(block, next))
       {
         block->size <<= 1;
         block         = next_block(block);
-        if ((uint64_t)block < HEAP_END)
+        if (block < allocator.tail)
         {
           next      = next_block(block);
           can_break = false;
@@ -149,7 +164,7 @@ static void merge_blocks()
         continue;
       }
       block = next_block(next);
-      if ((uint64_t)block < HEAP_END)
+      if (block < allocator.tail)
       {
         next = next_block(block);
       }
@@ -195,7 +210,7 @@ void* buddy_realloc(void* ptr, size_t size)
   kernel_log_debug("Merging blocks");
   merge_blocks();
   // debug();
-  return new_block;
+  return (void*)((char*)new_block + sizeof(struct AllocatorBlock));
 }
 
 void* buddy_alloc(size_t size)
@@ -237,7 +252,7 @@ void buddy_free(void* ptr)
     kernel_log_error("Cannot free NULL");
     return;
   }
-  if ((void*)allocator.head > ptr || HEAP_END < (uint64_t)ptr)
+  if ((void*)allocator.head >= ptr || (void*)allocator.tail < ptr)
   {
     kernel_log_error("Memory was not allocated by this allocator");
     return;
@@ -253,7 +268,9 @@ void init_buddy_allocator(uint64_t heap_start, uint64_t heap_size)
   head->size                  = heap_size;
   head->free                  = true;
   allocator.head              = head;
+  allocator.tail              = (void*)(heap_start + heap_size);
+  allocator.size              = heap_size;
   kernel_log_debug(
     "Initialized Buddy Allocator\n\tHead: %x\n\tTail: %x\n\tTag size: %d",
-    allocator.head, HEAP_END, sizeof(struct AllocatorBlock));
+    allocator.head, allocator.tail, sizeof(struct AllocatorBlock));
 }
