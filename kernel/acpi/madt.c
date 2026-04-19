@@ -9,7 +9,6 @@
 #include "config.h"
 #include "log.h"
 #include "stdio.h"
-#include "stdlib.h"
 static acpi_madt_t* madt = NULL;
 
 static inline void io_wait(void)
@@ -53,7 +52,7 @@ uint32_t madt_get_lapic_addr()
 
 void madt_init()
 {
-  madt = (void*)acpi_get_table("APIC");
+  madt = laihost_scan("APIC", 0);
   if (madt == NULL)
   {
     // Configure PIC

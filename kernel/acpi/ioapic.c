@@ -5,19 +5,19 @@
 #include "acpi.h"
 #include "acpi/pic.h"
 #include "acpi/tables.h"
-#include "stdlib.h"
+#include "types.h"
 #include <stdint.h>
 static void write_ioapic(
   uint64_t ioregsel, const uint8_t offset, const uint32_t value)
 {
-  *(volatile uint32_t*)(ioregsel)        = offset;
-  *(volatile uint32_t*)(ioregsel + 0x10) = value;
+  *(volatile uint32_t*)(ioregsel + hhdm_mapping)        = offset;
+  *(volatile uint32_t*)(ioregsel + 0x10 + hhdm_mapping) = value;
 }
 
 static uint32_t read_ioapic(uint64_t ioregsel, const uint8_t offset)
 {
-  *(volatile uint32_t*)(ioregsel) = offset;
-  return *(volatile uint32_t*)(ioregsel + 0x10);
+  *(volatile uint32_t*)(ioregsel + hhdm_mapping) = offset;
+  return *(volatile uint32_t*)(ioregsel + 0x10 + hhdm_mapping);
 }
 
 static void set_redirection_table_entry(

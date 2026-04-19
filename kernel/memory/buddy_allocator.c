@@ -36,10 +36,10 @@ static struct AllocatorBlock* next_block(struct AllocatorBlock* this)
   {
     abort_msg("block is out of bounds");
   }
-  if (this->size > allocator.size ||
-    this->size <= sizeof(struct AllocatorBlock))
+  if (this->size > allocator.size || this->size < MIN_ALLOC_SIZE)
   {
-    abort_msg("block has invalid size: %d", this->size);
+    kernel_log_error("corrupted block %x", this);
+    this->size = MIN_ALLOC_SIZE;
   }
   return (struct AllocatorBlock*)((char*)this + this->size);
 }
@@ -60,25 +60,23 @@ static struct AllocatorBlock* split_block(
 {
   if (block == NULL || size == 0)
   {
-    kernel_log_debug("Invalid block or size: %x %d", block, size);
+    kernel_log_error("Invalid block or size: %x %d", block, size);
     return NULL;
   }
   while (size <= (block->size >> 1))
   {
     size_t half_size = block->size >> 1;
-    kernel_log_debug("Split block %x into %d", block, half_size);
-    block->size = half_size;
-    block       = next_block(block);
-    block->size = half_size;
-    block->free = true;
+    block->size      = half_size;
+    block            = next_block(block);
+    block->size      = half_size;
+    block->free      = true;
   }
-  kernel_log_debug("New block %x %d", block, block->size);
   // debug();
   if (size <= block->size)
   {
     return block;
   }
-  kernel_log_debug("Block will not fit into %d bytes", size);
+  kernel_log_error("Block will not fit into %d bytes", size);
   return NULL;
 }
 
@@ -90,7 +88,6 @@ static bool can_merge(
 
 static struct AllocatorBlock* find_best(size_t size)
 {
-  kernel_log_debug("Locating block with at least size %d", size);
   struct AllocatorBlock* block = allocator.head;
   struct AllocatorBlock* next  = next_block(block);
   struct AllocatorBlock* best  = NULL;
@@ -138,7 +135,6 @@ static struct AllocatorBlock* find_best(size_t size)
 
 static void merge_blocks()
 {
-  kernel_log_debug("merging blocks");
   struct AllocatorBlock* block = allocator.head;
   struct AllocatorBlock* next  = next_block(block);
   while (true)
@@ -182,15 +178,12 @@ void* buddy_realloc(void* ptr, size_t size)
   {
     return buddy_alloc(size);
   }
-  kernel_log_debug("Reallocating block %x", ptr);
   struct AllocatorBlock* block =
     (struct AllocatorBlock*)((char*)ptr - sizeof(struct AllocatorBlock));
-  kernel_log_debug(
-    "Found block %x %d %s", block, block->size, block->free ? "free" : "used");
   struct AllocatorBlock* new_block = find_best(size);
   if (new_block == NULL)
   {
-    kernel_log_debug("Could not find new block, merging");
+    kernel_log_error("Could not find new block, merging");
     merge_blocks();
     new_block = find_best(size);
     // debug();
@@ -200,14 +193,10 @@ void* buddy_realloc(void* ptr, size_t size)
     kernel_log_error("Failed to find any valid blocks");
     return NULL;
   }
-  kernel_log_debug("Found replacement block %x %d %s", new_block,
-    new_block->size, new_block->free ? "free" : "used");
-
   memmove(new_block, block, block->size);
   size_t block_size = block->size;
   block->size       = block_size;
   block->free       = true;
-  kernel_log_debug("Merging blocks");
   merge_blocks();
   // debug();
   return (void*)((char*)new_block + sizeof(struct AllocatorBlock));
@@ -230,17 +219,15 @@ void* buddy_alloc(size_t size)
   struct AllocatorBlock* valid_block = find_best(size);
   if (valid_block == NULL)
   {
-    kernel_log_debug("Could not find a valid block, trying again");
+    kernel_log_error("Could not find a valid block, trying again");
     merge_blocks();
     valid_block = find_best(size);
   }
   if (valid_block == NULL)
   {
-    kernel_log_debug("Still could not find a valid block, aborting");
+    kernel_log_error("Still could not find a valid block, aborting");
     return NULL;
   }
-  kernel_log_debug("Found valid block %x, offsetting by %d for tag",
-    valid_block, sizeof(struct AllocatorBlock));
   valid_block->free = false;
   return (void*)((char*)valid_block + sizeof(struct AllocatorBlock));
 }

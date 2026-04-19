@@ -3,7 +3,7 @@
 
 #include "acpi/acpi.h"
 #include "acpi/tables.h"
-
+#include <stddef.h>
 #define MADT_ADDR32(index)                                           \
   (madt->interrupt_controller_structure[index + 3] & 0xFF) << 24 |   \
     (madt->interrupt_controller_structure[index + 2] & 0xFF) << 16 | \
@@ -19,10 +19,9 @@ void lapic_init();
 uint32_t madt_get_ioapic(uint32_t gsi);
 uint32_t madt_get_lapic_addr();
 madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq);
-void* acpi_get_table(const char id[4]);
 uint32_t lapic_read(uint16_t offset);
 void lapic_write(uint16_t offset, uint32_t value);
-void dsdt_init();
-void aml_parser_init(void*);
-void aml_parser_run();
+
+void* laihost_scan(const char*, size_t);
+
 #endif

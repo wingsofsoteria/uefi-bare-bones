@@ -5,6 +5,7 @@
 #include "acpispec/tables.h"
 #include "cpu/sleep.h"
 #include "lai/core.h"
+#include "lai/helpers/sci.h"
 #include "log.h"
 #include "memory/alloc.h"
 #include "stdio.h"
@@ -60,23 +61,6 @@ static bool sdt_checksum(acpi_header_t* sdt)
   return sum == 0;
 }
 
-void* acpi_get_table(const char id[4])
-{
-  int entries = (XSDT->header.length - sizeof(acpi_header_t)) / 8;
-  for (int i = 0; i < entries; i++)
-  {
-    acpi_header_t* sdt = (void*)XSDT->tables[i];
-    if (id[0] != sdt->signature[0] || id[1] != sdt->signature[1] ||
-      id[2] != sdt->signature[2] || id[3] != sdt->signature[3])
-    {
-      continue;
-    }
-    return sdt;
-  }
-
-  return NULL;
-}
-
 void* laihost_scan(const char* sig, size_t index)
 {
   if (strncmp(sig, "DSDT", 4) == 0)
@@ -93,7 +77,8 @@ void* laihost_scan(const char* sig, size_t index)
       return sdt;
     }
   }
-  abort();
+  kernel_log_error("Could not find table with signature %s", sig);
+  return NULL;
 }
 
 void laihost_outb(uint16_t port, uint8_t val)
@@ -171,11 +156,11 @@ int acpi_init(void* rsdp_pointer)
   }
   lai_set_acpi_revision(rsdp->revision);
   lai_create_namespace();
-  //  ignore scis
-  // lai_set_sci_event(0);
-  // lai_enable_acpi(1);
-  kernel_log_debug("ACPI initialization finished\n");
   madt_init();
   lapic_init();
+  //  ignore scis
+  // lai_set_sci_event(0);
+  lai_enable_acpi(1);
+  kernel_log_debug("ACPI initialization finished\n");
   return 0;
 }

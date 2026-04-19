@@ -9,7 +9,7 @@
 #include <acpi/acpi.h>
 #include <stdio.h>
 #include <keyboard.h>
-
+#include "trace.h"
 volatile uint64_t ticks;
 volatile uint8_t tsc_waiting;
 __attribute__((aligned(4096))) static idt_t idt;
@@ -44,7 +44,7 @@ static void dump_stack(isr_stack_t* stack)
   printf("STACK:%x\n", stack);
   printf("\tRFLAGS:%x\n", stack->rflags);
   printf("\t    CS:%x\n", stack->cs);
-  printf("\t   RIP:%x\n", stack->rip);
+  printf("\t   RIP:[%x] %s\n", stack->rip, resolve_function_name(stack->rip));
   printf("\t   ERR:%x\n", stack->err);
   printf("\t   ISR:%x\n", stack->isr);
   printf("\t   RAX:%x\n", stack->rax);
@@ -62,6 +62,11 @@ static void dump_stack(isr_stack_t* stack)
   printf("\t   R13:%x\n", stack->r13);
   printf("\t   R14:%x\n", stack->r14);
   printf("\t   R15:%x\n", stack->r15);
+  uint64_t cr2;
+  asm volatile("mov %%cr2, %0"
+    : "=r"(cr2));
+  printf("\t   CR2:%x\n", cr2);
+  walk_stack();
 }
 
 static void set_idt_entry_simple(uint8_t vector, void* handler)

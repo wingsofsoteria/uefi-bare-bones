@@ -1,8 +1,7 @@
 #include "acpi.h"
-#include "stdlib.h"
 void hpet_init()
 {
-  void* hpet_address = acpi_get_table("HPET");
+  void* hpet_address = laihost_scan("HPET", 0);
   if (hpet_address == NULL)
   {
     return;

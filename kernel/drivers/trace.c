@@ -11,7 +11,7 @@ struct StackFrame
 
 extern void* kernel_file_address;
 
-static char* resolve_function_name(uint64_t rip)
+char* resolve_function_name(uint64_t rip)
 {
   static Elf64_Ehdr* kernel_header = NULL;
 

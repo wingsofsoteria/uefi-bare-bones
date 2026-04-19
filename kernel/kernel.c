@@ -1,3 +1,4 @@
+#include "shell.h"
 #include "stdlib.h"
 #include <acpi/pic.h>
 #include <config.h>
@@ -141,6 +142,11 @@ int kmain()
   init_config_cpuid();
   acpi_init(rsdp_request.response->address);
   kernel_log_debug("Kernel finished initialization");
+  enable_irq(1, 33, keyboard_isr);
+  enable_tasking();
+  enable_apic();
+  enable_interrupts();
+  init_shell();
   halt_cpu;
 }
 #else
@@ -165,7 +171,6 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   // kernel_init();
   clear_screen();
   acpi_init(0);
-  halt_cpu;
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
   // enable_pit();
