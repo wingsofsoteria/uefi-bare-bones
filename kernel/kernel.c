@@ -140,13 +140,23 @@ int kmain()
   setup_allocator(memmap_request.response);
   kernel_init_code();
   init_config_cpuid();
-  acpi_init(rsdp_request.response->address);
+  acpi_early_init(rsdp_request.response->address);
   kernel_log_debug("Kernel finished initialization");
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
   enable_apic();
   enable_interrupts();
+  acpi_late_init();
   init_shell();
+
+  while (kernel_config.kexit == 0)
+  {
+    asm volatile("hlt");
+  }
+
+  printf("Kernel was told to exit, Goodbye!\n");
+  kernel_init_logging(10);
+  shutdown();
   halt_cpu;
 }
 #else
