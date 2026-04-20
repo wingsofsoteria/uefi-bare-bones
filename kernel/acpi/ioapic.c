@@ -10,8 +10,8 @@
 static void write_ioapic(
   uint64_t ioregsel, const uint8_t offset, const uint32_t value)
 {
-  *(volatile uint32_t*)(ioregsel + hhdm_mapping)        = offset;
-  *(volatile uint32_t*)(ioregsel + 0x10 + hhdm_mapping) = value;
+  *(volatile uint32_t*)(ioregsel)        = offset;
+  *(volatile uint32_t*)(ioregsel + 0x10) = value;
 }
 
 static uint32_t read_ioapic(uint64_t ioregsel, const uint8_t offset)

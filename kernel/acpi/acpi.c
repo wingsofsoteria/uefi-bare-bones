@@ -3,8 +3,10 @@
 
 #include "acpi.h"
 #include "acpispec/tables.h"
+#include "config.h"
 #include "cpu/sleep.h"
 #include "lai/core.h"
+#include "lai/helpers/pm.h"
 #include "lai/helpers/sci.h"
 #include "log.h"
 #include "memory/alloc.h"
@@ -144,7 +146,7 @@ void laihost_sleep(uint64_t ms)
 
 /* TODO laihost_timer, laihost_handle_global_notify, laihost_handle_amldebug */
 
-int acpi_init(void* rsdp_pointer)
+int acpi_early_init(void* rsdp_pointer)
 {
   acpi_xsdp_t* rsdp = rsdp_pointer;
 
@@ -160,7 +162,17 @@ int acpi_init(void* rsdp_pointer)
   lapic_init();
   //  ignore scis
   // lai_set_sci_event(0);
+  return 0;
+}
+
+int acpi_late_init()
+{
   lai_enable_acpi(1);
   kernel_log_debug("ACPI initialization finished\n");
   return 0;
+}
+
+void shutdown()
+{
+  lai_enter_sleep(5);
 }

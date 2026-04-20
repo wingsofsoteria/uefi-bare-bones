@@ -8,7 +8,9 @@
 #include "acpi/tables.h"
 #include "config.h"
 #include "log.h"
+#include "memory/paging.h"
 #include "stdio.h"
+#include "types.h"
 static acpi_madt_t* madt = NULL;
 
 static inline void io_wait(void)
@@ -47,6 +49,8 @@ static void mask_pic()
 
 uint32_t madt_get_lapic_addr()
 {
+  map_page(madt->local_interrupt_controller_address,
+    madt->local_interrupt_controller_address, 0b11);
   return madt->local_interrupt_controller_address;
 }
 
@@ -101,7 +105,10 @@ uint32_t madt_get_ioapic(uint32_t gsi)
     {
       continue;
     }
-    return MADT_ADDR32(i + 4);
+    uint32_t address = MADT_ADDR32(i + 4);
+    map_page(address, address, 0b11);
+    kernel_log_debug("IOAPIC at %x", address);
+    return address;
   }
 
   kernel_log_error("No IO APIC with GSI base %d\n", gsi);

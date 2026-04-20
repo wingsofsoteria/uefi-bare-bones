@@ -8,12 +8,12 @@ static uint32_t lapic_addr;
 
 void lapic_write(uint16_t offset, uint32_t value)
 {
-  *(volatile uint32_t*)((uint64_t)lapic_addr + offset + hhdm_mapping) = value;
+  *(volatile uint32_t*)((uint64_t)lapic_addr + offset) = value;
 }
 
 uint32_t lapic_read(uint16_t offset)
 {
-  return *(volatile uint32_t*)((uint64_t)lapic_addr + offset + hhdm_mapping);
+  return *(volatile uint32_t*)((uint64_t)lapic_addr + offset);
 }
 void lapic_init()
 {
