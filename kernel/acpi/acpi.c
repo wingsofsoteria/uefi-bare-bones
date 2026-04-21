@@ -12,12 +12,14 @@
 #include "memory/alloc.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "types.h"
 #include <string.h>
 static acpi_xsdt_t* XSDT = NULL;
 
 void laihost_log(int level, const char* msg)
 {
   kernel_log(level, msg);
+  putchar('\n');
 }
 
 __attribute__((noreturn)) void laihost_panic(const char* msg)
@@ -63,8 +65,19 @@ static bool sdt_checksum(acpi_header_t* sdt)
   return sum == 0;
 }
 
+void acpi_dump_tables()
+{
+  int entries = (XSDT->header.length - sizeof(acpi_header_t)) / 8;
+  for (int i = 0; i < entries; i++)
+  {
+    acpi_header_t* sdt = (void*)(XSDT->tables[i] + hhdm_mapping);
+    kernel_log_debug("ACPI Table %.4s", sdt->signature);
+  }
+}
+
 void* laihost_scan(const char* sig, size_t index)
 {
+  int current_index = 0;
   if (strncmp(sig, "DSDT", 4) == 0)
   {
     acpi_fadt_t* fadt = laihost_scan("FACP", 0);
@@ -74,8 +87,14 @@ void* laihost_scan(const char* sig, size_t index)
   for (int i = 0; i < entries; i++)
   {
     acpi_header_t* sdt = (void*)(XSDT->tables[i] + hhdm_mapping);
+    kernel_log_debug("ACPI Table %.4s", sdt->signature);
     if (strncmp(sig, sdt->signature, 4) == 0)
     {
+      if (current_index != index)
+      {
+        current_index++;
+        continue;
+      }
       return sdt;
     }
   }

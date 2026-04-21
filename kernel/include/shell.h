@@ -1,5 +1,5 @@
 #pragma once
-#define COMMAND_COUNT 3
+#define COMMAND_COUNT 4
 void push_char(char);
 void del_char();
 void execute_command();

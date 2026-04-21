@@ -1,6 +1,9 @@
 CC=clang
 AR=llvm-ar
 CFLAGS=-Iinclude -I../kernel/include -ffreestanding -fno-stack-protector -D__is_libk -mno-mmx -mno-sse -mno-sse2
+ifeq ($(FEATURE_QEMU),)
+CFLAGS += -DQEMU_DEBUG
+endif
 ifneq ($(FEATURE_DEBUG),)
 CFLAGS += -DKERNEL_DEBUG -g
 else

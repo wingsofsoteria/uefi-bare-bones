@@ -30,7 +30,6 @@ int kernel_vlog(int kernel_log_level, char* fmt, va_list args)
   }
   printf("(%s) ", kernel_log_str[kernel_log_level]);
   int written = vprintf(fmt, args);
-  putchar('\n');
   return written;
 }
 

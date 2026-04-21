@@ -1,43 +1,49 @@
 #!/usr/bin/env bash
 trap "exit 1" SIGINT
-make clean
-if ! test -b /dev/sda1; then
-	make
-    echo "using fat.img"
-    if ! test -f fat.img; then
-        echo "creating fat.img"
-        dd if=/dev/zero of=fat.img bs=1M count=100
-        sync
-    fi
-    sudo losetup -P loop100 fat.img
-    if ! test -f fs.dmp; then
-        echo "creating partition table"
-        echo -e "label: gpt\n,+,\n" | sudo sfdisk /dev/loop100
-        sudo sfdisk -d /dev/loop100 > fs.dmp
-    else
-    echo "copying partition table from backup"
-    sudo sfdisk /dev/loop100 < fs.dmp
-    fi
-    echo "formatting fat.img"
-    sudo mkfs.fat -F32 /dev/loop100p1
-    sudo mount /dev/loop100p1 /mnt
-    echo "adding files to fat.img"
-    sudo mkdir -p /mnt/efi/boot
-    sudo cp loader/bootx64.efi /mnt/efi/boot
-	sudo cp kernel/kernel /mnt/
-	sudo cp initfs /mnt/
-	tree /mnt
-    sudo umount /mnt
-    sudo losetup -d /dev/loop100
-else
-	make
-    echo "using disk"
-    sudo mount /dev/sda1 /mnt
-	sudo rm -rf /mnt/*
-    sudo mkdir -p /mnt/EFI/BOOT
-    sudo cp loader/bootx64.efi /mnt/EFI/BOOT
-	sudo cp kernel/kernel /mnt/
-	sudo cp initfs /mnt/
-	tree /mnt
-    sudo umount /mnt
+if [ $# -eq 0 ]
+then
+	echo "Specify a drive to format"
+	exit 1
 fi
+DRIVE=$1
+PARTITION="$DRIVE""1"
+echo $PARTITION
+if [ ! -b $DRIVE ]
+then
+	echo "$DRIVE is not a block device"
+	exit 1
+fi
+while true; do
+	read -p "Are you sure you want to use $DRIVE? [Y/N]" yn
+	case $yn in
+		[Yy]* ) break;;
+		[Nn]* ) exit 1;;
+		* ) echo "Invalid input $yn"
+	esac
+done
+echo "using $DRIVE"
+export FEATURE_LIMINE=1
+make clean
+make
+make images
+if [ ! -f fat.img ]
+then
+echo "Failed to build Lethe"
+exit 1
+fi
+sudo dd if=fat.img of=$DRIVE status=progress
+exit
+echo -e "label: gpt\n,+,\n" | sudo sfdisk $DRIVE
+sudo mkfs.fat -F32 $PARTITION
+sudo mount $PARTITION /mnt
+sudo mkdir -p /mnt/efi/boot
+sudo mkdir -p /mnt/boot/limine
+make clean
+make
+sudo cp kernel/kernel /mnt/boot
+sudo cp limine.conf /mnt/boot/limine
+sudo cp limine/limine-bios.sys /mnt/boot/limine
+sudo cp limine/BOOTX64.EFI /mnt/efi/boot
+sudo cp limine/BOOTIA32.EFI /mnt/efi/boot
+tree /mnt
+sudo umount /mnt

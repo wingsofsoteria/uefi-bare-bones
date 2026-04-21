@@ -13,12 +13,14 @@ static char* shell_cmd;
 static int shell_size;
 static int shell_cur;
 
-static const char* command_list[COMMAND_COUNT] = {"test", "exit", "rem"};
+static const char* command_list[COMMAND_COUNT] = {
+  "test", "exit", "rem", "jump"};
 
 static void test(void* _unused);
 static void exit(void* _unused);
 static void rem(void* comment);
-static const task_function commands[COMMAND_COUNT] = {test, exit, rem};
+static void jump(void* function);
+static const task_function commands[COMMAND_COUNT] = {test, exit, rem, jump};
 
 void checkpoint(char* name)
 {
@@ -39,6 +41,21 @@ void checkpoint(char* name)
 void exit(void* _unused)
 {
   kernel_config.kexit = 1;
+}
+
+extern uint64_t resolve_function_address(char*);
+extern void call_function(void*);
+
+void jump(void* function)
+{
+  uint64_t rip = resolve_function_address((char*)(function + 1));
+  kernel_log_debug("RIP: %x %s", rip, (char*)function);
+  if (rip == 0)
+  {
+    printf("Could not locate function %s\n", function);
+    return;
+  }
+  call_function((void*)rip);
 }
 
 void rem(void* comment)

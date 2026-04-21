@@ -1,4 +1,5 @@
 #include "elf.h"
+#include "log.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,14 +12,59 @@ struct StackFrame
 
 extern void* kernel_file_address;
 
+static Elf64_Ehdr* kernel_header = NULL;
+static Elf64_Sym* symtab         = NULL;
+static int sym_entries           = 0;
+static char* strtab              = NULL;
+static char* shstrtab            = NULL;
+
+uint64_t resolve_function_address(char* name)
+{
+  if (kernel_header == NULL)
+  {
+    kernel_header               = kernel_file_address;
+    Elf64_Shdr* kernel_shstrtab = kernel_file_address + kernel_header->e_shoff +
+      (kernel_header->e_shstrndx * kernel_header->e_shentsize);
+    shstrtab = kernel_file_address + kernel_shstrtab->sh_offset;
+
+    Elf64_Shdr* sections = kernel_file_address + kernel_header->e_shoff;
+    for (int i = 0; i < kernel_header->e_shnum; ++i)
+    {
+      Elf64_Shdr section = sections[i];
+      if (section.sh_type == 2)
+      {
+        symtab      = kernel_file_address + section.sh_offset;
+        sym_entries = section.sh_size / sizeof(Elf64_Sym);
+      }
+      if (section.sh_type == 3 &&
+        strncmp(shstrtab + section.sh_name, ".strtab", 7) == 0)
+      {
+        strtab = kernel_file_address + section.sh_offset;
+      }
+    }
+  }
+  if (strtab == NULL || symtab == NULL)
+  {
+    kernel_log_debug("Could not find symbol table");
+    return 0;
+  }
+  for (int i = 0; i < sym_entries; i++)
+  {
+    Elf64_Sym symbol = symtab[i];
+    if ((symbol.st_info & 0xf) != 2)
+    {
+      continue;
+    }
+    if (strncmp(strtab + symbol.st_name, name, strlen(name)) == 0)
+    {
+      return symbol.st_value;
+    }
+  }
+  return 0;
+}
+
 char* resolve_function_name(uint64_t rip)
 {
-  static Elf64_Ehdr* kernel_header = NULL;
-
-  static Elf64_Sym* symtab = NULL;
-  static int sym_entries   = 0;
-  static char* strtab      = NULL;
-  static char* shstrtab    = NULL;
   if (kernel_header == NULL)
   {
     kernel_header               = kernel_file_address;
