@@ -105,15 +105,17 @@ void enable_pit()
 void enable_apic()
 {
   MAYBE_CLI;
-  if (kernel_config.interrupt_source != 0b10 ||
-    !kernel_config.apic_tsc_deadline || !kernel_config.tsc_invariant)
-  {
-    kernel_log_error("APIC timer unsupported\n");
-    return;
-  }
+
   // TODO faster tsc calibration
   if (kernel_config.tsc_freq_khz == 0)
   {
+    if (kernel_config.interrupt_source != 0b10 ||
+      !kernel_config.apic_tsc_deadline || !kernel_config.tsc_invariant)
+    {
+      kernel_log_error("APIC timer unsupported, switching to pit");
+      enable_pit();
+      return;
+    }
     uint64_t frequency;
     int error;
     frequency = calibrate_tsc_slow();

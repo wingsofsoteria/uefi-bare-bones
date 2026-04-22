@@ -16,9 +16,7 @@
 
 #ifndef LIMINE_H
   #define LIMINE_H 1
-  #ifndef __KERNEL_LOADERS_LOADER_H__
-    #error "Do not include limine.h directly, use loader.h instead"
-  #endif
+
   #include <stdint.h>
 
   #ifdef __cplusplus
@@ -700,19 +698,37 @@ struct limine_mp_response
     LIMINE_PTR(struct limine_bootloader_performance_response*) response;
   };
 
-  #define LIMINE_KEEP_IOMMU_REQUEST_ID                            \
+  #define LIMINE_X86_64_KEEP_IOMMU_REQUEST_ID                     \
     {LIMINE_COMMON_MAGIC, 0x8ebaabe51f490179, 0x2aa86a59ffb4ab0f}
 
-  struct limine_keep_iommu_response
+  struct limine_x86_64_keep_iommu_response
   {
     uint64_t revision;
   };
 
-  struct limine_keep_iommu_request
+  struct limine_x86_64_keep_iommu_request
   {
     uint64_t id[4];
     uint64_t revision;
-    LIMINE_PTR(struct limine_keep_iommu_response*) response;
+    LIMINE_PTR(struct limine_x86_64_keep_iommu_response*) response;
+  };
+
+  /* TSC (Timestamp Counter) Frequency */
+
+  #define LIMINE_TSC_FREQUENCY_REQUEST_ID                         \
+    {LIMINE_COMMON_MAGIC, 0x10f2ee1d87d195e4, 0xf747a2b78f6ddb31}
+
+  struct limine_tsc_frequency_response
+  {
+    uint64_t revision;
+    uint64_t frequency;
+  };
+
+  struct limine_tsc_frequency_request
+  {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_tsc_frequency_response*) response;
   };
 
   #ifdef __cplusplus

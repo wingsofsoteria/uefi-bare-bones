@@ -1,3 +1,4 @@
+#include "loaders/limine.h"
 #include "shell.h"
 #include "stdlib.h"
 #include <acpi/pic.h>
@@ -89,6 +90,11 @@ __attribute__((used,
     ".limine_requests"))) static volatile struct limine_executable_file_request
   executable_request = {.id = LIMINE_EXECUTABLE_FILE_REQUEST_ID, .revision = 0};
 
+__attribute__((used,
+  section(
+    ".limine_requests"))) static volatile struct limine_tsc_frequency_request
+  tsc_frequency = {.id = LIMINE_TSC_FREQUENCY_REQUEST_ID, .revision = 0};
+
 void* kernel_file_address;
 
 // NOLINTNEXTLINE
@@ -127,10 +133,16 @@ int kmain()
   {
     halt_cpu;
   }
+  if (tsc_frequency.response != NULL)
+  {
+    kernel_config.tsc_freq_khz = tsc_frequency.response->frequency * 1000;
+  }
+
   kernel_file_address = executable_request.response->executable_file->address;
   common_init_start();
   init_fb((uint64_t)framebuffer->address, framebuffer->pitch,
     framebuffer->width, framebuffer->height);
+  printf("TSC: %d\n", kernel_config.tsc_freq_khz);
   #ifdef KERNEL_DEBUG
   kernel_init_logging(1);
   #else
@@ -155,7 +167,6 @@ int kmain()
   }
 
   printf("Kernel was told to exit, Goodbye!\n");
-  kernel_init_logging(10);
   shutdown();
   halt_cpu;
 }
