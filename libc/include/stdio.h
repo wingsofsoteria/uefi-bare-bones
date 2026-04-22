@@ -8,6 +8,12 @@
 #include <sys/cdefs.h>
 
 #define EOF (-1)
+#ifdef QEMU_DEBUG
+  #define SERIAL_PORT 0xE9
+#endif
+#ifdef VBOX_DEBUG
+  #define SERIAL_PORT 0x3F8
+#endif
 #define abort_msg(format, ...)                   \
   printf("ABORT [%s:%d]: ", __func__, __LINE__); \
   __abort_msg(format, ##__VA_ARGS__);

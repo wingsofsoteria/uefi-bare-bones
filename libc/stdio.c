@@ -19,8 +19,8 @@ int putchar(int ic)
   // #if defined(__is_libk)
   char c = (char)ic;
   tty_putc(c);
-#if defined(QEMU_DEBUG)
-  outb(0xE9, c);
+#if defined(SERIAL_PORT)
+  outb(SERIAL_PORT, c);
 #endif
   // #else
   // #endif
