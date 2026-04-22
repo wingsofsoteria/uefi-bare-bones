@@ -11,6 +11,16 @@ IMAGE=kernel/kernel
 ifneq ($(FEATURE_DEBUG),)
 IMAGE=kernel/debug_kernel
 endif
+QEMU_CPU=-enable-kvm -cpu host,+invtsc
+QEMU_MEM=-m 48G
+QEMU_FW=-drive if=pflash,format=raw,readonly=on,unit=0,file=bin/OVMF_CODE.fd -drive if=pflash,format=raw,readonly=on,unit=1,file=bin/OVMF_VARS.fd 
+QEMU_HDD=-drive file=fat.img
+ifneq ($(FEATURE_QEMU),)
+QEMU_LOG=-debugcon stdio 1> >(tee log >&2)
+else
+QEMU_LOG=-monitor stdio 1> >(tee log >&2)
+endif
+QEMU_FLAGS=-net none -no-reboot $(QEMU_CPU) $(QEMU_MEM) $(QEMU_FW) $(QEMU_HDD) $(QEMU_LOG)
 
 .PHONY: objs test aml lethe_loader lethe_image limine_image limine_loader common_image kernel lai libc initfs
 lethe_loader: objs kernel
@@ -55,7 +65,7 @@ limine_image: common_image
 	sudo umount /mnt
 	sudo losetup -d /dev/loop100
 qemu:
-	qemu-system-x86_64 -enable-kvm -cpu host,+invtsc -m 48G -drive if=pflash,format=raw,readonly=on,unit=0,file=bin/OVMF_CODE.fd -drive if=pflash,format=raw,readonly=on,unit=1,file=bin/OVMF_VARS.fd -drive file=fat.img -net none -no-reboot -debugcon stdio 1> >(tee log >&2)
+	qemu-system-x86_64 $(QEMU_FLAGS)	
 
 clean: 
 	rm -f fat.img $(EXEC) $(wildcard *.o) aml_driver/driver

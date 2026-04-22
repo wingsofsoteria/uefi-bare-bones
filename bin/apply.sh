@@ -23,6 +23,7 @@ while true; do
 done
 echo "using $DRIVE"
 export FEATURE_LIMINE=1
+export FEATURE_DEBUG=1
 make clean
 make
 make images
