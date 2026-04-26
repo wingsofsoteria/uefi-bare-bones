@@ -38,8 +38,7 @@ static struct AllocatorBlock* next_block(struct AllocatorBlock* this)
   }
   if (this->size > allocator.size || this->size < MIN_ALLOC_SIZE)
   {
-    kernel_log_error("corrupted block %x", this);
-    this->size = MIN_ALLOC_SIZE;
+    abort_msg("corrupted block %x", this);
   }
   return (struct AllocatorBlock*)((char*)this + this->size);
 }

@@ -46,7 +46,7 @@ SECTIONS
 		*(.bss .bss.*)
 		*(COMMON)
 	} :data
-
+	_kernel_end_addr = .;
 	/DISCARD/ : {
 		*(.eh_frame*)
 		*(.note .note.*)

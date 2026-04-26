@@ -3,10 +3,6 @@
 #include <stdint.h>
 #include <types.h>
 
-#define HEAP_START 0xffffffff81000000
-#define HEAP_SIZE  0x20000
-#define HEAP_END   0xffffffff81020000
-
 void* kmalloc(size_t);
 void kfree(void*);
 void* krealloc(void*, size_t);
