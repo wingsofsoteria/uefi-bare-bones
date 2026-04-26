@@ -175,6 +175,7 @@ int acpi_early_init(void* rsdp_pointer)
     kernel_log_error("Failed to parse ACPI tables\n");
     abort();
   }
+  lai_enable_tracing(7);
   lai_set_acpi_revision(rsdp->revision);
   lai_create_namespace();
   madt_init();
