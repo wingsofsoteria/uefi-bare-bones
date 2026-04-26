@@ -1,56 +1,55 @@
 #include "list_allocator.h"
+#include "initial_frame_allocator.h"
 #include "log.h"
-#include "stdio.h"
-#include "types.h"
+#include "memory/paging.h"
 #include <stdalign.h>
 #include <stdint.h>
 static list_allocator_t allocator = {0};
-void add_region(uint64_t start, uint64_t size)
+static uint64_t heap_end          = 0;
+void add_region(uint64_t start, int pages)
 {
-  if (size < sizeof(list_node_t))
+  uint64_t region_end = start + (PAGE_SIZE * pages);
+  if (region_end > heap_end)
   {
-    abort_msg("Region is too small to mark\n");
+    for (int i = start; i <= region_end; i += PAGE_SIZE)
+    {
+      uint64_t frame = allocate_frame();
+      if (frame == 0)
+      {
+        abort_msg("Out of Memory");
+      }
+      map_page(i, frame, 0b11);
+    }
+    kernel_log_debug("%x -> %x", heap_end, region_end);
+    heap_end = region_end;
   }
-  if (start != ALIGN_UP(start, alignof(list_node_t)))
-  {
-    abort_msg("Address %x is not aligned", start);
-  }
-  kernel_log_debug("Adding region %x - %x", start, start + size);
+  kernel_log_debug("Adding region %x - %x", start, start + (PAGE_SIZE * pages));
   list_node_t node      = {0};
   node.next             = allocator.head.next;
-  node.size             = size;
+  node.pages            = pages;
   list_node_t* node_ptr = (void*)start;
   *node_ptr             = node;
   allocator.head.next   = node_ptr;
 }
 
-static void* try_alloc(list_node_t* region, uint64_t size, uint64_t alignment)
+static void* try_alloc(list_node_t* region, int pages)
 {
-  uint64_t start      = (uint64_t)region;
-  uint64_t region_end = start + region->size;
-  start               = ALIGN_UP(start, alignment);
-  uint64_t end        = start + size;
-  if (end > region_end)
-  {
-    kernel_log_error("Region is too small for allocation of size %d\n", size);
-    return NULL;
-  }
-  uint64_t excess = end - region_end;
-  if (excess > 0 && excess < sizeof(list_node_t))
+  if (pages > region->pages)
   {
     kernel_log_error(
-      "Region does not have enough excess space for a ListNode\n");
+      "Region is too small for allocation of size %d\n", pages * PAGE_SIZE);
     return NULL;
   }
-  return (void*)start;
+  uint64_t excess = region->pages - pages;
+  return (void*)region;
 }
 
-static list_node_t* get_valid_region(uint64_t size, uint64_t alignment)
+static list_node_t* get_valid_region(int pages)
 {
   list_node_t* current = &allocator.head;
   while (current->next != NULL)
   {
-    void* alloc_result = try_alloc(current->next, size, alignment);
+    void* alloc_result = try_alloc(current->next, pages);
     if (alloc_result == NULL)
     {
       current = current->next;
@@ -65,23 +64,25 @@ static list_node_t* get_valid_region(uint64_t size, uint64_t alignment)
   return NULL;
 }
 
-void* list_alloc(uint64_t size)
+void* list_alloc(int pages)
 {
-  kernel_log_debug("Alloc: %d", size);
-  uint64_t required_size = size + sizeof(list_node_t);
-  uint64_t alignment     = alignof(list_node_t);
-  list_node_t* region    = get_valid_region(size, alignment);
+  kernel_log_debug("Alloc: %d pages", pages);
+  list_node_t* region = get_valid_region(pages);
   if (region == NULL)
   {
-    return NULL;
+    add_region(heap_end + PAGE_SIZE, pages);
+    region = get_valid_region(pages);
+    if (region == NULL)
+    {
+      abort();
+    }
   }
-  uint64_t alloc_end  = (uint64_t)region + required_size;
-  uint64_t region_end = (uint64_t)region + region->size;
-  uint64_t excess     = region_end - alloc_end;
+  uint64_t excess = region->pages - pages;
+  kernel_log_debug("region: %d excess: %d", region->pages, excess);
+  uint64_t alloc_end = (uint64_t)region + (excess * PAGE_SIZE);
   if (excess > 0)
   {
     add_region(alloc_end, excess);
   }
-  uint64_t alloc_start = ALIGN_UP((uint64_t)region, alignment);
-  return (void*)alloc_start;
+  return (void*)(region);
 }
