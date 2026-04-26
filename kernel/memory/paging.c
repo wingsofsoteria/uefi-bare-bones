@@ -1,3 +1,4 @@
+#include "memory/paging.h"
 #include "initial_frame_allocator.h"
 #include "log.h"
 #include "paging_internal.h"

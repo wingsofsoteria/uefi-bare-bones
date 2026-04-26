@@ -3,6 +3,8 @@
 
 #include "memory/paging.h"
 
+#define PAGE_PRESENT 1
+
 typedef struct
 {
   uint8_t present : 1;
