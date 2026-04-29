@@ -17,7 +17,7 @@ static Elf64_Sym* symtab         = NULL;
 static int sym_entries           = 0;
 static char* strtab              = NULL;
 static char* shstrtab            = NULL;
-
+// NOLINTNEXTLINE
 uint64_t resolve_function_address(char* name)
 {
   if (kernel_header == NULL)
@@ -62,7 +62,7 @@ uint64_t resolve_function_address(char* name)
   }
   return 0;
 }
-
+// NOLINTNEXTLINE
 char* resolve_function_name(uint64_t rip)
 {
   if (kernel_header == NULL)
@@ -91,11 +91,11 @@ char* resolve_function_name(uint64_t rip)
 
   if (strtab == NULL)
   {
-    return "";
+    return "???";
   }
   if (symtab == NULL)
   {
-    return "";
+    return "???";
   }
   Elf64_Sym best = symtab[0];
   for (int i = 0; i < sym_entries; i++)
@@ -122,7 +122,7 @@ void walk_stack()
   while (frame != NULL)
   {
     char* function = resolve_function_name(frame->rip);
-    printf("[%x] %s\n", frame->rip, function);
+    printf("[%p] %s\n", frame->rip, function);
     frame = frame->rbp;
   }
   printf("\n==TRACE==\n");

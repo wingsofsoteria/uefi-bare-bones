@@ -13,6 +13,7 @@ kernel/debug_kernel
 kernel/kernel
 limine/
 lai/
+lai.old/
 fat.img
 test.vdi
 fs.dmp

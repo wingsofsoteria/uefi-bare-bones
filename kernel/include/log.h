@@ -17,5 +17,5 @@ enum
 // int kernel_log_debug(char*, ...);
 // int kernel_log_error(char*, ...);
 void kernel_init_logging(int);
-int kernel_log(int, char*, ...);
+__attribute__((format(printf, 2, 3))) int kernel_log(int, char*, ...);
 int kernel_vlog(int, char*, va_list);

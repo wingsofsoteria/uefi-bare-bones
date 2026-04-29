@@ -3,7 +3,6 @@
 
 #include "acpi.h"
 #include "acpispec/tables.h"
-#include "config.h"
 #include "cpu/sleep.h"
 #include "lai/core.h"
 #include "lai/helpers/pm.h"
@@ -15,10 +14,10 @@
 #include "types.h"
 #include <string.h>
 static acpi_xsdt_t* XSDT = NULL;
-
+// NOLINTNEXTLINE
 void laihost_log(int level, const char* msg)
 {
-  kernel_log(level, msg);
+  puts(msg);
   putchar('\n');
 }
 
@@ -32,27 +31,25 @@ void* laihost_malloc(size_t size)
   void* addr = kmalloc(size);
   return addr;
 }
-
+// NOLINTNEXTLINE
 void* laihost_realloc(void* oldptr, size_t newsize, size_t oldsize)
 {
   return krealloc(oldptr, newsize);
 }
-
+// NOLINTNEXTLINE
 void laihost_free(void* ptr, size_t size)
 {
   kfree(ptr);
 }
-
-void* laihost_map(size_t address, size_t count)
+/*void* laihost_map(size_t address, size_t count)
 {
   abort();
   return (void*)address;
 }
-
 void laihost_unmap(void* ptr, size_t count)
 {
   abort();
-}
+}*/
 
 static bool sdt_checksum(acpi_header_t* sdt)
 {
@@ -65,7 +62,7 @@ static bool sdt_checksum(acpi_header_t* sdt)
   return sum == 0;
 }
 
-void acpi_dump_tables()
+static void acpi_dump_tables()
 {
   int entries = (XSDT->header.length - sizeof(acpi_header_t)) / 8;
   for (int i = 0; i < entries; i++)
@@ -101,7 +98,7 @@ void* laihost_scan(const char* sig, size_t index)
   kernel_log_error("Could not find table with signature %s", sig);
   return NULL;
 }
-
+/*
 void laihost_outb(uint16_t port, uint8_t val)
 {
   asm volatile("outb %b0, %1"
@@ -155,7 +152,7 @@ uint32_t laihost_ind(uint16_t port)
     : "memory");
   return val;
 }
-
+*/
 /* TODO PCI host functions */
 
 void laihost_sleep(uint64_t ms)

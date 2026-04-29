@@ -10,7 +10,6 @@
 #include "log.h"
 #include "memory/paging.h"
 #include "stdio.h"
-#include "types.h"
 static acpi_madt_t* madt = NULL;
 
 static inline void io_wait(void)
@@ -111,6 +110,5 @@ uint32_t madt_get_ioapic(uint32_t gsi)
     return address;
   }
 
-  kernel_log_error("No IO APIC with GSI base %d\n", gsi);
-  abort();
+  abort_msg("No IO APIC with GSI base %d\n", gsi);
 }

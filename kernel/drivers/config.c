@@ -9,7 +9,6 @@
 #include "cpu/tsc.h"
 #include "cpuid.h"
 #include "log.h"
-#include <stdio.h>
 struct kernel_config kernel_config;
 
 void init_config_cpuid()
@@ -44,7 +43,8 @@ void init_config_cpuid()
   supported = __get_cpuid(0x15, &eax, &ebx, &ecx, &edx);
   if (supported)
   {
-    printf("CPUID 0x15: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
+    kernel_log_debug(
+      "CPUID 0x15: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
     // leaf 15 gives the tsc freq in hz so divide by 1000
     kernel_config.tsc_freq_khz = (ecx * (ebx / eax)) / 1000;
   }
@@ -120,7 +120,7 @@ void enable_apic()
     int error;
     frequency = calibrate_tsc_slow();
     error     = frequency - calibrate_tsc_slow();
-    kernel_log_debug("CALIBRATION RESULT %l %d\n", frequency, error);
+    kernel_log_debug("CALIBRATION RESULT %lu %d\n", frequency, error);
     if (error > 1500 || error < -1500)
     {
       kernel_log_error("TSC is unreliable\n");

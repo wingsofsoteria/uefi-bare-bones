@@ -2,7 +2,6 @@
 
 #include "acpi.h"
 #include "stdio.h"
-#include "types.h"
 #include <stdint.h>
 static uint32_t lapic_addr;
 

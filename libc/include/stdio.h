@@ -3,8 +3,8 @@
 #define _STDIO_H
 
 #include <stdarg.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/cdefs.h>
 
 #define EOF (-1)
@@ -22,8 +22,8 @@
   printf("ABORT [%s:%d]", __func__, __LINE__); \
   __abort();
 
-int vprintf(const char* restrict format, va_list parameters);
-int printf(const char* __restrict, ...);
+int vprintf(const char*, va_list);
+__attribute__((format(printf, 1, 2))) int printf(const char* __restrict, ...);
 int putchar(int);
 int puts(const char*);
 

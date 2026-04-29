@@ -24,10 +24,6 @@ int kernel_log(int kernel_log_level, char* fmt, ...)
 
 int kernel_vlog(int kernel_log_level, char* fmt, va_list args)
 {
-  if (kernel_max_log_level > kernel_log_level)
-  {
-    return 0;
-  }
   printf("(%s) ", kernel_log_str[kernel_log_level]);
   int written = vprintf(fmt, args);
   return written;

@@ -54,12 +54,16 @@ void* memmove(void* dst, const void* src, size_t size)
 
 size_t strlen(const char* str)
 {
-  size_t len = 0;
-  while (*(str + len))
-  {
-    len++;
-  }
-  return len;
+  const char* s;
+  for (s = str; *s; ++s);
+  return (size_t)(s - str);
+}
+
+size_t strnlen(const char* str, size_t maxlen)
+{
+  const char* s;
+  for (s = str; *s && maxlen--; ++s);
+  return (size_t)(s - str);
 }
 
 int strcmp(const char* s1, const char* s2)

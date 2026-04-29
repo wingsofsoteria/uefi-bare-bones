@@ -16,7 +16,9 @@
 
 #ifndef LIMINE_H
   #define LIMINE_H 1
-
+  #ifndef __KERNEL_LOADERS_LOADER_H__
+    #error "Do not use limine.h directly"
+  #endif
   #include <stdint.h>
 
   #ifdef __cplusplus

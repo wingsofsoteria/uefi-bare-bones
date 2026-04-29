@@ -38,34 +38,35 @@ void enable_irq(int irq, int vector, interrupt handler)
 
   register_handler(vector, handler);
 }
-
+#define stack_member(x) #x, stack->x
 static void dump_stack(isr_stack_t* stack)
 {
-  printf("STACK:%x\n", stack);
-  printf("\tRFLAGS:%x\n", stack->rflags);
-  printf("\t    CS:%x\n", stack->cs);
-  printf("\t   RIP:[%x] %s\n", stack->rip, resolve_function_name(stack->rip));
-  printf("\t   ERR:%x\n", stack->err);
-  printf("\t   ISR:%x\n", stack->isr);
-  printf("\t   RAX:%x\n", stack->rax);
-  printf("\t   RBX:%x\n", stack->rbx);
-  printf("\t   RCX:%x\n", stack->rcx);
-  printf("\t   RDX:%x\n", stack->rdx);
-  printf("\t   RSI:%x\n", stack->rsi);
-  printf("\t   RDI:%x\n", stack->rdi);
-  printf("\t   RBP:%x\n", stack->rbp);
-  printf("\t    R8:%x\n", stack->r8);
-  printf("\t    R9:%x\n", stack->r9);
-  printf("\t   R10:%x\n", stack->r10);
-  printf("\t   R11:%x\n", stack->r11);
-  printf("\t   R12:%x\n", stack->r12);
-  printf("\t   R13:%x\n", stack->r13);
-  printf("\t   R14:%x\n", stack->r14);
-  printf("\t   R15:%x\n", stack->r15);
+  printf("STACK:%p\n", stack);
+  printf("%9s:%lx\n", stack_member(rflags));
+  printf("%9s:%lx\n", stack_member(cs));
+  printf(
+    "%9s:[%lx] %s\n", stack_member(rip), resolve_function_name(stack->rip));
+  printf("%9s:%ld\n", stack_member(err));
+  printf("%9s:%lx\n", stack_member(isr));
+  printf("%9s:%lx\n", stack_member(rax));
+  printf("%9s:%lx\n", stack_member(rbx));
+  printf("%9s:%lx\n", stack_member(rcx));
+  printf("%9s:%lx\n", stack_member(rdx));
+  printf("%9s:%lx\n", stack_member(rsi));
+  printf("%9s:%lx\n", stack_member(rdi));
+  printf("%9s:%lx\n", stack_member(rbp));
+  printf("%9s:%lx\n", stack_member(r8));
+  printf("%9s:%lx\n", stack_member(r9));
+  printf("%9s:%lx\n", stack_member(r10));
+  printf("%9s:%lx\n", stack_member(r11));
+  printf("%9s:%lx\n", stack_member(r12));
+  printf("%9s:%lx\n", stack_member(r13));
+  printf("%9s:%lx\n", stack_member(r14));
+  printf("%9s:%lx\n", stack_member(r15));
   uint64_t cr2;
   asm volatile("mov %%cr2, %0"
     : "=r"(cr2));
-  printf("\t   CR2:%x\n", cr2);
+  printf("%9s:%lx\n", "cr2", cr2);
   walk_stack();
 }
 
@@ -107,7 +108,7 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
       }
     case 13:
       {
-        printf("===GENERAL PROTECTION FAULT===\n\tError Code: %d", stack->err);
+        printf("===GENERAL PROTECTION FAULT===\n\tError Code: %lu", stack->err);
         halt_cpu
       }
     case 14:
@@ -119,7 +120,7 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
 
     default:
       {
-        printf("Interrupt: %d\n", stack->isr);
+        printf("Interrupt: %lu\n", stack->isr);
         halt_cpu
       }
   }

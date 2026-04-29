@@ -49,10 +49,10 @@ extern void call_function(void*);
 void jump(void* function)
 {
   uint64_t rip = resolve_function_address((char*)(function + 1));
-  kernel_log_debug("RIP: %x %s", rip, (char*)function);
+  kernel_log_debug("RIP: %lx %s", rip, (char*)function);
   if (rip == 0)
   {
-    printf("Could not locate function %s\n", function);
+    printf("Could not locate function %s\n", (char*)function);
     return;
   }
   call_function((void*)rip);
@@ -119,7 +119,7 @@ void execute_command()
         args = (void*)(shell_cmd + count);
       }
       kernel_log_debug(
-        "SHELL COMMAND: %s, count %d, shell_cur: %d, args: %x, args_triggered? %s\n",
+        "SHELL COMMAND: %s, count %d, shell_cur: %d, args: %s, args_triggered? %s\n",
         command_list[index], count, shell_cur, args,
         count < shell_cur ? "true" : "false");
       commands[index](args);

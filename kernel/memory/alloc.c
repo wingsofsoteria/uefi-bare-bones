@@ -1,6 +1,5 @@
 #include "memory/alloc.h"
 #include "list_allocator.h"
-#include "log.h"
 #include "memory/paging.h"
 #include "paging_internal.h"
 #include "stdio.h"
@@ -46,9 +45,10 @@ int liballoc_free(void* ptr, int pages)
 
 void* liballoc_alloc(int pages)
 {
-  kernel_log_debug("allocating %d pages", pages);
   return list_alloc(pages);
 }
+
+extern void set_heap_end(uint64_t);
 
 void setup_allocator(struct limine_memmap_response* memory_map)
 {
@@ -56,6 +56,16 @@ void setup_allocator(struct limine_memmap_response* memory_map)
   heap_start = ALIGN_UP(heap_start, PAGE_SIZE);
   init_frame_allocator(memory_map);
   init_page_table();
+  for (uint64_t i = heap_start; i <= heap_start + heap_size; i += PAGE_SIZE)
+  {
+    uint64_t frame = allocate_frame();
+    if (frame == 0)
+    {
+      abort_msg("Out of Memory");
+    }
+    map_page(i, frame, 0b11);
+  }
+  set_heap_end(heap_start + heap_size);
   add_region(heap_start, heap_size / PAGE_SIZE);
 }
 #endif

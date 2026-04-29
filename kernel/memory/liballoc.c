@@ -2,7 +2,7 @@
 
 /**  Durand's Ridiculously Amazing Super Duper Memory functions.  */
 
-#define DEBUG
+// #define DEBUG
 
 #define LIBALLOC_MAGIC 0xc001c0de
 #define MAXCOMPLETE    5
@@ -18,8 +18,9 @@
   #include <stdio.h>
 #endif
 
-struct boundary_tag* l_freePages[MAXEXP]; //< Allowing for 2^MAXEXP blocks
-int l_completePages[MAXEXP];              //< Allowing for 2^MAXEXP blocks
+static struct boundary_tag*
+  l_freePages[MAXEXP];              //< Allowing for 2^MAXEXP blocks
+static int l_completePages[MAXEXP]; //< Allowing for 2^MAXEXP blocks
 
 #ifdef DEBUG
 unsigned int l_allocated = 0; //< The real amount of memory allocated.
@@ -50,7 +51,10 @@ static inline int getexp(unsigned int size)
 
   while (shift < MAXEXP)
   {
-    if ((1 << shift) > size) break;
+    if ((1 << shift) > size)
+    {
+      break;
+    }
     shift += 1;
   }
 
@@ -65,7 +69,10 @@ static inline int getexp(unsigned int size)
 static void* liballoc_memset(void* s, int c, size_t n)
 {
   int i;
-  for (i = 0; i < n; i++) ((char*)s)[i] = c;
+  for (i = 0; i < n; i++)
+  {
+    ((char*)s)[i] = c;
+  }
 
   return s;
 }
@@ -113,7 +120,7 @@ static void dump_array()
     while (tag != NULL)
     {
       if (tag->split_left != NULL) printf("*");
-      printf("%i", tag->real_size);
+      printf("%l", tag->real_size);
       if (tag->split_right != NULL) printf("*");
 
       printf(" ");
@@ -133,10 +140,15 @@ static inline void insert_tag(struct boundary_tag* tag, int index)
   if (index < 0)
   {
     realIndex = getexp(tag->real_size - sizeof(struct boundary_tag));
-    if (realIndex < MINEXP) realIndex = MINEXP;
+    if (realIndex < MINEXP)
+    {
+      realIndex = MINEXP;
+    }
   }
   else
+  {
     realIndex = index;
+  }
 
   tag->index = realIndex;
 
@@ -151,10 +163,19 @@ static inline void insert_tag(struct boundary_tag* tag, int index)
 
 static inline void remove_tag(struct boundary_tag* tag)
 {
-  if (l_freePages[tag->index] == tag) l_freePages[tag->index] = tag->next;
+  if (l_freePages[tag->index] == tag)
+  {
+    l_freePages[tag->index] = tag->next;
+  }
 
-  if (tag->prev != NULL) tag->prev->next = tag->next;
-  if (tag->next != NULL) tag->next->prev = tag->prev;
+  if (tag->prev != NULL)
+  {
+    tag->prev->next = tag->next;
+  }
+  if (tag->next != NULL)
+  {
+    tag->next->prev = tag->prev;
+  }
 
   tag->next  = NULL;
   tag->prev  = NULL;
@@ -168,7 +189,10 @@ static inline struct boundary_tag* melt_left(struct boundary_tag* tag)
   left->real_size   += tag->real_size;
   left->split_right  = tag->split_right;
 
-  if (tag->split_right != NULL) tag->split_right->split_left = left;
+  if (tag->split_right != NULL)
+  {
+    tag->split_right->split_left = left;
+  }
 
   return left;
 }
@@ -182,7 +206,10 @@ static inline struct boundary_tag* absorb_right(struct boundary_tag* tag)
   tag->real_size += right->real_size;
 
   tag->split_right = right->split_right;
-  if (right->split_right != NULL) right->split_right->split_left = tag;
+  if (right->split_right != NULL)
+  {
+    right->split_right->split_left = tag;
+  }
 
   return tag;
 }
@@ -206,7 +233,10 @@ static inline struct boundary_tag* split_tag(struct boundary_tag* tag)
   new_tag->split_left  = tag;
   new_tag->split_right = tag->split_right;
 
-  if (new_tag->split_right != NULL) new_tag->split_right->split_left = new_tag;
+  if (new_tag->split_right != NULL)
+  {
+    new_tag->split_right->split_left = new_tag;
+  }
   tag->split_right = new_tag;
 
   tag->real_size -= new_tag->real_size;
@@ -229,14 +259,23 @@ static struct boundary_tag* allocate_new_tag(unsigned int size)
 
   // Perfect amount of space
   pages = usage / l_pageSize;
-  if ((usage % l_pageSize) != 0) pages += 1;
+  if ((usage % l_pageSize) != 0)
+  {
+    pages += 1;
+  }
 
   // Make sure it's >= the minimum size.
-  if (pages < l_pageCount) pages = l_pageCount;
+  if (pages < l_pageCount)
+  {
+    pages = l_pageCount;
+  }
 
   tag = (struct boundary_tag*)liballoc_alloc(pages);
 
-  if (tag == NULL) return NULL; // uh oh, we ran out of memory.
+  if (tag == NULL)
+  {
+    return NULL; // uh oh, we ran out of memory.
+  }
 
   tag->magic     = LIBALLOC_MAGIC;
   tag->size      = size;
@@ -282,7 +321,10 @@ void* malloc(size_t size)
   }
 
   index = getexp(size) + MODE;
-  if (index < MINEXP) index = MINEXP;
+  if (index < MINEXP)
+  {
+    index = MINEXP;
+  }
 
   // Find one big enough.
   tag = l_freePages[index]; // Start at the front of the list.
@@ -322,7 +364,9 @@ void* malloc(size_t size)
     remove_tag(tag);
 
     if ((tag->split_left == NULL) && (tag->split_right == NULL))
+    {
       l_completePages[index] -= 1;
+    }
   }
 
   // We have a free page.  Remove it from the free pages list.
@@ -339,7 +383,7 @@ void* malloc(size_t size)
 #endif
 
   unsigned int remainder = tag->real_size - size -
-    sizeof(struct boundary_tag) * 2; // Support a new tag + remainder
+    (sizeof(struct boundary_tag) * 2); // Support a new tag + remainder
 
   if (((int)(remainder) >
         0) /*&& ( (tag->real_size - remainder) >= (1<<MINEXP))*/)
@@ -383,7 +427,10 @@ void free(void* ptr)
   int index;
   struct boundary_tag* tag;
 
-  if (ptr == NULL) return;
+  if (ptr == NULL)
+  {
+    return;
+  }
 
   liballoc_lock();
 
@@ -429,7 +476,10 @@ void free(void* ptr)
 
   // Where is it going back to?
   index = getexp(tag->real_size - sizeof(struct boundary_tag));
-  if (index < MINEXP) index = MINEXP;
+  if (index < MINEXP)
+  {
+    index = MINEXP;
+  }
 
   // A whole, empty block?
   if ((tag->split_left == NULL) && (tag->split_right == NULL))
@@ -439,8 +489,14 @@ void free(void* ptr)
       // Too many standing by to keep. Free this one.
       unsigned int pages = tag->real_size / l_pageSize;
 
-      if ((tag->real_size % l_pageSize) != 0) pages += 1;
-      if (pages < l_pageCount) pages = l_pageCount;
+      if ((tag->real_size % l_pageSize) != 0)
+      {
+        pages += 1;
+      }
+      if (pages < l_pageCount)
+      {
+        pages = l_pageCount;
+      }
 
       liballoc_free(tag, pages);
 
@@ -496,14 +552,26 @@ void* realloc(void* p, size_t size)
     free(p);
     return NULL;
   }
-  if (p == NULL) return malloc(size);
+  if (p == NULL)
+  {
+    return malloc(size);
+  }
 
-  if (liballoc_lock != NULL) liballoc_lock(); // lockit
+  if (liballoc_lock != NULL)
+  {
+    liballoc_lock(); // lockit
+  }
   tag = (struct boundary_tag*)((unsigned char*)p - sizeof(struct boundary_tag));
   real_size = tag->size;
-  if (liballoc_unlock != NULL) liballoc_unlock();
+  if (liballoc_unlock != NULL)
+  {
+    liballoc_unlock();
+  }
 
-  if (real_size > size) real_size = size;
+  if (real_size > size)
+  {
+    real_size = size;
+  }
 
   ptr = malloc(size);
   liballoc_memcpy(ptr, p, real_size);

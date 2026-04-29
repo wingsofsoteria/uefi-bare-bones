@@ -55,7 +55,7 @@ uint64_t calibrate_tsc_slow()
     if (d_error_1 && d_error_2)
     {
       uint64_t avg = (d0 + d1 + d2) / 3;
-      printf("found valid tsc frequency in kHz %d, %d MHz, %d GHz\n", avg,
+      printf("found valid tsc frequency in kHz %lu, %lu MHz, %lu GHz\n", avg,
         avg / 1000, avg / 1000000);
       return avg;
     }

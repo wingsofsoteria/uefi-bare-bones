@@ -49,7 +49,7 @@ static void debug()
   while (block < allocator.tail && block->size > 0)
   {
     kernel_log_debug(
-      "%x %d %s", block, block->size, block->free ? "free" : "used");
+      "%p %zu %s", block, block->size, block->free ? "free" : "used");
     block = next_block(block);
   }
 }
@@ -59,7 +59,7 @@ static struct AllocatorBlock* split_block(
 {
   if (block == NULL || size == 0)
   {
-    kernel_log_error("Invalid block or size: %x %d", block, size);
+    kernel_log_error("Invalid block or size: %p %zu", block, size);
     return NULL;
   }
   while (size <= (block->size >> 1))
@@ -75,7 +75,7 @@ static struct AllocatorBlock* split_block(
   {
     return block;
   }
-  kernel_log_error("Block will not fit into %d bytes", size);
+  kernel_log_error("Block will not fit into %zu bytes", size);
   return NULL;
 }
 
@@ -257,6 +257,6 @@ void init_buddy_allocator(uint64_t heap_start, uint64_t heap_size)
   allocator.tail              = (void*)(heap_start + heap_size);
   allocator.size              = heap_size;
   kernel_log_debug(
-    "Initialized Buddy Allocator\n\tHead: %x\n\tTail: %x\n\tTag size: %d",
+    "Initialized Buddy Allocator\n\tHead: %p\n\tTail: %p\n\tTag size: %zu",
     allocator.head, allocator.tail, sizeof(struct AllocatorBlock));
 }

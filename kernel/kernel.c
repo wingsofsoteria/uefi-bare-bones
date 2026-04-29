@@ -1,4 +1,3 @@
-#include "loaders/limine.h"
 #include "shell.h"
 #include "stdlib.h"
 #include <acpi/pic.h>
@@ -95,6 +94,7 @@ __attribute__((used,
     ".limine_requests"))) static volatile struct limine_tsc_frequency_request
   tsc_frequency = {.id = LIMINE_TSC_FREQUENCY_REQUEST_ID, .revision = 0};
 
+// NOLINTNEXTLINE
 void* kernel_file_address;
 
 // NOLINTNEXTLINE
@@ -148,7 +148,7 @@ int kmain()
   #else
   kernel_init_logging(5);
   #endif
-  kernel_log_debug("Kernel offset set to %x", hhdm_mapping);
+  kernel_log_debug("Kernel offset set to %lu", hhdm_mapping);
   setup_allocator(memmap_request.response);
   kernel_init_code();
   init_config_cpuid();
