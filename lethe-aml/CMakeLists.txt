@@ -1,0 +1,3 @@
+INCLUDE_DIRECTORIES(aml/include)
+ADD_SUBDIRECTORY(aml)
+ADD_SUBDIRECTORY(third_party)

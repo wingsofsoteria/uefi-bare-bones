@@ -1,0 +1,6 @@
+ADD_LIBRARY(cpu STATIC)
+TARGET_SOURCES(cpu PRIVATE gdt.c gdt.asm.o idt.asm.o idt.c isr.c isr.asm.o pit.c sleep.c task.c tsc.c)
+find_program(NASM nasm)
+add_custom_command(OUTPUT gdt.asm.o COMMAND ${NASM} -felf64 -i ../include gdt.asm -o ${CMAKE_CURRENT_BINARY_DIR}/gdt.asm.o WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_custom_command(OUTPUT idt.asm.o COMMAND ${NASM} -felf64 -i ../include idt.asm -o ${CMAKE_CURRENT_BINARY_DIR}/idt.asm.o WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_custom_command(OUTPUT isr.asm.o COMMAND ${NASM} -felf64 -i ../include isr.asm -o ${CMAKE_CURRENT_BINARY_DIR}/isr.asm.o WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

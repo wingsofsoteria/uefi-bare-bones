@@ -1,0 +1,102 @@
+Language:        C
+AccessModifierOffset: -2
+AlignAfterOpenBracket: DontAlign
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments:
+  Enabled:         true
+  AcrossEmptyLines: false
+  AcrossComments:  false
+  AlignCompound:   true
+  AlignFunctionDeclarations: false
+  AlignFunctionPointers: false
+  PadOperators:    true
+AlignConsecutiveDeclarations:
+  Enabled:         false
+  AcrossEmptyLines: false
+  AcrossComments:  false
+  AlignCompound:   true
+  AlignFunctionDeclarations: false
+  AlignFunctionPointers: false
+  PadOperators:    true
+AlignConsecutiveMacros:
+  Enabled:         true
+  AcrossEmptyLines: false
+  AcrossComments:  false
+  AlignCompound:   true
+  AlignFunctionDeclarations: false
+  AlignFunctionPointers: false
+  PadOperators:    true
+AlignEscapedNewlines: LeftWithLastLine
+AlignOperands:   DontAlign
+AlignTrailingComments:
+  Kind:            Always
+  OverEmptyLines:  0
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseExpressionOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+BreakAdjacentStringLiterals: true
+BreakAfterAttributes: Leave
+BreakAfterReturnType: Automatic
+BreakArrays:     false
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Allman
+BreakBeforeInlineASMColon: Always
+BreakBeforeTernaryOperators: true
+BreakBinaryOperations: Never
+BreakFunctionDefinitionParameters: false
+BreakStringLiterals: false
+ColumnLimit:     80
+ContinuationIndentWidth: 2
+DerivePointerAlignment: false
+IncludeBlocks:   Preserve
+IndentCaseBlocks: true
+IndentCaseLabels: true
+IndentExternBlock: Indent
+IndentGotoLabels: false
+IndentPPDirectives: BeforeHash
+IndentWidth:     2
+IndentWrappedFunctionNames: false
+InsertBraces:    false
+InsertNewlineAtEOF: false
+KeepEmptyLines:
+  AtEndOfFile:     false
+  AtStartOfBlock:  false
+  AtStartOfFile:   false
+LineEnding:      LF
+MaxEmptyLinesToKeep: 1
+PointerAlignment: Left
+PPIndentWidth:   -1
+QualifierAlignment: Leave
+ReferenceAlignment: Pointer
+ReflowComments:  Always
+RemoveBracesLLVM: false
+RemoveEmptyLinesInUnwrappedLines: true
+RemoveParentheses: Leave
+RemoveSemicolon: false
+SeparateDefinitionBlocks: Leave
+SkipMacroDefinitionBody: false
+SortIncludes:    false
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: true
+SpacesBeforeTrailingComments: 1
+SpacesInContainerLiterals: true
+SpacesInLineCommentPrefix:
+  Minimum:         1
+  Maximum:         -1
+SpacesInParens:  Never
+SpacesInSquareBrackets: false
+TabWidth:        2
+UseTab:          Never
+

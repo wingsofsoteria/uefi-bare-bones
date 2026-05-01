@@ -1,0 +1,16 @@
+#pragma once
+
+#include <stdint.h>
+#include <stddef.h>
+#include <sys/cdefs.h>
+
+int memcmp(const void *, const void *, size_t);
+void *memcpy(void *restrict dest, const void *restrict src, size_t);
+void *memmove(void *, const void *, size_t);
+void *memset(void *, int, size_t);
+size_t strlen(const char *);
+size_t strnlen(const char *, size_t);
+int strcmp(const char *s1, const char *s2);
+int strncmp(const char *s1, const char *s2, size_t n);
+// char* itoa(unsigned long long int number, char* str, int base, int size);
+// int numlen(unsigned long long int value, int base);
