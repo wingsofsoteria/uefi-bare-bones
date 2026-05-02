@@ -1,4 +1,5 @@
 ADD_LIBRARY(aml STATIC)
-TARGET_SOURCES(aml PRIVATE computational_data.c exec.c expression.c name_string.c named_obj.c namespace.c namespace_modifier.c parser.c statement.c)
+TARGET_SOURCES(aml PRIVATE scratch.c computational_data.c exec.c expression.c name_string.c named_obj.c namespace.c namespace_modifier.c parser.c statement.c)
 TARGET_INCLUDE_DIRECTORIES(aml PUBLIC include)
 ADD_DEPENDENCIES(aml fnv)
+TARGET_LINK_LIBRARIES(aml fnv)
