@@ -11,7 +11,7 @@
 #include "utils.h"
 static acpi_madt_t* madt = NULL;
 
-static inline void io_wait(void) { outb(0x80, 0); }
+inline static void io_wait(void) { outb(0x80, 0); }
 
 static void start_pic()
 {
@@ -44,23 +44,27 @@ static void mask_pic()
 
 uint32_t madt_get_lapic_addr()
 {
-  map_page(madt->local_interrupt_controller_address,
-           madt->local_interrupt_controller_address, 0b11);
+  map_page(
+    madt->local_interrupt_controller_address,
+    madt->local_interrupt_controller_address,
+    0b11
+  );
   return madt->local_interrupt_controller_address;
 }
 
 void madt_init()
 {
   madt = scan_tables("APIC", 0);
-  if (madt == NULL) {
-    // Configure PIC
-    kernel_config.interrupt_source = 0b1;
-  } else {
-    kernel_config.interrupt_source = 0b10;
-  }
-  if ((madt->flags & 0b1) == 1) {
-    mask_pic();
-  }
+  if (madt == NULL)
+    {
+      // Configure PIC
+      kernel_config.interrupt_source = 0b1;
+    }
+  else
+    {
+      kernel_config.interrupt_source = 0b10;
+    }
+  if ((madt->flags & 0b1) == 1) { mask_pic(); }
 }
 
 madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq)
@@ -68,13 +72,9 @@ madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq)
   MADT_LOOP
   {
     uint8_t type = (uint8_t)madt->interrupt_controller_structure[i];
-    if (type != 2) {
-      continue;
-    }
+    if (type != 2) { continue; }
     uint8_t current_irq = madt->interrupt_controller_structure[i + 3];
-    if (current_irq != irq) {
-      continue;
-    }
+    if (current_irq != irq) { continue; }
     return (void*)(madt->interrupt_controller_structure + i);
   }
   return NULL;
@@ -85,15 +85,11 @@ uint32_t madt_get_ioapic(uint32_t gsi)
   MADT_LOOP
   {
     uint8_t type = (uint8_t)madt->interrupt_controller_structure[i];
-    if (type != 1) {
-      continue;
-    }
+    if (type != 1) { continue; }
     uint32_t current_gsi = MADT_ADDR32(i + 8);
-    if (current_gsi != gsi) {
-      continue;
-    }
+    if (current_gsi != gsi) { continue; }
     uint32_t address = MADT_ADDR32(i + 4);
-    map_page(address, address, 0b11);
+    if (virtual_to_physical(address) == 0) { map_page(address, address, 0b11); }
     kernel_log_debug("IOAPIC at %x", address);
     return address;
   }

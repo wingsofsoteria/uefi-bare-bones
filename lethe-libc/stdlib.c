@@ -2,10 +2,9 @@
 #include <stdlib.h>
 
 #if defined(__is_libk)
-#include "../lethe-kernel/include/utils.h"
-__attribute__((__noreturn__)) void abort() {
-  halt();
-}
+  #include "../lethe-kernel/include/utils.h"
+
+__attribute__((__noreturn__)) void abort() { halt(); }
 #endif
 /*
 extern void walk_stack(void);

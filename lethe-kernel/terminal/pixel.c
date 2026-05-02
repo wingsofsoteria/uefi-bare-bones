@@ -1,4 +1,5 @@
 #include "terminal/pixel.h"
+
 #include "terminal/tty.h"
 
 static uint64_t fb_base;
@@ -8,9 +9,10 @@ static int      fb_xres;
 
 void init_fb(uint64_t base, uint32_t pitch, int x, int y)
 {
-  if (base == 0) {
-    for (;;) {}
-  }
+  if (base == 0)
+    {
+      for (;;) {}
+    }
   fb_base  = base;
   fb_pitch = pitch;
   fb_xres  = x;
@@ -32,11 +34,13 @@ void test_pixels()
 
 void fill(int start_x, int start_y, int width, int height, uint32_t color)
 {
-  for (int x = start_x; x < start_x + width; x++) {
-    for (int y = start_y; y < start_y + height; y++) {
-      *(uint32_t*)(fb_base + (fb_pitch * y) + (4 * x)) = color;
+  for (int x = start_x; x < start_x + width; x++)
+    {
+      for (int y = start_y; y < start_y + height; y++)
+        {
+          *(uint32_t*)(fb_base + (fb_pitch * y) + (4 * x)) = color;
+        }
     }
-  }
 }
 
 void clear_screen()
@@ -46,6 +50,4 @@ void clear_screen()
 }
 
 void put_pixel(int x, int y, uint32_t color)
-{
-  *(uint32_t*)(fb_base + (fb_pitch * y) + (4 * x)) = color;
-}
+{ *(uint32_t*)(fb_base + (fb_pitch * y) + (4 * x)) = color; }

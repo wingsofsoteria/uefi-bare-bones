@@ -1,9 +1,10 @@
 // NOLINTBEGIN(misc-use-internal-linkage)
 #include "cpu/idt.h"
-#include "cpu/isr.h"
 
+#include "cpu/isr.h"
 #include "trace.h"
 #include "utils.h"
+
 #include <acpi/acpi.h>
 #include <config.h>
 #include <keyboard.h>
@@ -18,29 +19,34 @@ static isr_stack_t* blank_handler(isr_stack_t* stack) { return stack; }
 
 void disable_irq(int irq, int vector)
 {
-  if (kernel_config.interrupt_source == 0b10) {
-    ioapic_disable_irq(irq);
-  }
+  if (kernel_config.interrupt_source == 0b10) { ioapic_disable_irq(irq); }
 
   unregister_handler(vector);
 }
+
 // TODO add support for PIC
 void enable_irq(int irq, int vector, interrupt handler)
 {
-  if (kernel_config.interrupt_source == 0b10) {
-    ioapic_enable_irq(irq, vector);
-  }
+  if (kernel_config.interrupt_source == 0b10)
+    {
+      ioapic_enable_irq(irq, vector);
+    }
 
   register_handler(vector, handler);
 }
+
 #define stack_member(x) #x, stack->x
+
 static void dump_stack(isr_stack_t* stack)
 {
   printf("STACK:%p\n", stack);
   printf("%9s:%lx\n", stack_member(rflags));
   printf("%9s:%lx\n", stack_member(cs));
-  printf("%9s:[%lx] %s\n", stack_member(rip),
-         resolve_function_name(stack->rip));
+  printf(
+    "%9s:[%lx] %s\n",
+    stack_member(rip),
+    resolve_function_name(stack->rip)
+  );
   printf("%9s:%ld\n", stack_member(err));
   printf("%9s:%lx\n", stack_member(isr));
   printf("%9s:%lx\n", stack_member(rax));
@@ -59,7 +65,8 @@ static void dump_stack(isr_stack_t* stack)
   printf("%9s:%lx\n", stack_member(r14));
   printf("%9s:%lx\n", stack_member(r15));
   uint64_t cr2;
-  asm volatile("mov %%cr2, %0" : "=r"(cr2));
+  asm volatile("mov %%cr2, %0"
+    : "=r"(cr2));
   printf("%9s:%lx\n", "cr2", cr2);
   walk_stack();
 }
@@ -82,44 +89,53 @@ static isr_stack_t* interrupt_handler(isr_stack_t* stack)
   lapic_send_eoi();
   return modified_stack;
 }
+
 isr_stack_t* exception_handler(isr_stack_t* stack)
 {
-  if (stack->isr >= 32) {
-    return interrupt_handler(stack);
-  }
-  switch (stack->isr) {
-  case 2: {
-    printf("GOT NMI\n");
-    break;
-  }
-  case 8: {
-    printf("===DOUBLE FAULT===\n");
-    halt();
-  }
-  case 13: {
-    printf("===GENERAL PROTECTION FAULT===\n\tError Code: %lu", stack->err);
-    halt();
-  }
-  case 14: {
-    printf("PAGE FAULT\n");
-    dump_stack(stack);
-    halt();
-  }
+  if (stack->isr >= 32) { return interrupt_handler(stack); }
+  switch (stack->isr)
+    {
+      case 2:
+        {
+          printf("GOT NMI\n");
+          break;
+        }
+      case 8:
+        {
+          printf("===DOUBLE FAULT===\n");
+          halt();
+        }
+      case 13:
+        {
+          printf(
+            "===GENERAL PROTECTION FAULT===\n\tError Code: %lu",
+            stack->err
+          );
+          halt();
+        }
+      case 14:
+        {
+          printf("PAGE FAULT\n");
+          dump_stack(stack);
+          halt();
+        }
 
-  default: {
-    printf("Interrupt: %lu\n", stack->isr);
-    halt();
-  }
-  }
+      default:
+        {
+          printf("Interrupt: %lu\n", stack->isr);
+          halt();
+        }
+    }
 
   return stack;
 }
 
 void load_idt()
 {
-  for (int i = 0; i < IDT_ENTRY_COUNT; i++) {
-    set_idt_entry_simple(i, isr_stub_table[i]);
-  }
+  for (int i = 0; i < IDT_ENTRY_COUNT; i++)
+    {
+      set_idt_entry_simple(i, isr_stub_table[i]);
+    }
   idt_ptr_t ptr;
   ptr.size   = (sizeof(idt_t)) - 1;
   ptr.offset = (uint64_t)&idt;

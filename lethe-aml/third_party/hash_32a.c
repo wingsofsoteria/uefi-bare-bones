@@ -95,20 +95,20 @@
  */
 Fnv32_t fnv_32a_buf(void* buf, Fnv32_t len)
 {
-  unsigned char* bp = (unsigned char*)buf; /* start of buffer */
-  unsigned char* be = bp + len;            /* beyond end of buffer */
-  Fnv32_t hval      = FNV1_32A_INIT;
+  unsigned char* bp   = (unsigned char*)buf; /* start of buffer */
+  unsigned char* be   = bp + len;            /* beyond end of buffer */
+  Fnv32_t        hval = FNV1_32A_INIT;
   /*
    * FNV-1a hash each octet in the buffer
    */
   while (bp < be)
-  {
-    /* xor the bottom with the current octet */
-    hval ^= (Fnv32_t)*bp++;
+    {
+      /* xor the bottom with the current octet */
+      hval ^= (Fnv32_t)*bp++;
 
-    /* multiply by the 32 bit FNV magic prime mod 2^32 */
-    hval *= FNV_32_PRIME;
-  }
+      /* multiply by the 32 bit FNV magic prime mod 2^32 */
+      hval *= FNV_32_PRIME;
+    }
 
   /* return our new hash value */
   return hval;
@@ -129,19 +129,19 @@ Fnv32_t fnv_32a_buf(void* buf, Fnv32_t len)
  */
 Fnv32_t fnv_32a_str(char* str)
 {
-  unsigned char* s = (unsigned char*)str; /* unsigned string */
-  Fnv32_t hval     = FNV1_32A_INIT; // hard code init value for ease of use
+  unsigned char* s    = (unsigned char*)str; /* unsigned string */
+  Fnv32_t        hval = FNV1_32A_INIT; // hard code init value for ease of use
   /*
    * FNV-1a hash each octet in the buffer
    */
   while (*s)
-  {
-    /* xor the bottom with the current octet */
-    hval ^= (Fnv32_t)*s++;
+    {
+      /* xor the bottom with the current octet */
+      hval ^= (Fnv32_t)*s++;
 
-    /* multiply by the 32 bit FNV magic prime mod 2^32 */
-    hval *= FNV_32_PRIME;
-  }
+      /* multiply by the 32 bit FNV magic prime mod 2^32 */
+      hval *= FNV_32_PRIME;
+    }
 
   /* return our new hash value */
   return hval;

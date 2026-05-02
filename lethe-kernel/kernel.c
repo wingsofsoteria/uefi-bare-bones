@@ -1,5 +1,7 @@
 #include "shell.h"
 #include "stdlib.h"
+#include "utils.h"
+
 #include <acpi/acpi.h>
 #include <acpi/pic.h>
 #include <config.h>
@@ -18,7 +20,6 @@
 #include <terminal/pixel.h>
 #include <terminal/tty.h>
 #include <types.h>
-#include "utils.h"
 // BTW if anyone ever actually tries to read this code, it might be some of the
 // worst code I have ever or will ever write
 // my methodology for actually writing this damn thing was (random burst of
@@ -51,50 +52,69 @@ static void common_init_start()
 
 #ifdef KERNEL_USE_LIMINE
 
-__attribute__((used, section(".limine_requests"))) static volatile uint64_t
-    limine_base_revision[] = LIMINE_BASE_REVISION(6);
+__attribute__((
+  used,
+  section(".limine_requests")
+)) static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
 
 __attribute__((
-    used,
-    section(
-        ".limine_requests"))) static volatile struct limine_framebuffer_request
-    framebuffer_request = {
-        .id       = LIMINE_FRAMEBUFFER_REQUEST_ID,
-        .revision = 0,
+  used,
+  section(".limine_requests")
+)) static volatile struct limine_framebuffer_request framebuffer_request = {
+  .id       = LIMINE_FRAMEBUFFER_REQUEST_ID,
+  .revision = 0,
 };
 
 __attribute__((
-    used,
-    section(".limine_requests"))) static volatile struct limine_memmap_request
-    memmap_request = {.id = LIMINE_MEMMAP_REQUEST_ID, .revision = 0};
+  used,
+  section(".limine_requests")
+)) static volatile struct limine_memmap_request memmap_request = {
+  .id       = LIMINE_MEMMAP_REQUEST_ID,
+  .revision = 0
+};
 
 __attribute__((
-    used,
-    section(".limine_requests"))) static volatile struct limine_hhdm_request
-    hhdm_request = {.id = LIMINE_HHDM_REQUEST_ID, .revision = 0};
+  used,
+  section(".limine_requests")
+)) static volatile struct limine_hhdm_request hhdm_request = {
+  .id       = LIMINE_HHDM_REQUEST_ID,
+  .revision = 0
+};
 
 __attribute__((
-    used,
-    section(
-        ".limine_requests"))) static volatile struct limine_paging_mode_request
-    paging_mode_request = {.id       = LIMINE_PAGING_MODE_REQUEST_ID,
-                           .revision = 1,
-                           .mode     = LIMINE_PAGING_MODE_X86_64_4LVL,
-                           .max_mode = LIMINE_PAGING_MODE_X86_64_4LVL,
-                           .min_mode = LIMINE_PAGING_MODE_X86_64_4LVL};
+  used,
+  section(".limine_requests")
+)) static volatile struct limine_paging_mode_request paging_mode_request = {
+  .id       = LIMINE_PAGING_MODE_REQUEST_ID,
+  .revision = 1,
+  .mode     = LIMINE_PAGING_MODE_X86_64_4LVL,
+  .max_mode = LIMINE_PAGING_MODE_X86_64_4LVL,
+  .min_mode = LIMINE_PAGING_MODE_X86_64_4LVL
+};
 
 __attribute__((
-    used,
-    section(".limine_requests"))) static volatile struct limine_rsdp_request
-    rsdp_request = {.id = LIMINE_RSDP_REQUEST_ID, .revision = 0};
+  used,
+  section(".limine_requests")
+)) static volatile struct limine_rsdp_request rsdp_request = {
+  .id       = LIMINE_RSDP_REQUEST_ID,
+  .revision = 0
+};
 
-__attribute__((used, section(".limine_requests"))) static volatile struct
-    limine_executable_file_request executable_request = {
-        .id = LIMINE_EXECUTABLE_FILE_REQUEST_ID, .revision = 0};
+__attribute__((
+  used,
+  section(".limine_requests")
+)) static volatile struct limine_executable_file_request executable_request = {
+  .id       = LIMINE_EXECUTABLE_FILE_REQUEST_ID,
+  .revision = 0
+};
 
-__attribute__((used, section(".limine_requests"))) static volatile struct
-    limine_tsc_frequency_request tsc_frequency = {
-        .id = LIMINE_TSC_FREQUENCY_REQUEST_ID, .revision = 0};
+__attribute__((
+  used,
+  section(".limine_requests")
+)) static volatile struct limine_tsc_frequency_request tsc_frequency = {
+  .id       = LIMINE_TSC_FREQUENCY_REQUEST_ID,
+  .revision = 0
+};
 
 // NOLINTNEXTLINE
 void* kernel_file_address;
@@ -104,20 +124,23 @@ int kmain()
 {
   if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) halt();
 
-  if (framebuffer_request.response == NULL ||
-      framebuffer_request.response->framebuffer_count < 1)
+  if (
+    framebuffer_request.response == NULL ||
+    framebuffer_request.response->framebuffer_count < 1
+  )
     halt();
 
   if (memmap_request.response == NULL) halt();
 
   hhdm_mapping = 0;
-  if (hhdm_request.response != NULL) {
-    struct limine_hhdm_response* hhdm_response = hhdm_request.response;
-    hhdm_mapping                               = hhdm_response->offset;
-  }
+  if (hhdm_request.response != NULL)
+    {
+      struct limine_hhdm_response* hhdm_response = hhdm_request.response;
+      hhdm_mapping                               = hhdm_response->offset;
+    }
 
   struct limine_framebuffer* framebuffer =
-      framebuffer_request.response->framebuffers[0];
+    framebuffer_request.response->framebuffers[0];
   if (framebuffer->bpp != 32) halt();
 
   if (rsdp_request.response == NULL) halt();
@@ -129,15 +152,19 @@ int kmain()
 
   kernel_file_address = executable_request.response->executable_file->address;
   common_init_start();
-  init_fb((uint64_t)framebuffer->address, framebuffer->pitch,
-          framebuffer->width, framebuffer->height);
+  init_fb(
+    (uint64_t)framebuffer->address,
+    framebuffer->pitch,
+    framebuffer->width,
+    framebuffer->height
+  );
   printf("TSC: %d\n", kernel_config.tsc_freq_khz);
   #ifdef KERNEL_DEBUG
   kernel_init_logging(1);
   #else
   kernel_init_logging(5);
   #endif
-  kernel_log_debug("Kernel offset set to %lu", hhdm_mapping);
+  kernel_log_debug("Kernel offset set to %llx", hhdm_mapping);
   setup_allocator(memmap_request.response);
   kernel_init_code();
   init_config_cpuid();
@@ -150,9 +177,7 @@ int kmain()
   acpi_late_init();
   init_shell();
 
-  while (kernel_config.kexit == 0) {
-    asm volatile("hlt");
-  }
+  while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 
   printf("Kernel was told to exit, Goodbye!\n");
   halt();
@@ -162,18 +187,28 @@ int kmain()
 int _start(kernel_bootinfo_t* bootinfo, void* ptr)
 {
   common_init_start();
-  init_fb(bootinfo->base, bootinfo->pitch, bootinfo->horizontal_resolution,
-          bootinfo->vertical_resolution);
+  init_fb(
+    bootinfo->base,
+    bootinfo->pitch,
+    bootinfo->horizontal_resolution,
+    bootinfo->vertical_resolution
+  );
   init_config_cpuid();
   // setup_allocator(bootinfo->mmap);
 
   uint64_t rsp = 0;
-  asm volatile("mov %%rsp, %0" : "=a"(rsp));
-  printf("provided stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\nactive "
-         "stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\n",
-         bootinfo->stack_top, bootinfo->stack_bottom,
-         bootinfo->stack_top - bootinfo->stack_bottom, rsp,
-         bootinfo->stack_bottom, rsp - bootinfo->stack_bottom);
+  asm volatile("mov %%rsp, %0"
+    : "=a"(rsp));
+  printf(
+    "provided stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\nactive "
+    "stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\n",
+    bootinfo->stack_top,
+    bootinfo->stack_bottom,
+    bootinfo->stack_top - bootinfo->stack_bottom,
+    rsp,
+    bootinfo->stack_bottom,
+    rsp - bootinfo->stack_bottom
+  );
 
   // kernel_init();
   clear_screen();
@@ -184,9 +219,7 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   enable_apic();
   enable_interrupts();
   init_shell();
-  while (kernel_config.kexit == 0) {
-    asm volatile("hlt");
-  }
+  while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 
   printf("Kernel was told to exit, Goodbye!\n");
   asm volatile("cli");

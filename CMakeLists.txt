@@ -26,14 +26,20 @@ INCLUDE_DIRECTORIES(lethe-libc/include)
 ADD_SUBDIRECTORY(lethe-libc)
 ADD_COMPILE_OPTIONS(-mcmodel=large)
 #SET(ENV{LETHE_BOUNCER} 1)
+IF (DEFINED ENV{FEATURE_QEMU})
+	SET(FEATURE_QEMU 1)
+ENDIF()
 IF (DEFINED ENV{FEATURE_LIMINE})
     SET(FEATURE_LIMINE 1)
 ELSEIF (DEFINED ENV{FEATURE_EFI_LOADER})
 ELSE ()
     SET(FEATURE_LIMINE 1)
 ENDIF ()
-IF (UNIX)
-	execute_process(COMMAND ${CMAKE_COMMANDS} -E create_symlink ${CMAKE_BINARY_DIR}/compile_commands.json ${PROJECT_SOURCE_DIR}/compile_commands.json)
+file(CREATE_LINK
+  "${CMAKE_BINARY_DIR}/compile_commands.json"
+  "${CMAKE_SOURCE_DIR}/compile_commands.json"
+  SYMBOLIC
+)
 ADD_SUBDIRECTORY(lethe-aml)
 ADD_SUBDIRECTORY(lethe-kernel)
 ADD_SUBDIRECTORY(lethe-bootloaders)

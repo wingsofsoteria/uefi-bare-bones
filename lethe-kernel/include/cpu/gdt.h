@@ -2,7 +2,8 @@
 
 #include <types.h>
 
-typedef struct {
+typedef struct
+{
   uint16_t limit_low;
   uint16_t base_low;
   uint8_t  base_mid;
@@ -11,7 +12,8 @@ typedef struct {
   uint8_t  base_high;
 } __attribute__((packed)) gdt_entry_t;
 
-typedef struct {
+typedef struct
+{
   gdt_entry_t null;
   gdt_entry_t kernel_code;
   gdt_entry_t kernel_data;
@@ -19,7 +21,8 @@ typedef struct {
   gdt_entry_t user_code;
 } __attribute__((packed)) gdt_t;
 
-typedef struct {
+typedef struct
+{
   uint16_t size;
   uint64_t offset;
 } __attribute__((packed)) gdt_ptr_t;

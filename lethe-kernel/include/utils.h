@@ -10,68 +10,85 @@
 
 __attribute__((__noreturn__)) static inline void halt()
 {
-  for (;;) {
-    asm volatile("hlt");
-  }
+  for (;;) { asm volatile("hlt"); }
   __builtin_unreachable();
 }
 
-#define abort_msg(format, ...)                                                 \
-  printf("ABORT [%s:%d]: ", __func__, __LINE__);                               \
-  printf(format, ##__VA_ARGS__);                                               \
-  walk_stack();                                                                \
+#define abort_msg(format, ...)                   \
+  printf("ABORT [%s:%d]: ", __func__, __LINE__); \
+  printf(format, ##__VA_ARGS__);                 \
+  walk_stack();                                  \
   halt();
+
 /*
 #define abort()                                                                \
   printf("ABORT [%s:%d]", __func__, __LINE__);                                 \
   walk_stack();                                                                \
   halt();
 */
-static inline uint64_t read_cr3()
+inline static uint64_t read_cr3()
 {
   uint64_t cr3;
-  asm volatile("mov %%cr3, %0" : "=r"(cr3));
+  asm volatile("mov %%cr3, %0"
+    : "=r"(cr3));
   return (cr3 >> 12) << 12;
 }
-static inline uint64_t read_cr2()
+
+inline static uint64_t read_cr2()
 {
   uint64_t cr2;
-  asm volatile("mov %%cr2, %0" : "=r"(cr2));
+  asm volatile("mov %%cr2, %0"
+    : "=r"(cr2));
   return cr2;
 }
-static inline void flush_tlb(uint64_t page)
+
+inline static void flush_tlb(uint64_t page)
 {
-  asm volatile("invlpg (%0)" ::"b"(page) : "memory");
+  asm volatile("invlpg (%0)" ::"b"(page)
+    : "memory");
 }
 // NOLINTNEXTLINE(*-const-parameter)
 static inline void read_msr(uint32_t msr, uint32_t* low, uint32_t* high)
 {
-  asm volatile("rdmsr" : "=a"(*low), "=d"(*high) : "c"(msr));
+  asm volatile("rdmsr"
+    : "=a"(*low), "=d"(*high)
+    : "c"(msr));
 }
 
-static inline void write_msr(uint32_t msr, uint32_t low, uint32_t high)
+inline static void write_msr(uint32_t msr, uint32_t low, uint32_t high)
 {
-  asm volatile("wrmsr" : : "a"(low), "d"(high), "c"(msr));
+  asm volatile("wrmsr"
+    :
+    : "a"(low), "d"(high), "c"(msr));
 }
 
-static inline void outb(uint16_t port, uint8_t val)
+inline static void outb(uint16_t port, uint8_t val)
 {
-  asm volatile("outb %b0, %1" : : "a"(val), "Nd"(port) : "memory");
+  asm volatile("outb %b0, %1"
+    :
+    : "a"(val), "Nd"(port)
+    : "memory");
 }
 
-static inline uint8_t inb(uint16_t port)
+inline static uint8_t inb(uint16_t port)
 {
   uint8_t val;
-  asm volatile("inb %1, %b0" : "=a"(val) : "Nd"(port) : "memory");
+  asm volatile("inb %1, %b0"
+    : "=a"(val)
+    : "Nd"(port)
+    : "memory");
   return val;
 }
-static inline uint64_t rdtsc()
+
+inline static uint64_t rdtsc()
 {
   uint64_t low;
   uint64_t high;
-  asm volatile("rdtsc" : "=a"(low), "=d"(high));
+  asm volatile("rdtsc"
+    : "=a"(low), "=d"(high));
   return ((high << 32) | low);
 }
+
 void     abort();
 void     walk_stack();
 char*    resolve_function_name(uint64_t);

@@ -1,4 +1,5 @@
 #include "cpu/pit.h"
+
 #include "cpu/idt.h"
 #include "utils.h"
 
@@ -20,9 +21,11 @@ uint16_t pit_count()
 void pit_init()
 {
   uint16_t reload_value = PIT_FREQ / PIT_HZ;
-  outb(PIT_MODE_COMMAND_REG,
-       0b00110100); // Select channel 0 with access mode lobyte/hibyte and
-                    // operating mode rate generator and use 16-bit binary mode
+  outb(
+    PIT_MODE_COMMAND_REG,
+    0b00110100
+  ); // Select channel 0 with access mode lobyte/hibyte and
+     // operating mode rate generator and use 16-bit binary mode
   outb(PIT_DATA0, reload_value & 0xFF);
   outb(PIT_DATA0, reload_value >> 8);
 }
@@ -30,7 +33,5 @@ void pit_init()
 void pit_sleep(uint64_t duration)
 {
   ticks = duration;
-  while (ticks > 0) {
-    asm volatile("hlt");
-  }
+  while (ticks > 0) { asm volatile("hlt"); }
 }

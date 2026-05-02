@@ -2,6 +2,7 @@
 #define __AML_INTERNAL_H__
 
 #include "host.h"
+
 #include <stdint.h>
 // misc prefixes
 #define EXT_OP_PREFIX 0x5B
@@ -66,50 +67,38 @@
 #define TRY_PARSE_CONTINUE(x, ...) \
   AML_SET_ANCHOR;                  \
   status = x(__VA_ARGS__);         \
-  IF_SUCCESS(status)               \
-  {                                \
-    continue;                      \
-  }                                \
+  IF_SUCCESS(status) { continue; } \
   AML_RESET_ANCHOR;
 
-#define TRY_PARSE(x, ...)  \
-  AML_SET_ANCHOR;          \
-  status = x(__VA_ARGS__); \
-  IF_SUCCESS(status)       \
-  {                        \
-    return status;         \
-  }                        \
+#define TRY_PARSE(x, ...)               \
+  AML_SET_ANCHOR;                       \
+  status = x(__VA_ARGS__);              \
+  IF_SUCCESS(status) { return status; } \
   AML_RESET_ANCHOR;
 
-#define IF_SUCCESS(x)                                            \
+#define IF_SUCCESS(x) \
   if (x.prefix_byte != ERR_PARSE && x.prefix_byte != ERR_PREFIX)
 #define AML_ERR_CHECK_ABRT(x)                                    \
   if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
-  {                                                              \
-    set_pointer(__current_anchor__);                             \
-    AML_LOG("ERR Check Failed\n");                               \
-    print_next_definition_block();                               \
-    AML_EXIT()                                                   \
-  }
+    {                                                            \
+      set_pointer(__current_anchor__);                           \
+      AML_LOG("ERR Check Failed\n");                             \
+      print_next_definition_block();                             \
+      AML_EXIT()                                                 \
+    }
 #define AML_ERR_CHECK(x)                                         \
   if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
-  {                                                              \
-    set_pointer(__current_anchor__);                             \
-    AML_LOG("ERR Check Failed\n");                               \
-    return x;                                                    \
-  }
+    {                                                            \
+      set_pointer(__current_anchor__);                           \
+      AML_LOG("ERR Check Failed\n");                             \
+      return x;                                                  \
+    }
 #define AML_PREFIX_ERROR \
-  (aml_ptr_t)            \
-  {                      \
-    ERR_PREFIX, NULL     \
-  }
+  (aml_ptr_t) { ERR_PREFIX, NULL }
 
 #define AML_PARSE_ERROR \
-  (aml_ptr_t)           \
-  {                     \
-    ERR_PARSE, NULL     \
-  }
-#define AML_PRELUDE(x)                          \
+  (aml_ptr_t) { ERR_PARSE, NULL }
+#define AML_PRELUDE(x) \
   if (next_byte() != x) return AML_PREFIX_ERROR
 
 #define AML_EXT_PRELUDE(x)                                   \
@@ -122,36 +111,36 @@ void* parse_buffer_definition();
 
 typedef struct
 {
-  char signature[4];
+  char     signature[4];
   uint32_t length;
-  uint8_t revision;
-  uint8_t checksum;
-  uint8_t oem_id[6];
+  uint8_t  revision;
+  uint8_t  checksum;
+  uint8_t  oem_id[6];
   uint64_t oem_table_id;
   uint32_t oem_revision;
   uint32_t creator_id;
   uint32_t creator_revision;
-  uint8_t definition_blocks[];
+  uint8_t  definition_blocks[];
 } __attribute__((packed)) acpi_aml_table_t;
 
 typedef struct
 {
-  int length;
+  int   length;
   char* string;
 } aml_name_string_t;
 
 typedef struct
 {
   uint8_t prefix_byte;
-  void* __ptr;
+  void*   __ptr;
 } __attribute__((packed)) aml_ptr_t;
 
 typedef struct
 {
   aml_ptr_t method_name;
-  uint8_t method_flags;
-  uint32_t length;
-  char* code;
+  uint8_t   method_flags;
+  uint32_t  length;
+  char*     code;
 } aml_method_t;
 
 typedef struct
@@ -161,8 +150,8 @@ typedef struct
 } aml_alias_t;
 
 void* root();
-void init_map();
-void append(void* map, const char key[4], void* value);
+void  init_map();
+void  append(void* map, const char key[4], void* value);
 void* new_map(const char key[4], int capacity);
 
 void aml_parser_init(void*);

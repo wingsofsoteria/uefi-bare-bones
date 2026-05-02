@@ -1,7 +1,8 @@
 #pragma once
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
   uint32_t magic;         /* magic bytes to identify PSF */
   uint32_t version;       /* zero */
   uint32_t headersize;    /* offset of bitmaps in file, 32 */

@@ -3,17 +3,20 @@
 
 #define IDT_ENTRY_COUNT 256
 
-typedef struct {
+typedef struct
+{
   uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rbp, rdi, rsi, rdx, rcx, rbx,
-      rax, isr, err, rip, cs, rflags;
+    rax, isr, err, rip, cs, rflags;
 } __attribute__((packed)) isr_stack_t;
 
-typedef struct {
+typedef struct
+{
   uint16_t size;
   uint64_t offset;
 } __attribute__((packed)) idt_ptr_t;
 
-typedef struct {
+typedef struct
+{
   uint16_t offset_low;
   uint16_t segment_selector;
   uint8_t  ist;
@@ -23,7 +26,8 @@ typedef struct {
   uint32_t reserved_high;
 } __attribute__((packed)) idt_entry_t;
 
-typedef struct {
+typedef struct
+{
   idt_entry_t entries[IDT_ENTRY_COUNT];
 } __attribute__((packed)) idt_t;
 

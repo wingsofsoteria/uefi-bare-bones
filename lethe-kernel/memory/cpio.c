@@ -1,5 +1,7 @@
 #include "memory/cpio.h"
+
 #include "utils.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,32 +12,27 @@ static uint8_t* cpio_address;
 static bool     cpio_eof = false;
 static uint32_t file_size();
 static bool     check_header();
-void            init_cpio(uint8_t* addr)
+
+void init_cpio(uint8_t* addr)
 {
   cpio_address = addr;
 
-  if (!check_header()) {
-    abort();
-  }
+  if (!check_header()) { abort(); }
 }
+
 static bool check_header()
-{
-  return ((cpio_header_t*)cpio_address)->c_magic == 0070707;
-}
+{ return ((cpio_header_t*)cpio_address)->c_magic == 0070707; }
 
 static void check_eof()
 {
   char* filename = (char*)(cpio_address + CPIO_HEADER_SIZE);
-  if (strncmp(filename, "TRAILER!!!", file_size())) {
-    cpio_eof = true;
-  }
+  if (strncmp(filename, "TRAILER!!!", file_size())) { cpio_eof = true; }
 }
+
 uint8_t* get_file()
 {
   cpio_header_t* header = (cpio_header_t*)cpio_address;
-  if (!check_header()) {
-    abort();
-  }
+  if (!check_header()) { abort(); }
   next_header();
   return (uint8_t*)(header) + CPIO_HEADER_SIZE + header->c_namesize + 1;
 }
@@ -48,9 +45,7 @@ uint32_t file_size()
 
 bool next_header()
 {
-  if (cpio_eof) {
-    return false;
-  }
+  if (cpio_eof) { return false; }
   cpio_address = cpio_address + CPIO_HEADER_SIZE +
                  ((cpio_header_t*)cpio_address)->c_namesize + 1 + file_size();
   check_eof();

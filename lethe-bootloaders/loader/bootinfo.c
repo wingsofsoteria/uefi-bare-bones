@@ -1,62 +1,54 @@
-#include "uefi/uefi.h"
 #include "../kernel/include/types.h"
-#include <stdint.h>
-#include <stdbool.h>
 #include "loader.h"
+#include "uefi/uefi.h"
+
+#include <stdbool.h>
+#include <stdint.h>
 
 typedef struct
 {
-  char signature[8];
-  uint8_t checksum;
-  char oemid[6];
-  uint8_t revision;
+  char     signature[8];
+  uint8_t  checksum;
+  char     oemid[6];
+  uint8_t  revision;
   uint32_t rsdt_address;
   uint32_t length;
   uint64_t xsdt_address;
-  uint8_t extended_checksum;
-  char reserved[3];
+  uint8_t  extended_checksum;
+  char     reserved[3];
 } acpi_rsdp_structure_t;
 
 int guid_equal(efi_guid_t a, efi_guid_t b)
 {
   return a.Data1 == b.Data1 && a.Data2 == b.Data2 && a.Data3 == b.Data3 &&
-    a.Data4[0] == b.Data4[0] && a.Data4[1] == b.Data4[1] &&
-    a.Data4[2] == b.Data4[2] && a.Data4[3] == b.Data4[3] &&
-    a.Data4[4] == b.Data4[4] && a.Data4[5] == b.Data4[5] &&
-    a.Data4[6] == b.Data4[6] && a.Data4[7] == b.Data4[7];
+         a.Data4[0] == b.Data4[0] && a.Data4[1] == b.Data4[1] &&
+         a.Data4[2] == b.Data4[2] && a.Data4[3] == b.Data4[3] &&
+         a.Data4[4] == b.Data4[4] && a.Data4[5] == b.Data4[5] &&
+         a.Data4[6] == b.Data4[6] && a.Data4[7] == b.Data4[7];
 }
 
 void* get_configuration_table(efi_guid_t guid)
 {
   for (int i = 0; i < ST->NumberOfTableEntries; i++)
-  {
-    efi_configuration_table_t table = ST->ConfigurationTable[i];
-    efi_guid_t table_guid           = table.VendorGuid;
-    if (guid_equal(table_guid, guid))
     {
-      return table.VendorTable;
+      efi_configuration_table_t table      = ST->ConfigurationTable[i];
+      efi_guid_t                table_guid = table.VendorGuid;
+      if (guid_equal(table_guid, guid)) { return table.VendorTable; }
     }
-  }
   return NULL;
 }
 
 bool rsdp_checksum(acpi_rsdp_structure_t* rsdp)
 {
   uint8_t* bytes = (uint8_t*)rsdp;
-  uint8_t sum    = 0;
-  int checksum_bytes;
-  if (rsdp->revision > 0)
-  {
-    checksum_bytes = 36;
-  }
+  uint8_t  sum   = 0;
+  int      checksum_bytes;
+  if (rsdp->revision > 0) { checksum_bytes = 36; }
   else
-  {
-    checksum_bytes = 20;
-  }
-  for (int i = 0; i < checksum_bytes; i++)
-  {
-    sum += bytes[i];
-  }
+    {
+      checksum_bytes = 20;
+    }
+  for (int i = 0; i < checksum_bytes; i++) { sum += bytes[i]; }
   return sum == 0;
 }
 
@@ -65,21 +57,21 @@ efi_status_t get_rsdp(kernel_bootinfo_t* bootinfo)
   printf("getting rsdp\n");
   efi_guid_t acpi_guid     = ACPI_20_TABLE_GUID;
   efi_guid_t fallback_guid = ACPI_TABLE_GUID;
-  void* acpi_table         = get_configuration_table(acpi_guid);
-  bool fallback            = false;
+  void*      acpi_table    = get_configuration_table(acpi_guid);
+  bool       fallback      = false;
   if (acpi_table == NULL)
-  {
-    acpi_table = get_configuration_table(fallback_guid);
-    if (acpi_table == NULL)
     {
-      // TODO ACTUALLY HANDLE UNSUPPORTED SYSTEMS
-      return EFI_NOT_FOUND;
+      acpi_table = get_configuration_table(fallback_guid);
+      if (acpi_table == NULL)
+        {
+          // TODO ACTUALLY HANDLE UNSUPPORTED SYSTEMS
+          return EFI_NOT_FOUND;
+        }
+      else
+        {
+          fallback = true;
+        }
     }
-    else
-    {
-      fallback = true;
-    }
-  }
   bootinfo->rsdp_address = acpi_table;
   return EFI_SUCCESS;
 }
@@ -89,20 +81,18 @@ efi_status_t get_initfs(kernel_bootinfo_t* bootinfo)
   int initfs_size = 1048576;
 
   FILE* initfs = fopen("\\initfs", "r");
-  if (initfs == NULL)
-  {
-    return EFI_NOT_FOUND;
-  }
+  if (initfs == NULL) { return EFI_NOT_FOUND; }
   void* initfs_buffer;
   BS->AllocatePool(EfiLoaderData, initfs_size, &initfs_buffer);
-  if (initfs_buffer == NULL)
-  {
-    return EFI_OUT_OF_RESOURCES;
-  }
+  if (initfs_buffer == NULL) { return EFI_OUT_OF_RESOURCES; }
   fread(initfs_buffer, initfs_size, 1, initfs);
   fclose(initfs);
-  map_pages(initfs_buffer + KERNEL_START, initfs_buffer,
-    initfs_size / EFI_PAGE_SIZE, 0b10);
+  map_pages(
+    initfs_buffer + KERNEL_START,
+    initfs_buffer,
+    initfs_size / EFI_PAGE_SIZE,
+    0b10
+  );
   bootinfo->initfs_size = initfs_size;
   bootinfo->initfs      = initfs_buffer;
   return EFI_SUCCESS;
@@ -111,16 +101,16 @@ efi_status_t get_initfs(kernel_bootinfo_t* bootinfo)
 efi_status_t get_gop(kernel_bootinfo_t* bootinfo)
 {
   printf("getting EFI gop\n");
-  efi_guid_t gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-  efi_gop_t* gop;
+  efi_guid_t   gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+  efi_gop_t*   gop;
   efi_status_t status = BS->LocateProtocol(&gop_guid, NULL, (void**)&gop);
-  if (status != EFI_SUCCESS)
-  {
-    return status;
-  }
-  map_pages((void*)gop->Mode->FrameBufferBase + KERNEL_START,
+  if (status != EFI_SUCCESS) { return status; }
+  map_pages(
+    (void*)gop->Mode->FrameBufferBase + KERNEL_START,
     (void*)gop->Mode->FrameBufferBase,
-    gop->Mode->FrameBufferSize / EFI_PAGE_SIZE, 0b10);
+    gop->Mode->FrameBufferSize / EFI_PAGE_SIZE,
+    0b10
+  );
   bootinfo->base  = gop->Mode->FrameBufferBase;
   bootinfo->pitch = gop->Mode->Information->PixelsPerScanLine * 4;
   bootinfo->horizontal_resolution =
@@ -153,28 +143,28 @@ kernel_bootinfo_t* get_bootinfo()
   uint32_t stack_size  = 100 * 1024;
   uint32_t stack_pages = (stack_size / EFI_PAGE_SIZE) + 1;
   for (int i = 0; i < (mmap.size / mmap.desc_size); i++)
-  {
-    efi_memory_descriptor_t* desc =
-      (efi_memory_descriptor_t*)((uint8_t*)mmap.addr + (i * mmap.desc_size));
-    desc->VirtualStart = KERNEL_START + desc->PhysicalStart;
-    if (desc->NumberOfPages >= stack_pages)
     {
-      if (desc->NumberOfPages < min_pages)
-      {
-        min_pages  = desc->NumberOfPages;
-        min_offset = i;
-      }
+      efi_memory_descriptor_t* desc =
+        (efi_memory_descriptor_t*)((uint8_t*)mmap.addr + (i * mmap.desc_size));
+      desc->VirtualStart = KERNEL_START + desc->PhysicalStart;
+      if (desc->NumberOfPages >= stack_pages)
+        {
+          if (desc->NumberOfPages < min_pages)
+            {
+              min_pages  = desc->NumberOfPages;
+              min_offset = i;
+            }
+        }
     }
-  }
 
   if (min_offset == KERNEL_MEMORY_MAX)
-  {
-    printf("Failed to allocate memory for stack\n");
-    for (;;);
-  }
+    {
+      printf("Failed to allocate memory for stack\n");
+      for (;;);
+    }
   efi_memory_descriptor_t* stack_descriptor =
     (efi_memory_descriptor_t*)((uint8_t*)mmap.addr +
-      (min_offset * mmap.desc_size));
+                               (min_offset * mmap.desc_size));
   uint64_t stack_start = stack_descriptor->VirtualStart + EFI_PAGE_SIZE;
   uint64_t stack_end   = stack_start + ((stack_pages - 1) * EFI_PAGE_SIZE);
   stack_descriptor->PhysicalStart = stack_end;

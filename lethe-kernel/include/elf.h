@@ -18,7 +18,8 @@ typedef Elf64_Half Elf64_Versym;
   #define EI_MAG3   3
   #define PT_LOAD   1
 
-typedef struct {
+typedef struct
+{
   unsigned char e_ident[EI_NIDENT];
   Elf64_Half    e_type;
   Elf64_Half    e_machine;
@@ -35,7 +36,8 @@ typedef struct {
   Elf64_Half    e_shstrndx;
 } Elf64_Ehdr;
 
-typedef struct {
+typedef struct
+{
   Elf64_Word  p_type;
   Elf64_Word  p_flags;
   Elf64_Off   p_offset;
@@ -46,7 +48,8 @@ typedef struct {
   Elf64_Xword p_align;
 } Elf64_Phdr;
 
-typedef struct {
+typedef struct
+{
   Elf64_Word  sh_name;
   Elf64_Word  sh_type;
   Elf64_Xword sh_flags;
@@ -59,7 +62,8 @@ typedef struct {
   Elf64_Xword sh_entsize;
 } Elf64_Shdr;
 
-typedef struct {
+typedef struct
+{
   Elf64_Word    st_name;
   unsigned char st_info;
   unsigned char st_other;

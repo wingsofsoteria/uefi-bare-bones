@@ -1,9 +1,11 @@
 #include "cpu/task.h"
+
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
 #include "memory/alloc.h"
 #include "utils.h"
+
 #include <keyboard.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -18,30 +20,25 @@ static task_queue_t* IDLE_QUEUE = NULL;
 
 static void idle()
 {
-  while (1) {
-    asm volatile("hlt");
-  }
+  while (1) { asm volatile("hlt"); }
 }
 
 static void push_queue(task_queue_t* queue, task_t* task)
 {
-  if (((queue->head + 1) % queue->capacity) == queue->tail) {
-    return; // queue is full
-  }
+  if (((queue->head + 1) % queue->capacity) == queue->tail)
+    {
+      return; // queue is full
+    }
   queue->_inner[queue->tail] = task;
   queue->tail                = (queue->tail + 1) % queue->capacity;
 }
 
 static task_t* pop_queue(task_queue_t* queue)
 {
-  if (queue->head == queue->tail) {
-    return kernel;
-  }
+  if (queue->head == queue->tail) { return kernel; }
   task_t* task = queue->_inner[queue->head];
   queue->head  = (queue->head + 1) % queue->capacity;
-  if (task == NULL) {
-    return pop_queue(queue);
-  }
+  if (task == NULL) { return pop_queue(queue); }
   return task;
 }
 
@@ -116,26 +113,23 @@ static task_t* remove_task(task_queue_t* queue, int id)
 {
   if (id == 0) // id is 0 for the kernel / idle task so we never want to remove
                // that on accident
-  {
-    return NULL;
-  }
-  for (int i = 0; i < queue->capacity; i++) {
-    if (queue->_inner[i]->task_id != id) {
-      continue;
+    {
+      return NULL;
     }
-    task_t* task     = queue->_inner[i];
-    queue->_inner[i] = NULL;
-    return task;
-  }
+  for (int i = 0; i < queue->capacity; i++)
+    {
+      if (queue->_inner[i]->task_id != id) { continue; }
+      task_t* task     = queue->_inner[i];
+      queue->_inner[i] = NULL;
+      return task;
+    }
   return NULL;
 }
 
 void signal_idle(uint64_t deadline)
 {
   task_t* self = remove_task(LIVE_QUEUE, get_task_id());
-  if (self == NULL) {
-    return;
-  }
+  if (self == NULL) { return; }
   self->deadline = deadline;
   push_queue(IDLE_QUEUE, self);
 }
@@ -152,9 +146,7 @@ static void task_wrapper(int id, task_function fn_ptr, void* fn_args)
 {
   fn_ptr(fn_args);
   task_t* self = remove_task(LIVE_QUEUE, id);
-  if (self == NULL) {
-    return;
-  }
+  if (self == NULL) { return; }
   kfree(self->ctx);
   kfree(self);
 }
@@ -179,8 +171,9 @@ void create_task(task_function rip, void* data)
 
 void task_loop()
 {
-  while (1) {
-    ksleep((kernel_duration_t){.milliseconds = 20});
-    asm volatile("int $128");
-  }
+  while (1)
+    {
+      ksleep((kernel_duration_t){ .milliseconds = 20 });
+      asm volatile("int $128");
+    }
 }

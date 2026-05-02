@@ -1,16 +1,19 @@
 #pragma once
 
 #include "loaders/loader.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
   bool     start;
   uint64_t base;
   uint64_t length;
 } frame_t;
 
-typedef struct {
+typedef struct
+{
   void*   memory_map;
   frame_t next;
 } frame_allocator_t;

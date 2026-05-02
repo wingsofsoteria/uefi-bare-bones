@@ -7,10 +7,12 @@
 
 // My timer resolutions are EITHER 1 millisecond or 1 nanosecond
 // also store seconds for convenience
-typedef struct {
+typedef struct
+{
   uint64_t seconds;
   uint64_t milliseconds;
   uint64_t nanoseconds;
 
 } kernel_duration_t;
+
 void ksleep(kernel_duration_t);

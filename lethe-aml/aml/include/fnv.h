@@ -96,7 +96,7 @@ typedef uint32_t Fnv32_t;
    *
    * NOTE: The FNV-1a initial basis is the same value as FNV-1 by definition.
    */
-  #define FNV1_32_INIT  ((Fnv32_t)0x811c9dc5)
+  #define FNV1_32_INIT  ((Fnv32_t)0x811C9DC5)
   #define FNV1_32A_INIT FNV1_32_INIT
 
 /* hash_32a.c */

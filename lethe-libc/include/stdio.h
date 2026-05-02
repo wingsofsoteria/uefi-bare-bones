@@ -19,10 +19,10 @@
   printf("ABORT [%s:%d]", __func__, __LINE__); \
   __abort();
 */
-int vprintf(const char*, va_list);
+int                                       vprintf(const char*, va_list);
 __attribute__((format(printf, 1, 2))) int printf(const char* __restrict, ...);
-int putchar(int);
-int puts(const char*);
+int                                       putchar(int);
+int                                       puts(const char*);
 /*
 static inline uint64_t read_cr3()
 {

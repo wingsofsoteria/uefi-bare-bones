@@ -1,9 +1,14 @@
 #include "log.h"
+
 #include <stdarg.h>
 #include <stdio.h>
 
-const static char* kernel_log_str[6] = {"",      "debug", "warn",
-                                        "trace", "info",  "error"};
+static const char* kernel_log_str[6] = { "",
+  "debug",
+  "warn",
+  "trace",
+  "info",
+  "error" };
 // const static char* kernel_log_str[6] = {
 //"", "error", "warn", "info", "trace", "debug"};
 static int kernel_max_log_level = KERNEL_LOG_ERROR;

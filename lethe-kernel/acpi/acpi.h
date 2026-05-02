@@ -3,9 +3,11 @@
 
 #include "acpi/acpi.h"
 #include "tables.h"
+
 #include <stddef.h>
 
-typedef struct {
+typedef struct
+{
   acpi_header_t header;
   uint8_t       hardware_rev_id;
   uint8_t       comparator_count : 5;
@@ -28,19 +30,22 @@ typedef struct {
 // TODO i'm saving my fingers from manually typing out all members of the FADT
 // table by just shoving it all in arrays. I'll add them as needed
 
-typedef struct {
+typedef struct
+{
   acpi_header_t header;
   uint32_t      local_interrupt_controller_address;
   uint32_t      flags;
   char          interrupt_controller_structure[];
 } __attribute__((packed)) acpi_madt_t;
 
-typedef struct {
+typedef struct
+{
   uint8_t type;
   uint8_t length;
 } __attribute__((packed)) madt_interrupt_controller_header_t;
 
-typedef struct {
+typedef struct
+{
   madt_interrupt_controller_header_t header;
   uint8_t                            io_apic_id;
   uint8_t                            reserved;
@@ -48,7 +53,8 @@ typedef struct {
   uint32_t                           global_system_interrupt_base;
 } __attribute__((packed)) madt_io_apic_t;
 
-typedef struct {
+typedef struct
+{
   madt_interrupt_controller_header_t header;
   uint8_t                            bus;
   uint8_t                            source;
@@ -58,14 +64,16 @@ typedef struct {
   uint16_t                           reserved : 12;
 } __attribute__((packed)) madt_interrupt_source_override_t;
 
-#define MADT_ADDR32(index)                                                     \
-  (madt->interrupt_controller_structure[index + 3] & 0xFF) << 24 |             \
-      (madt->interrupt_controller_structure[index + 2] & 0xFF) << 16 |         \
-      (madt->interrupt_controller_structure[index + 1] & 0xFF) << 8 |          \
-      (madt->interrupt_controller_structure[index] & 0xFF);
-#define MADT_LOOP                                                              \
-  for (uint64_t i = 0; i < madt->header.length - 44;                           \
-       i         += madt->interrupt_controller_structure[i + 1])
+#define MADT_ADDR32(index)                                           \
+  (madt->interrupt_controller_structure[index + 3] & 0xFF) << 24 |   \
+    (madt->interrupt_controller_structure[index + 2] & 0xFF) << 16 | \
+    (madt->interrupt_controller_structure[index + 1] & 0xFF) << 8 |  \
+    (madt->interrupt_controller_structure[index] & 0xFF);
+#define MADT_LOOP                                            \
+  for (                                                      \
+    uint64_t i = 0; i < madt->header.length - 44;            \
+    i         += madt->interrupt_controller_structure[i + 1] \
+  )
 
 void                              madt_init();
 void                              lapic_init();

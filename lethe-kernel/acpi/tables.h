@@ -34,7 +34,8 @@
 #define ACPI_OPREGION_CMOS   0x05
 #define ACPI_OPREGION_OEM    0x80
 
-typedef struct acpi_rsdp_t {
+typedef struct acpi_rsdp_t
+{
   char     signature[8];
   uint8_t  checksum;
   char     oem[6];
@@ -42,7 +43,8 @@ typedef struct acpi_rsdp_t {
   uint32_t rsdt;
 } __attribute__((packed)) acpi_rsdp_t;
 
-typedef struct acpi_xsdp_t {
+typedef struct acpi_xsdp_t
+{
   char     signature[8];
   uint8_t  checksum;
   char     oem[6];
@@ -53,7 +55,8 @@ typedef struct acpi_xsdp_t {
   uint8_t  extended_checksum;
 } __attribute__((packed)) acpi_xsdp_t;
 
-typedef struct acpi_header_t {
+typedef struct acpi_header_t
+{
   char     signature[4];
   uint32_t length;
   uint8_t  revision;
@@ -65,17 +68,20 @@ typedef struct acpi_header_t {
   uint32_t creator_revision;
 } __attribute__((packed)) acpi_header_t;
 
-typedef struct acpi_rsdt_t {
+typedef struct acpi_rsdt_t
+{
   acpi_header_t header;
   uint32_t      tables[];
 } __attribute__((packed)) acpi_rsdt_t;
 
-typedef struct acpi_xsdt_t {
+typedef struct acpi_xsdt_t
+{
   acpi_header_t header;
   uint64_t      tables[];
 } __attribute__((packed)) acpi_xsdt_t;
 
-typedef struct acpi_gas_t {
+typedef struct acpi_gas_t
+{
   uint8_t  address_space;
   uint8_t  bit_width;
   uint8_t  bit_offset;
@@ -83,7 +89,8 @@ typedef struct acpi_gas_t {
   uint64_t base;
 } __attribute__((packed)) acpi_gas_t;
 
-typedef struct acpi_fadt_t {
+typedef struct acpi_fadt_t
+{
   acpi_header_t header;
   uint32_t      firmware_control;
   uint32_t      dsdt; // pointer to dsdt
@@ -150,7 +157,8 @@ typedef struct acpi_fadt_t {
   acpi_gas_t sleep_status_reg;
 } __attribute__((packed)) acpi_fadt_t;
 
-typedef struct acpi_ecdt_t {
+typedef struct acpi_ecdt_t
+{
   acpi_header_t header;
   acpi_gas_t    ec_control;
   acpi_gas_t    ec_data;

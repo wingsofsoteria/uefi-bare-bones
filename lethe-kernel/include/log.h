@@ -1,14 +1,16 @@
 #pragma once
 #include "stdarg.h"
 #include "stdio.h"
-enum {
+
+enum
+{
   KERNEL_LOG_DEBUG = 1,
   KERNEL_LOG_ERROR = 5,
 };
 
-#define __kernel_log(level, ...)                                               \
-  kernel_log(level, "[%s:%d] ", __func__, __LINE__);                           \
-  kernel_log(level, __VA_ARGS__);                                              \
+#define __kernel_log(level, ...)                     \
+  kernel_log(level, "[%s:%d] ", __func__, __LINE__); \
+  kernel_log(level, __VA_ARGS__);                    \
   putchar('\n');
 
 #define kernel_log_error(...) __kernel_log(KERNEL_LOG_ERROR, __VA_ARGS__);

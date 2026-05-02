@@ -15,7 +15,8 @@
  * 	4 hpet (unimplemented)
  * */
 
-struct kernel_config {
+struct kernel_config
+{
   uint8_t  kexit : 1;
   uint8_t  interrupts_enabled : 1;
   uint8_t  interrupt_source : 2;
@@ -26,15 +27,11 @@ struct kernel_config {
   uint8_t  timer_source : 3;
 } __attribute__((packed));
 
-#define MAYBE_STI                                                              \
-  if (kernel_config.interrupts_enabled == 0b1) {                               \
-    sti();                                                                     \
-  }
+#define MAYBE_STI \
+  if (kernel_config.interrupts_enabled == 0b1) { sti(); }
 
-#define MAYBE_CLI                                                              \
-  if (kernel_config.interrupts_enabled == 0b1) {                               \
-    cli();                                                                     \
-  }
+#define MAYBE_CLI \
+  if (kernel_config.interrupts_enabled == 0b1) { cli(); }
 void                        sti();
 void                        cli();
 void                        enable_interrupts();

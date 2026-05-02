@@ -4,7 +4,8 @@
   #error "Do not use lethe_loader.h directly, use loader.h instead"
 #endif
 
-enum {
+enum
+{
   EfiReservedMemoryType  = 0,  // unusable
   EfiLoaderCode          = 1,  // usable
   EfiLoaderData          = 2,  // usable after kernel init
@@ -24,7 +25,8 @@ enum {
   EfiMaxMemoryType           = 16, // undefined
 };
 
-typedef struct {
+typedef struct
+{
   uint32_t type;
   uint32_t __pad;
   uint64_t p_addr;
@@ -33,7 +35,8 @@ typedef struct {
   uint64_t __attrib;
 } loader_memory_descriptor_t;
 
-typedef struct {
+typedef struct
+{
   loader_memory_descriptor_t* addr;
   uint64_t                    size;
   uint64_t                    desc_size;
@@ -41,7 +44,8 @@ typedef struct {
   uint64_t                    key;
 } mmap_t;
 
-typedef struct {
+typedef struct
+{
   char     magic[5];
   uint64_t base;
   uint64_t size;

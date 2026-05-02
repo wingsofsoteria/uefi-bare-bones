@@ -7,13 +7,15 @@ typedef void (*task_function)(void*);
 
 void install_task(task_function fn_ptr, void* data);
 
-typedef struct {
+typedef struct
+{
   isr_stack_t* ctx;
   int          task_id;
   uint64_t     deadline;
 } task_t;
 
-typedef struct {
+typedef struct
+{
   task_t** _inner;
   int      head;
   int      tail;

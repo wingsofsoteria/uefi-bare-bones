@@ -31,7 +31,8 @@
 #define LAPIC_TIMER_MODE_TSC_DEADLINE      (1 << 18)
 #define LAPIC_TIMER_IRQ                    32
 
-typedef struct {
+typedef struct
+{
   uint8_t  pin;
   uint8_t  vector;
   uint8_t  delivery_mode : 3;
@@ -45,7 +46,8 @@ typedef struct {
   uint8_t  destination;
 } __attribute__((packed)) ioapic_redtbl_t;
 
-typedef struct {
+typedef struct
+{
   uint8_t  type;
   uint8_t  length;
   uint8_t  processor_uid;
@@ -53,7 +55,8 @@ typedef struct {
   uint32_t flags;
 } __attribute__((packed)) acpi_local_apic_structure_t;
 
-typedef struct {
+typedef struct
+{
   uint8_t  type;
   uint8_t  length;
   uint8_t  io_apic_id;

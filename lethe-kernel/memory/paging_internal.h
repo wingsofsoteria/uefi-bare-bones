@@ -1,11 +1,12 @@
 #pragma once
-#include <stdint.h>
-
 #include "memory/paging.h"
+
+#include <stdint.h>
 
 #define PAGE_PRESENT 1
 
-typedef struct {
+typedef struct
+{
   uint8_t  present : 1;
   uint8_t  writable : 1;
   uint8_t  user_accessable : 1;
@@ -20,7 +21,8 @@ typedef struct {
   uint8_t  execute_disable : 1;
 } page_entry_t;
 
-typedef struct {
+typedef struct
+{
   page_entry_t pages[PAGE_COUNT];
 } page_table_t;
 

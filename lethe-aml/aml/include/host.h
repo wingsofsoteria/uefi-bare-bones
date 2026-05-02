@@ -1,19 +1,17 @@
 #ifndef __AML_INTERNAL_HOST_H__
 #define __AML_INTERNAL_HOST_H__
-#include <stdint.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-void abort();
+void  abort();
 void* calloc(size_t, size_t);
-void free(void*);
+void  free(void*);
 void* malloc(size_t);
 void* realloc(void*, size_t);
-static void host_exit()
-{
-  abort();
-}
+
+static void host_exit() { abort(); }
 
 #ifdef AML_DEBUG // AML_DEBUG can be defined for the host OS and the kernel so
                  // we can't make any assumptions beyond the existence of a
