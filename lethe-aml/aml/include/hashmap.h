@@ -1,5 +1,6 @@
 #pragma once
 #include <stddef.h>
+#include <stdint.h>
 struct hash_map;
 typedef struct hash_map hash_map_t;
 

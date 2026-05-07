@@ -1,6 +1,7 @@
 #include "hashmap.h"
 
 #include "fnv.h"
+#include "host.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -11,8 +12,8 @@
 
 typedef struct
 {
-  char key[1022];
-  void*       data;
+  char  key[1022];
+  void* data;
 } hash_entry;
 
 typedef struct hash_map
@@ -90,7 +91,7 @@ void hash_map_resize(hash_map_t* map, int max_cap)
         }
       assert(!inner[index].data);
       inner[index].data = map->inner[i].data;
-    memcpy(inner[index].key, map->inner[i].key, 1022);
+      memcpy(inner[index].key, map->inner[i].key, 1022);
     }
 
   free(map->inner);

@@ -39,7 +39,8 @@
 #define ERR_PARSE        0xF8
 #define TERM_LIST_PREFIX 0xF7
 // statements
-#define IF_OP 0xA0
+#define IF_OP   0xA0
+#define ELSE_OP 0xA1
 // named objs
 #define EXT_BANK_FIELD_OP    0x87
 #define EXT_CREATE_FIELD_OP  0x13
