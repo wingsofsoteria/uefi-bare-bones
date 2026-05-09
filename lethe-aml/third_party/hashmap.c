@@ -23,6 +23,21 @@ typedef struct hash_map
   hash_entry* inner;
 } hash_map_t;
 
+static int iter_counter = 0;
+
+bool __hash_map_iter_has_next(hash_map_t* map)
+{ return iter_counter < map->count; }
+
+void* __hash_map_iter_next(hash_map_t* map, int flag)
+{
+  if (flag)
+    {
+      iter_counter = 0;
+      return NULL;
+    }
+  return map->inner[iter_counter++].data;
+}
+
 void hash_map_debug(hash_map_t* map)
 {
   printf("Map(%i) %i\n", map->capacity, map->count);

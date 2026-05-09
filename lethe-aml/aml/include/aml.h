@@ -106,6 +106,10 @@
   if (next_byte() != EXT_OP_PREFIX) return AML_PREFIX_ERROR; \
   AML_PRELUDE(x)
 
+#define EXP_STRINGIFY(x) #x
+
+#define STRINGIFY(x) EXP_STRINGIFY(x)
+
 uint32_t get_next_dword();
 
 void* parse_buffer_definition();
@@ -135,14 +139,6 @@ typedef struct
   uint8_t prefix_byte;
   void*   __ptr;
 } __attribute__((packed)) aml_ptr_t;
-
-typedef struct
-{
-  aml_ptr_t method_name;
-  uint8_t   method_flags;
-  uint32_t  length;
-  char*     code;
-} aml_method_t;
 
 typedef struct
 {
