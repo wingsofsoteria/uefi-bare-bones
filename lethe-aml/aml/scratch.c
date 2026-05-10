@@ -13,6 +13,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define TYPE_METHOD    (1 << 0)
+#define TYPE_NAMESPACE (1 << 1)
+#define TYPE_REGION    (1 << 2)
+#define TYPE_NAME      (1 << 3)
+#define TYPE_FIELD     (1 << 4)
+
+#define DATA_STR   (1 << 0)
+#define DATA_PKG   (1 << 1)
+#define DATA_BUF   (1 << 2)
+#define DATA_BYTE  (1 << 3)
+#define DATA_SHORT (1 << 4)
+#define DATA_INT   (1 << 5)
+
 typedef struct aml_namespace
 {
   struct aml_namespace* parent;
@@ -21,16 +34,16 @@ typedef struct aml_namespace
   hash_map_t*           children;
 } aml_namespace_t;
 
+#define MAX_CHARS 1022
+
 typedef struct
 {
-  char inner[1022];
+  int  count;
+  char inner[MAX_CHARS];
 } aml_name_t;
 
-#define VARIABLE_SIG "VAR_"
-
 typedef struct
 {
-  char       sig[4];
   aml_name_t label;
   uint8_t    data_type;
   void*      data;
@@ -42,11 +55,8 @@ typedef struct
   uint8_t* buffer;
 } aml_buffer_t;
 
-#define METHOD_SIG "METD"
-
 typedef struct
 {
-  char       sig[4];
   aml_name_t name;
   uint8_t    flags;
   size_t     len;
@@ -114,71 +124,33 @@ enum ExtAccessModifier
 
 typedef struct
 {
-  enum FieldUnitType type;
-
-  union
-  {
-    struct
-    {
-      aml_name_t name;
-      size_t     len;
-    } named_field;
-
-    struct
-    {
-      size_t len;
-    } reserved_field;
-
-    struct
-    {
-      enum AccessType        type;
-      enum AttributeModifier mod;
-      enum AccessAttrib      attrib;
-    } access_field;
-
-    struct
-    {
-      enum AccessType        type;
-      enum ExtAccessModifier mod;
-      uint8_t                len;
-    } ext_access_field;
-
-    struct
-    {
-      union
-      {
-        aml_name_t   name;
-        aml_buffer_t buffer;
-      };
-    } connect_field;
-  };
-} aml_field_unit_t;
-
-typedef struct
-{
-  enum AccessType   access_type;
-  bool              should_lock;
-  enum UpdateRule   update_rule;
-  aml_field_unit_t* field_unit_list;
+  enum AccessType access_type;
+  bool            should_lock;
+  enum UpdateRule update_rule;
+  aml_name_t      name;
 } aml_field_t;
 
-#define OP_REGION_SIG "OPRN"
+typedef struct
+{
+  int          offset;
+  int          len;
+  aml_name_t   name;
+  aml_field_t* parent;
+} aml_named_field_t;
 
 typedef struct
 {
-  char         sig[4];
-  aml_name_t   name;
-  uint8_t      region_space;
-  size_t       offset;
-  size_t       len;
-  aml_field_t* field;
+  aml_name_t name;
+  uint8_t    region_space;
+  size_t     offset;
+  size_t     len;
 } aml_operation_region_t;
 
 typedef struct
 {
-  char  sig[4];
-  void* __unused;
-} __aml_generic_t;
+  uint8_t type;
+  void*   data;
+} aml_ptr_t;
 
 static aml_namespace_t* _root = NULL;
 
@@ -189,14 +161,67 @@ static aml_namespace_t* create_namespace(
 )
 {
   aml_namespace_t* namespace = malloc(sizeof(aml_namespace_t));
-  if (!namespace) return NULL;
-  namespace->parent = parent;
-  namespace->code   = code;
-  namespace->name   = name;
+  namespace->parent          = parent;
+  namespace->code            = code;
+  namespace->name            = name;
   hash_map_t* map;
   hash_map_create(&map, 5);
   namespace->children = map;
   return namespace;
+}
+
+static void prepend_str(aml_name_t* name, char* str, int len)
+{
+  int offset = len;
+  assert((len + name->count) < MAX_CHARS);
+  if (name->count > 0) { memmove(name->inner + len, name->inner, name->count); }
+  memcpy(name->inner, str, len);
+  name->count += len;
+}
+
+static aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
+{
+  if (key.inner[0] == '\\') { return key; }
+  unimplemented(key.inner[0] == '^');
+  unimplemented(key.count != 4);
+  aml_name_t resolved_key = { 0, {} };
+  prepend_str(&resolved_key, key.inner, key.count);
+  if (ns->parent != NULL)
+    {
+      prepend_str(&resolved_key, ".", 1);
+      prepend_str(&resolved_key, ns->name, strlen(ns->name));
+      return resolved_key;
+    }
+  prepend_str(&resolved_key, "\\", 1);
+  return resolved_key;
+}
+
+static void* search_root(aml_name_t key)
+{
+  if (key.inner[0] == '\\')
+    {
+      int index = 0;
+      return hash_map_get(_root->children, key.inner, &index);
+    }
+  return NULL;
+}
+
+static aml_ptr_t* create_ptr(void* data, uint8_t type)
+{
+  aml_ptr_t* ptr = malloc(sizeof(aml_ptr_t));
+  ptr->data      = data;
+  ptr->type      = type;
+  return ptr;
+}
+
+static void add_child_to_namespace(
+  aml_namespace_t* ns,
+  aml_name_t       key,
+  aml_ptr_t*       data
+)
+{
+  aml_name_t resolved_name = resolve_name(ns, key);
+  hash_map_push(ns->children, resolved_name.inner, data, sizeof(aml_ptr_t));
 }
 
 static int print_indent(int indent)
@@ -264,143 +289,6 @@ static char* stringify_region_space(uint8_t space)
   return value;
 }
 
-static void print_field(aml_field_t* field)
-{
-  int indent = print_indent(-1);
-  printf("Field\n");
-  print_indent(-1);
-  printf("{\n");
-  print_indent(indent + 2);
-  switch (field->access_type)
-    {
-      case AnyAcc:
-        {
-          printf("AnyAcc\n");
-          break;
-        }
-      case ByteAcc:
-        {
-          printf("ByteAcc\n");
-          break;
-        }
-      case WordAcc:
-        {
-          printf("WordAcc\n");
-          break;
-        }
-      case DWordAcc:
-        {
-          printf("DWordAcc\n");
-          break;
-        }
-      case QWordAcc:
-        {
-          printf("QWordAcc\n");
-          break;
-        }
-      case BufferAcc:
-        {
-          printf("QWordAcc\n");
-          break;
-        }
-      default:
-        {
-          printf("???\n");
-          break;
-        }
-    }
-  print_indent(-1);
-  printf("%s\n", (int)field->should_lock ? "Lock" : "NoLock");
-  print_indent(-1);
-  switch (field->update_rule)
-    {
-      case Preserve:
-        {
-          printf("Preserve\n");
-          break;
-        }
-      case WriteAsOnes:
-        {
-          printf("WriteAsOnes\n");
-          break;
-        }
-      case WriteAsZeros:
-        {
-          printf("WriteAsZeros\n");
-          break;
-        }
-      default:
-        {
-          printf("???\n");
-          break;
-        }
-    }
-  print_indent(-1);
-  printf("List\n");
-  print_indent(-1);
-  printf("{\n");
-  aml_field_unit_t unit = field->field_unit_list[0];
-
-  int i = 0;
-  while (unit.type != 0xFE)
-    {
-      unit = field->field_unit_list[i];
-      print_indent(indent + 4);
-      switch (unit.type)
-        {
-          case Reserved:
-            {
-              printf("Reserved: %#lx\n", unit.reserved_field.len);
-              break;
-            }
-          case Access:
-            {
-              printf(
-                "Access: %d %d %d\n",
-                unit.access_field.type,
-                unit.access_field.attrib,
-                unit.access_field.mod
-              );
-              break;
-            }
-          case Connect:
-            {
-              printf("Connect: %s\n", unit.connect_field.name.inner);
-              break;
-            }
-          case ExtendedAccess:
-            {
-              printf(
-                "ExtAccess: %d %d %d\n",
-                unit.ext_access_field.type,
-                unit.ext_access_field.mod,
-                unit.ext_access_field.len
-              );
-              break;
-            }
-          case Named:
-            {
-              printf(
-                "Named: %s %lu\n",
-                unit.named_field.name.inner,
-                unit.named_field.len
-              );
-              break;
-            }
-          default:
-            {
-              printf("???\n");
-              break;
-            }
-        }
-      i++;
-    }
-  print_indent(indent + 2);
-  printf("}\n");
-  print_indent(indent);
-  printf("}\n");
-}
-
 static void print_region(aml_operation_region_t* region)
 {
   int prev_indent = 0;
@@ -420,7 +308,6 @@ static void print_region(aml_operation_region_t* region)
   printf("%#lx\n", region->offset);
   print_indent(-1);
   printf("%#lx\n", region->len);
-  print_field(region->field);
   print_indent(prev_indent);
   printf("}\n");
 }
@@ -445,35 +332,36 @@ static void print_method(aml_method_t* method)
 
 static void print_children(aml_namespace_t* ns)
 {
-  void* data;
-  printf("Root\n{\n");
-  int indent = 2;
+  aml_ptr_t* data;
+  printf("%s\n{\n", ns->name);
+  int indent = -1;
+  if (ns->parent == NULL) { indent = 2; };
   hash_map_iter(ns->children, data)
   {
-    __aml_generic_t* _data = (__aml_generic_t*)data;
-    if (!data)
+    switch (data->type)
       {
-        print_indent(indent);
-        printf("Empty\n");
-        continue;
+        case TYPE_NAME:
+          {
+            print_variable(data->data);
+            break;
+          }
+        case TYPE_REGION:
+          {
+            print_region(data->data);
+            break;
+          }
+        case TYPE_METHOD:
+          {
+            print_method(data->data);
+            break;
+          }
+        default:
+          {
+            print_indent(indent);
+            printf("Empty\n");
+            break;
+          }
       }
-    if (strncmp(_data->sig, VARIABLE_SIG, 4) == 0)
-      {
-        print_variable(data);
-        continue;
-      }
-    if (strncmp(_data->sig, OP_REGION_SIG, 4) == 0)
-      {
-        print_region(data);
-        continue;
-      }
-    if (strncmp(_data->sig, METHOD_SIG, 4) == 0)
-      {
-        print_method(data);
-        continue;
-      }
-    print_indent(indent);
-    printf("%.4s\n", _data->sig);
   }
   printf("}\n");
   fflush(stdout);
@@ -567,22 +455,54 @@ static uint64_t term_arg_to_int(aml_namespace_t* ns)
       default:
         {
           ns->code--;
-          char name[4] = { ns->code[0], ns->code[1], ns->code[2], ns->code[3] };
-          int  index   = -1;
-          aml_variable_t* var = hash_map_get(ns->children, name, &index);
+          aml_name_t aml_name;
+          aml_name.count = 4;
+          memcpy(aml_name.inner, ns->code, 4);
+          int        index = -1;
+          aml_ptr_t* var   = hash_map_get(
+            ns->children,
+            resolve_name(_root, aml_name).inner,
+            &index
+          );
 
           if (index == -1)
             {
               debug_exit(ns);
               return 1;
             }
-          if (strncmp(var->sig, VARIABLE_SIG, 4) != 0)
+          switch (var->type)
             {
-              debug_exit(ns);
-              return 1;
+              case TYPE_NAME:
+                {
+                  ns->code            += 4;
+                  aml_variable_t* data = var->data;
+                  switch (data->data_type)
+                    {
+                      case DATA_BYTE:
+                        {
+                          return *(uint8_t*)data->data;
+                        }
+                      case DATA_SHORT:
+                        {
+                          return *(uint16_t*)data->data;
+                        }
+                      case DATA_INT:
+                        {
+                          return *(uint32_t*)data->data;
+                        }
+                      default:
+                        {
+                          debug_exit(ns);
+                          return 1;
+                        }
+                    }
+                }
+              default:
+                {
+                  debug_exit(ns);
+                  return 1;
+                }
             }
-          ns->code += 4;
-          return *(uint64_t*)var->data;
         }
     }
 }
@@ -626,6 +546,7 @@ static void parse_namestring(aml_namespace_t* ns, aml_name_t* name)
     }
 
   uint32_t char_count = seg_count * 4;
+  name->count         = char_count;
   while (char_count--) { *name_ptr++ = *copy++; }
   *name_ptr = '\0';
   ns->code  = copy;
@@ -639,12 +560,11 @@ static void def_method(aml_namespace_t* ns)
   parse_namestring(ns, &method_name);
   uint8_t       method_flags = *ns->code++;
   aml_method_t* method       = malloc(sizeof(aml_method_t));
-  memcpy(method->sig, METHOD_SIG, 4);
-  method->flags = method_flags;
-  method->len   = method_len - (ns->code - code_copy);
-  method->name  = method_name;
-  method->code  = ns->code;
-  hash_map_push(ns->children, method_name.inner, method, sizeof(aml_method_t));
+  method->flags              = method_flags;
+  method->len                = method_len - (ns->code - code_copy);
+  method->name               = method_name;
+  method->code               = ns->code;
+  add_child_to_namespace(ns, method_name, create_ptr(method, TYPE_METHOD));
   ns->code = code_copy + method_len;
 }
 
@@ -659,27 +579,27 @@ static void parse_data_object(
     {
       case ZERO_OP:
         {
-          *(uint64_t*)out_data = 0;
-          *out_type            = 1;
+          *(uint8_t*)out_data = 0;
+          *out_type           = DATA_BYTE;
           break;
         }
       case ONE_OP:
         {
-          *(uint64_t*)out_data = 1;
-          *out_type            = 1;
+          *(uint8_t*)out_data = 1;
+          *out_type           = DATA_BYTE;
           break;
         }
       case ONES_OP:
         {
-          *(uint64_t*)out_data = 0xFF;
-          *out_type            = 1;
+          *(uint8_t*)out_data = 0xFF;
+          *out_type           = DATA_BYTE;
           break;
         }
       case BYTE_PREFIX:
         {
-          uint64_t data        = *ns->code++;
-          *(uint64_t*)out_data = data;
-          *out_type            = 1;
+          uint8_t data        = *ns->code++;
+          *(uint8_t*)out_data = data;
+          *out_type           = DATA_BYTE;
           break;
         }
       case WORD_PREFIX:
@@ -687,17 +607,17 @@ static void parse_data_object(
           uint8_t  lower       = *ns->code++;
           uint8_t  upper       = *ns->code++;
           uint16_t word        = (uint16_t)upper << 8 | lower;
-          *(uint64_t*)out_data = word;
-          *out_type            = 1;
+          *(uint16_t*)out_data = word;
+          *out_type            = DATA_SHORT;
           break;
         }
       case DWORD_PREFIX:
         {
-          *(uint64_t*)out_data = ns->code[0] | (uint32_t)ns->code[1] << 8 |
+          *(uint32_t*)out_data = ns->code[0] | (uint32_t)ns->code[1] << 8 |
                                  (uint32_t)ns->code[2] << 16 |
                                  (uint32_t)ns->code[3] << 24;
           ns->code            += 4;
-          *out_type            = 1;
+          *out_type            = DATA_INT;
           break;
         }
       case STRING_PREFIX:
@@ -709,7 +629,7 @@ static void parse_data_object(
           char* ptr = malloc(i * sizeof(char));
           for (int j = 0; j < i; j++) { ptr[j] = *ns->code++; }
           out_data  = ptr;
-          *out_type = 2;
+          *out_type = DATA_STR;
           break;
         }
       case PACKAGE_OP:
@@ -721,6 +641,7 @@ static void parse_data_object(
           ptr->buffer                = ns->code;
           ptr->size                  = num_elements;
           ns->code                   = code_copy + pkg_len;
+          *out_type                  = DATA_PKG;
           break;
         }
       case BUFFER_OP:
@@ -732,6 +653,7 @@ static void parse_data_object(
           aml_buffer_t* ptr = out_data;
           ptr->size         = buffer_size;
           ptr->buffer       = buffer;
+          *out_type         = DATA_BUF;
           break;
         }
       default:
@@ -750,13 +672,14 @@ static void def_name(aml_namespace_t* ns)
   uint8_t type = 0;
   parse_data_object(ns, data, &type);
   aml_variable_t* name_var = malloc(sizeof(aml_variable_t));
-  memcpy(name_var->sig, VARIABLE_SIG, 4);
-  name_var->data      = data;
-  name_var->label     = name;
-  name_var->data_type = type;
-  hash_map_push(ns->children, name.inner, name_var, sizeof(name_var));
-  hash_map_debug(ns->children);
+  name_var->data           = data;
+  name_var->label          = name;
+  name_var->data_type      = type;
+
+  add_child_to_namespace(ns, name, create_ptr(name_var, TYPE_NAME));
 }
+
+static void parse_next(aml_namespace_t* /*ns*/);
 
 static void def_op_region(aml_namespace_t* ns)
 {
@@ -766,42 +689,39 @@ static void def_op_region(aml_namespace_t* ns)
   uint64_t                region_offset = term_arg_to_int(ns);
   uint64_t                region_len    = term_arg_to_int(ns);
   aml_operation_region_t* region = malloc(sizeof(aml_operation_region_t));
-  memcpy(region->sig, OP_REGION_SIG, 4);
-  region->region_space = region_space;
-  region->len          = region_len;
-  region->offset       = region_offset;
-  region->name         = name;
-  region->field        = NULL;
-  hash_map_push(
-    ns->children,
-    name.inner,
-    region,
-    sizeof(aml_operation_region_t)
-  );
+  region->region_space           = region_space;
+  region->len                    = region_len;
+  region->offset                 = region_offset;
+  region->name                   = name;
+  add_child_to_namespace(ns, name, create_ptr(region, TYPE_REGION));
 }
 
-static int parse_next_field_elem(
-  aml_namespace_t*  ns,
-  aml_field_unit_t* out_field
+static size_t parse_next_field_elem(
+  aml_namespace_t* ns,
+  int              offset,
+  aml_field_t*     parent
 )
 {
-  uint8_t* code_copy = ns->code;
-  uint8_t  op        = *ns->code++;
+  aml_name_t parent_name = resolve_name(ns, parent->name);
+  uint8_t*   code_copy   = ns->code;
+  uint8_t    op          = *ns->code++;
   switch (op)
     {
       case Reserved:
         {
-          out_field->type               = Reserved;
-          out_field->reserved_field.len = parse_length(ns);
+          // out_field->reserved_field.len = parse_length(ns);
+          return parse_length(ns);
           break;
         }
       case Access:
         {
-          out_field->type                = Access;
-          uint8_t access_type            = *ns->code++;
-          out_field->access_field.type   = access_type & 0x0F;
-          out_field->access_field.mod    = (access_type & 0xC0) >> 6;
-          out_field->access_field.attrib = *ns->code++;
+          // out_field->type                = Access;
+          // uint8_t access_type            = *ns->code++;
+          // out_field->access_field.type   = access_type & 0x0F;
+          // out_field->access_field.mod    = (access_type & 0xC0) >> 6;
+          // out_field->access_field.attrib = *ns->code++;
+          ns->code += 2;
+          return 2;
           break;
         }
       case Connect:
@@ -809,20 +729,23 @@ static int parse_next_field_elem(
           AML_EXIT();
           aml_name_t name;
           parse_namestring(ns, &name);
-          out_field->type               = Connect;
-          out_field->connect_field.name = name;
+          // out_field->type               = Connect;
+          // out_field->connect_field.name = name;
           break;
         }
       case ExtendedAccess:
         {
-          out_field->type                  = ExtendedAccess;
-          out_field->ext_access_field.type = *ns->code++ & 0x0F;
-          out_field->ext_access_field.mod  = *ns->code++;
-          out_field->ext_access_field.len  = *ns->code++;
+          // out_field->type                  = ExtendedAccess;
+          // out_field->ext_access_field.type = *ns->code++ & 0x0F;
+          // out_field->ext_access_field.mod  = *ns->code++;
+          // out_field->ext_access_field.len  = *ns->code++;
+          ns->code += 3;
+          return 3;
           break;
         }
       default:
         {
+          ns->code--;
           aml_name_t name;
           parse_namestring(ns, &name);
           for (int i = 0; i < 4; i++)
@@ -830,12 +753,22 @@ static int parse_next_field_elem(
               if (name.inner[i] >= '0' && name.inner[i] <= '9') { continue; }
               if (name.inner[i] >= 'A' && name.inner[i] <= 'Z') { continue; }
               if (name.inner[i] >= 'a' && name.inner[i] <= 'z') { continue; }
+              if (name.inner[i] == '_') { continue; }
               ns->code = code_copy;
-              return 1;
+              return 0;
             }
-          out_field->type             = Named;
-          out_field->named_field.name = name;
-          out_field->named_field.len  = parse_length(ns);
+          aml_named_field_t* field = malloc(sizeof(aml_named_field_t));
+          field->len               = parse_length(ns);
+          field->offset            = offset;
+          prepend_str(&name, parent_name.inner, parent_name.count);
+          field->name   = name;
+          field->parent = parent;
+          add_child_to_namespace(
+            ns,
+            field->name,
+            create_ptr(field, TYPE_FIELD)
+          );
+          return (ns->code - code_copy);
           break;
         }
     }
@@ -848,35 +781,20 @@ static void def_field(aml_namespace_t* ns)
   size_t     field_len = parse_length(ns);
   aml_name_t name;
   parse_namestring(ns, &name);
-  int                     index = -1;
-  aml_operation_region_t* region =
-    hash_map_get(ns->children, name.inner, &index);
-  assert(index != -1);
-  assert(strncmp(region->sig, OP_REGION_SIG, 4) == 0);
   uint8_t      flags = *ns->code++;
   aml_field_t* field = malloc(sizeof(aml_field_t));
   field->access_type = flags & 0xF;
   field->should_lock = (flags & 0x10) != 0;
   field->update_rule = (flags & 0xC0) >> 6;
+  field->name        = name;
   assert((flags & 0x80) == 0);
-  uint8_t* b_code_copy = ns->code;
-  size_t   field_count = 1;
+  int offset = 0;
   while (1)
     {
-      aml_field_unit_t unit;
-      if (parse_next_field_elem(ns, &unit)) { break; }
-      field_count++;
+      size_t len = parse_next_field_elem(ns, offset, field);
+      if (len == 0) { break; }
+      offset += len;
     }
-  ns->code               = b_code_copy;
-  field->field_unit_list = malloc(field_count * sizeof(aml_field_unit_t));
-  int i                  = 0;
-  while (1)
-    {
-      if (parse_next_field_elem(ns, &field->field_unit_list[i])) { break; }
-      i++;
-    }
-  field->field_unit_list[field_count - 1] = (aml_field_unit_t){ .type = 0xFE };
-  region->field                           = field;
   // TODO parse field list
   // append field list to operation region
   ns->code = code_copy + field_len;

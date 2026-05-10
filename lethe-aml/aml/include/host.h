@@ -13,6 +13,10 @@ void* realloc(void*, size_t);
 
 static void host_exit() { abort(); }
 
+#define unimplemented(expr)                           \
+  if (expr) { printf("Unimplemented! %s\n", #expr); } \
+  assert(!(expr))
+
 #ifdef AML_DEBUG // AML_DEBUG can be defined for the host OS and the kernel so
                  // we can't make any assumptions beyond the existence of a
                  // printf function

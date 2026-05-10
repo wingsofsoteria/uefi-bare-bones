@@ -134,18 +134,6 @@ typedef struct
   char* string;
 } aml_name_string_t;
 
-typedef struct
-{
-  uint8_t prefix_byte;
-  void*   __ptr;
-} __attribute__((packed)) aml_ptr_t;
-
-typedef struct
-{
-  aml_ptr_t source;
-  aml_ptr_t alias;
-} aml_alias_t;
-
 void* root();
 void  init_map();
 void  append(void* map, const char key[4], void* value);
@@ -154,6 +142,5 @@ void* new_map(const char key[4], int capacity);
 void aml_parser_init(void*);
 void aml_parser_run(void);
 
-typedef aml_ptr_t (*aml_parser_fn)(void*);
 extern int __current_anchor__;
 #endif
