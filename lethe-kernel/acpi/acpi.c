@@ -3,6 +3,7 @@
 
 #include "acpi.h"
 
+#include "aml.h"
 #include "log.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -69,13 +70,12 @@ int acpi_early_init(void* rsdp_pointer)
     }
   madt_init();
   lapic_init();
-  // ignore scis
-  // lai_set_sci_event(0);
   return 0;
 }
 
 int acpi_late_init()
 {
+  parse_table(scan_tables("DSDT", 0));
   kernel_log_debug("ACPI initialization finished\n");
   return 0;
 }

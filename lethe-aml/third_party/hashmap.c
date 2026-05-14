@@ -121,8 +121,10 @@ int hash_map_push(hash_map_t* map, char* key, void* data, size_t data_size)
   int      ignore = 0;
   if (hash_map_get(map, key, &ignore) != NULL) { return 1; }
   int index = hash % map->capacity;
+
   while (map->inner[index].data != NULL)
     {
+      if (strncmp(map->inner[index].key, key, strlen(key)) == 0) { abort(); }
       index++;
       if (index >= map->capacity) { hash_map_resize(map, map->capacity * 2); }
     }
@@ -145,10 +147,10 @@ void* hash_map_pop(hash_map_t* map, char* key)
   return entry_data;
 }
 
-int hash_map_create(hash_map_t** out_map, int max_cap)
+void* hash_map_create(int max_cap)
 {
   hash_map_t* map = malloc(sizeof(hash_map_t));
-  if (map == NULL) { return 1; }
+  if (map == NULL) { return NULL; }
   map->capacity = max_cap;
   map->count    = 0;
   map->inner    = calloc(max_cap, sizeof(hash_entry));
@@ -156,8 +158,7 @@ int hash_map_create(hash_map_t** out_map, int max_cap)
   if (map->inner == NULL)
     {
       free(map);
-      return 1;
+      return NULL;
     }
-  *out_map = map;
-  return 0;
+  return map;
 }

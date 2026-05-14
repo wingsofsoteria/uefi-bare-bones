@@ -18,4 +18,5 @@ lethe-misc/fs.dmp
 lethe-kernel/font.psf
 *.o
 *.a
+lethe-aml/aml/unused.c
 compile_commands.json

@@ -1,18 +1,19 @@
 #ifndef __AML_INTERNAL_H__
 #define __AML_INTERNAL_H__
 
-#include "host.h"
+#include "hashmap.h"
 
 #include <stdint.h>
 // misc prefixes
 #define EXT_OP_PREFIX 0x5B
 #define EXT_DEBUG_OP  0x31
 // name string
-#define ROOT_CHAR         0x5C
+/*#define ROOT_CHAR         0x5C
 #define PREFIX_CHAR       0x5E
 #define NULL_NAME         0x00
 #define DUAL_NAME_PREFIX  0x2E
 #define MULTI_NAME_PREFIX 0x2F
+*/
 // computational data
 #define BYTE_PREFIX     0x0A
 #define WORD_PREFIX     0x0B
@@ -33,11 +34,6 @@
 #define ALIAS_OP 0x06
 #define NAME_OP  0x08
 #define SCOPE_OP 0x10
-// self defined
-#define ERR_PREFIX       0xFA
-#define NAME_SEG_PREFIX  0xF9
-#define ERR_PARSE        0xF8
-#define TERM_LIST_PREFIX 0xF7
 // statements
 #define IF_OP   0xA0
 #define ELSE_OP 0xA1
@@ -61,58 +57,18 @@
 #define CREATE_QWORDFIELD_OP 0x8F
 #define CREATE_WORDFIELD_OP  0x8B
 
-#define LEAD_CHAR_OOB(x) x < 0x41 || (x > 0x5A && x != 0x5F)
-#define NAME_CHAR_OOB(x) x < 0x30 || (x > 0x39 && LEAD_CHAR_OOB(x))
-#define AML_SET_ANCHOR   __current_anchor__ = get_pointer()
-#define AML_RESET_ANCHOR set_pointer(__current_anchor__)
-#define TRY_PARSE_CONTINUE(x, ...) \
-  AML_SET_ANCHOR;                  \
-  status = x(__VA_ARGS__);         \
-  IF_SUCCESS(status) { continue; } \
-  AML_RESET_ANCHOR;
+#define TYPE_METHOD       (1 << 0)
+#define TYPE_NAMESPACE    (1 << 1)
+#define TYPE_REGION       (1 << 2)
+#define TYPE_NAME         (1 << 3)
+#define TYPE_FIELD_OFFSET (1 << 4)
 
-#define TRY_PARSE(x, ...)               \
-  AML_SET_ANCHOR;                       \
-  status = x(__VA_ARGS__);              \
-  IF_SUCCESS(status) { return status; } \
-  AML_RESET_ANCHOR;
-
-#define IF_SUCCESS(x) \
-  if (x.prefix_byte != ERR_PARSE && x.prefix_byte != ERR_PREFIX)
-#define AML_ERR_CHECK_ABRT(x)                                    \
-  if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
-    {                                                            \
-      set_pointer(__current_anchor__);                           \
-      AML_LOG("ERR Check Failed\n");                             \
-      print_next_definition_block();                             \
-      AML_EXIT()                                                 \
-    }
-#define AML_ERR_CHECK(x)                                         \
-  if (x.prefix_byte == ERR_PREFIX || x.prefix_byte == ERR_PARSE) \
-    {                                                            \
-      set_pointer(__current_anchor__);                           \
-      AML_LOG("ERR Check Failed\n");                             \
-      return x;                                                  \
-    }
-#define AML_PREFIX_ERROR \
-  (aml_ptr_t) { ERR_PREFIX, NULL }
-
-#define AML_PARSE_ERROR \
-  (aml_ptr_t) { ERR_PARSE, NULL }
-#define AML_PRELUDE(x) \
-  if (next_byte() != x) return AML_PREFIX_ERROR
-
-#define AML_EXT_PRELUDE(x)                                   \
-  if (next_byte() != EXT_OP_PREFIX) return AML_PREFIX_ERROR; \
-  AML_PRELUDE(x)
-
-#define EXP_STRINGIFY(x) #x
-
-#define STRINGIFY(x) EXP_STRINGIFY(x)
-
-uint32_t get_next_dword();
-
-void* parse_buffer_definition();
+#define DATA_STR   (1 << 0)
+#define DATA_PKG   (1 << 1)
+#define DATA_BUF   (1 << 2)
+#define DATA_BYTE  (1 << 3)
+#define DATA_SHORT (1 << 4)
+#define DATA_INT   (1 << 5)
 
 typedef struct
 {
@@ -128,19 +84,132 @@ typedef struct
   uint8_t  definition_blocks[];
 } __attribute__((packed)) acpi_aml_table_t;
 
+typedef struct aml_namespace
+{
+  struct aml_namespace* parent;
+  char*                 name;
+  uint8_t*              code;
+  hash_map_t*           children;
+} aml_namespace_t;
+
+#define MAX_CHARS 1022
+
 typedef struct
 {
-  int   length;
-  char* string;
-} aml_name_string_t;
+  int  count;
+  char inner[MAX_CHARS];
+} aml_name_t;
 
-void* root();
-void  init_map();
-void  append(void* map, const char key[4], void* value);
-void* new_map(const char key[4], int capacity);
+typedef struct
+{
+  aml_name_t label;
+  uint8_t    data_type;
+  void*      data;
+} aml_variable_t;
 
-void aml_parser_init(void*);
-void aml_parser_run(void);
+typedef struct
+{
+  size_t   size;
+  uint8_t* buffer;
+} aml_buffer_t;
 
-extern int __current_anchor__;
+typedef struct
+{
+  aml_name_t name;
+  uint8_t    flags;
+  size_t     len;
+  uint8_t*   code;
+} aml_method_t;
+
+enum VariableType
+{
+  VariableUnimplemented = 0,
+  VariableInt           = 1,
+  VariableStr           = 2,
+};
+
+enum AccessType
+{
+  AnyAcc    = 0,
+  ByteAcc   = 1,
+  WordAcc   = 2,
+  DWordAcc  = 3,
+  QWordAcc  = 4,
+  BufferAcc = 5
+};
+
+enum UpdateRule
+{
+  Preserve     = 0,
+  WriteAsOnes  = 1,
+  WriteAsZeros = 2
+};
+
+enum FieldUnitType
+{
+  Reserved       = 0x00,
+  Access         = 0x01,
+  Connect        = 0x02,
+  ExtendedAccess = 0x03,
+  Named          = 0xFF,
+};
+
+enum AttributeModifier
+{
+  AttribNormal          = 0,
+  AttribBytes           = 1,
+  AttribRawBytes        = 2,
+  AttribRawProcessBytes = 3,
+};
+
+enum AccessAttrib
+{
+  AttribQuick            = 0x02,
+  AttribSendRecv         = 0x04,
+  AttribByte             = 0x06,
+  AttribWord             = 0x08,
+  AttribBlock            = 0x0A,
+  AttribProcessCall      = 0x0C,
+  AttribBlockProcessCall = 0x0D
+};
+
+enum ExtAccessModifier
+{
+  ExtAttribBytes      = 0x0B,
+  ExtAttribRawBytes   = 0x0E,
+  ExtAttribRawProcess = 0x0F
+};
+
+typedef struct
+{
+  aml_name_t name;
+  uint8_t    region_space;
+  size_t     offset;
+  size_t     len;
+} aml_operation_region_t;
+
+typedef struct
+{
+  enum AccessType         access_type;
+  bool                    should_lock;
+  enum UpdateRule         update_rule;
+  aml_operation_region_t* region;
+} aml_field_t;
+
+typedef struct
+{
+  int          offset;
+  int          len;
+  aml_name_t   name;
+  aml_field_t* parent;
+} aml_named_field_t;
+
+typedef struct
+{
+  uint8_t type;
+  void*   data;
+} aml_ptr_t;
+
+void parse_table(acpi_aml_table_t* table);
+
 #endif

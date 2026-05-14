@@ -23,6 +23,7 @@ ADD_LINK_OPTIONS(
         --static
         -Wl,-z,max-page-size=0x1000
         $<$<NOT:$<CONFIG:DEBUG>>:-O2>)
+INCLUDE_DIRECTORIES(lethe-kernel/include)
 INCLUDE_DIRECTORIES(lethe-libc/include)
 ADD_SUBDIRECTORY(lethe-libc)
 ADD_COMPILE_OPTIONS(-mcmodel=large)
@@ -44,9 +45,11 @@ file(CREATE_LINK
 #ADD_SUBDIRECTORY(lethe-aml)
 ADD_SUBDIRECTORY(lethe-aml/third_party)
 ADD_SUBDIRECTORY(lethe-aml/aml)
+TARGET_COMPILE_DEFINITIONS(aml PUBLIC __is_libk)
 TARGET_INCLUDE_DIRECTORIES(fnv PRIVATE lethe-aml/aml/include)
 ADD_SUBDIRECTORY(lethe-kernel)
 ADD_SUBDIRECTORY(lethe-bootloaders)
+TARGET_INCLUDE_DIRECTORIES(acpi PRIVATE lethe-aml/aml/include)
 SET(REL_INSTALL_DIR "lethe-misc/out")
 SET(REL_SCRIPT_DIR "lethe-misc")
 CMAKE_PATH(ABSOLUTE_PATH REL_INSTALL_DIR OUTPUT_VARIABLE ABS_INSTALL_DIR)

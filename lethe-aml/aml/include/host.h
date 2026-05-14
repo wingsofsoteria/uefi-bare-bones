@@ -17,6 +17,22 @@ static void host_exit() { abort(); }
   if (expr) { printf("Unimplemented! %s\n", #expr); } \
   assert(!(expr))
 
+#ifdef __is_libk
+  #include <utils.h>
+#else
+
+inline static void outb(uint16_t port, uint64_t val) {}
+
+inline static uint8_t inb(uint16_t port) { return 0; }
+
+  #define outw outb
+  #define inw  inb
+  #define outd outb
+  #define ind  inb
+  #define outq outb
+  #define inq  inb
+#endif
+
 #ifdef AML_DEBUG // AML_DEBUG can be defined for the host OS and the kernel so
                  // we can't make any assumptions beyond the existence of a
                  // printf function

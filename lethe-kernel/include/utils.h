@@ -80,6 +80,26 @@ inline static uint8_t inb(uint16_t port)
   return val;
 }
 
+inline static uint16_t inw(uint16_t port)
+{
+  uint16_t val;
+  asm volatile("inw %1, %w0"
+    : "=a"(val)
+    : "Nd"(port)
+    : "memory");
+  return val;
+}
+
+inline static uint32_t ind(uint16_t port)
+{
+  uint32_t val;
+  asm volatile("inl %1, %k0"
+    : "=a"(val)
+    : "Nd"(port)
+    : "memory");
+  return val;
+}
+
 inline static uint64_t rdtsc()
 {
   uint64_t low;
