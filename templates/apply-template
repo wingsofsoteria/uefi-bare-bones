@@ -29,19 +29,3 @@ echo "Failed to build Lethe"
 exit 1
 fi
 sudo dd if=$OUTPUT_IMAGE of=$DRIVE status=progress
-exit
-echo -e "label: gpt\n,+,\n" | sudo sfdisk $DRIVE
-sudo mkfs.fat -F32 $PARTITION
-sudo mount $PARTITION /mnt
-sudo mkdir -p /mnt/efi/boot
-sudo mkdir -p /mnt/boot/limine
-make clean
-make
-sudo cp kernel/kernel /mnt/boot
-sudo cp limine.conf /mnt/boot/limine
-sudo cp limine/limine-bios.sys /mnt/boot/limine
-sudo cp limine/BOOTX64.EFI /mnt/efi/boot
-sudo cp limine/BOOTIA32.EFI /mnt/efi/boot
-tree /mnt
-sudo umount /mnt
-

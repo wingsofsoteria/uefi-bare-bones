@@ -1,0 +1,2 @@
+file @LETHE_KERNEL_FILE@
+target remote localhost:1234

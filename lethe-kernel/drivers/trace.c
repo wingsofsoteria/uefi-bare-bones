@@ -50,7 +50,7 @@ uint64_t resolve_function_address(char* name)
     }
   if (strtab == NULL || symtab == NULL)
     {
-      kernel_log_debug("Could not find symbol table");
+      klog("Could not find symbol table");
       return 0;
     }
   for (int i = 0; i < sym_entries; i++)

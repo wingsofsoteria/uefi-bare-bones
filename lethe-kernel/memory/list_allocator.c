@@ -1,9 +1,7 @@
 #include "list_allocator.h"
 
 #include "initial_frame_allocator.h"
-#include "log.h"
 #include "memory/paging.h"
-#include "stdio.h"
 #include "utils.h"
 
 #include <stdalign.h>
@@ -11,7 +9,10 @@
 #include <stdint.h>
 static list_allocator_t allocator = { 0 };
 static uint64_t         heap_end  = 0;
-static int              debug     = 0;
+// #define DEBUG
+#ifdef DEBUG
+  #include "log.h"
+#endif
 // NOLINTNEXTLINE
 void set_heap_end(uint64_t val) { heap_end = val; }
 
@@ -19,11 +20,13 @@ static void increase_heap_size(int pages)
 {
   uint64_t heap_start   = heap_end + PAGE_SIZE;
   uint64_t new_heap_end = heap_start + (PAGE_SIZE * pages);
-  if (debug) { kernel_log_debug("%#lx -> %#lx", heap_end, new_heap_end); }
+#ifdef DEBUG
+  klog("%#llx -> %#llx\n", heap_end, new_heap_end);
+#endif
   for (uint64_t i = heap_start; i <= new_heap_end; i += PAGE_SIZE)
     {
       uint64_t frame = allocate_frame();
-      if (frame == 0) { abort_msg("Out of Memory"); }
+      if (frame == 0) { panic("Out of Memory\n"); }
       map_page(i, frame, 0b11);
     }
   heap_end = new_heap_end;
@@ -32,14 +35,9 @@ static void increase_heap_size(int pages)
 
 void add_region(uint64_t start, int pages)
 {
-  if (debug)
-    {
-      kernel_log_debug(
-        "Adding region %#lx - %#lx",
-        start,
-        start + (PAGE_SIZE * pages)
-      );
-    }
+#ifdef DEBUG
+  klog("Adding region %#llx - %#llx\n", start, start + (PAGE_SIZE * pages));
+#endif
   list_node_t node      = { 0 };
   node.next             = allocator.head.next;
   node.pages            = pages;
@@ -52,10 +50,12 @@ static void* try_alloc(list_node_t* region, int pages)
 {
   if (pages > region->pages)
     {
-      kernel_log_error(
+#ifdef DEBUG
+      klog(
         "Region is too small for allocation of size %d\n",
         pages * PAGE_SIZE
       );
+#endif
       return NULL;
     }
   uint64_t excess = region->pages - pages;
@@ -94,14 +94,14 @@ void* list_alloc(int pages)
   int      excess    = region->pages - pages;
   uint64_t alloc_end = (uint64_t)region + (excess * PAGE_SIZE);
   if (excess > 0) { add_region(alloc_end, excess); }
-  if (debug)
-    {
-      kernel_log_debug(
-        "Alloc: %d pages\nRegion: %d Excess: %d",
-        pages,
-        region->pages,
-        excess
-      );
-    }
+#ifdef DEBUG
+  klog(
+    "Alloc: %d pages\nRegion: %d Excess: %d\n",
+    pages,
+    region->pages,
+    excess
+  );
+#endif
+
   return (void*)(region);
 }

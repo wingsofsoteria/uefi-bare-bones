@@ -67,7 +67,7 @@ void kb_handle_key()
 
 static void init_kb_status()
 {
-  kernel_log_debug("Initialized PS2 Keyboard");
+  klog("Initialized PS2 Keyboard");
   // memset(KB_STATUS, 0, 88 * sizeof(uint8_t));
   enable_irq(1, 33, keyboard_isr);
 }

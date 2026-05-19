@@ -6,6 +6,7 @@
 #include "memory/alloc.h"
 #include "utils.h"
 
+#include <assert.h>
 #include <keyboard.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -45,10 +46,11 @@ static task_t* pop_queue(task_queue_t* queue)
 static task_queue_t* new_queue()
 {
   task_queue_t* queue = kmalloc(sizeof(task_queue_t));
-  queue->head         = 0;
-  queue->tail         = 0;
-  queue->capacity     = TASK_QUEUE_SIZE;
-  queue->_inner       = kmalloc(queue->capacity * sizeof(task_t*));
+  assert(queue != NULL);
+  queue->head     = 0;
+  queue->tail     = 0;
+  queue->capacity = TASK_QUEUE_SIZE;
+  queue->_inner   = kmalloc(queue->capacity * sizeof(task_t*));
 
   return queue;
 }

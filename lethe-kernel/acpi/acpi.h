@@ -78,7 +78,7 @@ typedef struct
 void                              madt_init();
 void                              lapic_init();
 uint32_t                          madt_get_ioapic(uint32_t gsi);
-uint32_t                          madt_get_lapic_addr();
+uint64_t                          madt_get_lapic_addr();
 madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq);
 uint32_t                          lapic_read(uint16_t offset);
 void                              lapic_write(uint16_t offset, uint32_t value);

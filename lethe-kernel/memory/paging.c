@@ -1,13 +1,15 @@
 #include "memory/paging.h"
 
 #include "initial_frame_allocator.h"
-#include "log.h"
 #include "paging_internal.h"
 #include "types.h"
 #include "utils.h"
-static page_table_t* page_table = NULL;
-static int           debug      = 0;
 
+static page_table_t* page_table = NULL;
+// #define DEBUG
+#ifdef DEBUG
+  #include "log.h"
+#endif
 uint64_t virtual_to_physical(uint64_t virtual)
 {
   uint16_t p4_index = (virtual >> 12 >> 9 >> 9 >> 9) & 0x1FF;
@@ -18,46 +20,55 @@ uint64_t virtual_to_physical(uint64_t virtual)
   uint64_t p3_physical = page_table->pages[p4_index].address << 12;
   if (p3_physical == 0)
     {
-      kernel_log_error(
-        "Could not get level 3 page table, %lu is not mapped to "
-        "any physical address",
+#ifdef DEBUG
+      klog(
+        "Could not get level 3 page table, %llx is not mapped to "
+        "any physical address\n",
         virtual
       );
+#endif
       return 0;
     }
   page_table_t* p3          = (void*)(p3_physical + hhdm_mapping);
   uint64_t      p2_physical = p3->pages[p3_index].address << 12;
   if (p2_physical == 0)
     {
-      kernel_log_error(
-        "Could not get level 2 page table, %lu is not mapped to "
-        "any physical address",
+#ifdef DEBUG
+      klog(
+        "Could not get level 2 page table, %llx is not mapped to "
+        "any physical address\n",
         virtual
       );
+#endif
       return 0;
     }
   page_table_t* p2          = (void*)(p2_physical + hhdm_mapping);
   uint64_t      p1_physical = p2->pages[p2_index].address << 12;
   if (p1_physical == 0)
     {
-      kernel_log_error(
-        "Could not get level 1 page table, %lu is not mapped to "
-        "any physical address",
+#ifdef DEBUG
+      klog(
+        "Could not get level 1 page table, %llx is not mapped to "
+        "any physical address\n",
         virtual
       );
+#endif
       return 0;
     }
   page_table_t* p1         = (void*)(p1_physical + hhdm_mapping);
   uint64_t      page_entry = p1->pages[p1_index].address << 12;
   if (page_entry == 0)
     {
-      kernel_log_error(
-        "Could not get page entry, %llu is not mapped to any physical address",
+#ifdef DEBUG
+      klog(
+        "Could not get page entry, %llx is not mapped to any physical "
+        "address\n",
         virtual
       );
+#endif
       return 0;
     }
-  // kernel_log_debug("%x is mapped to %x", virtual, page_entry);
+  // klog("%x is mapped to %x", virtual, page_entry);
   return page_entry;
 }
 
@@ -84,7 +95,7 @@ static void __allocate_entry(
 )
 {
   uint64_t address = allocate_frame();
-  if (address == 0) { abort_msg("Failed to allocate space for page entry"); }
+  if (address == 0) { panic("Failed to allocate space for page entry\n"); }
   set_entry(&table->pages[index], address, flags);
 }
 
@@ -113,25 +124,16 @@ void map_page(uint64_t page, uint64_t frame, uint16_t flags)
     }
   page_table_t* p1 =
     (void*)((p2->pages[p2_index].address << 12) + hhdm_mapping);
-  if (debug)
-    {
-      kernel_log_debug(
-        "Mapping address %lu to %lu\n\tP4[%i]: %p\n\tP3[%i]: "
-        "%p\n\tP2[%i]: %p\n\tEntry: %i",
-        frame,
-        page,
-        p4_index,
-        p3,
-        p3_index,
-        p2,
-        p2_index,
-        p1,
-        p1_index
-      );
-    }
+#ifdef DEBUG
+  klog("Mapping address %llx to %llx\n", frame, page);
+  klog("p4[%i] = %p\n", p4_index, p3);
+  klog("p3[%i] = %p\n", p3_index, p2);
+  klog("p2[%i] = %p\n", p2_index, p1);
+  klog("entry = %i\n", p1_index);
+#endif
   if (p1->pages[p1_index].present)
     {
-      abort_msg("Page is already mapped %p -> %p", page, p1->pages[p1_index]);
+      panic("Page is already mapped\n");
       return;
     }
   set_entry(&p1->pages[p1_index], frame, flags);
@@ -153,21 +155,20 @@ void unmap_page(uint64_t page)
   if (p2->pages[p2_index].present == 0) { return; }
   page_table_t* p1 =
     (void*)((p2->pages[p2_index].address << 12) + hhdm_mapping);
-  if (debug)
-    {
-      kernel_log_debug(
-        "Unmapping page %lu\n\tP4[%i]: %p\n\tP3[%i]: "
-        "%p\n\tP2[%i]: %p\n\tEntry: %i",
-        page,
-        p4_index,
-        p3,
-        p3_index,
-        p2,
-        p2_index,
-        p1,
-        p1_index
-      );
-    }
+#ifdef DEBUG
+  klog(
+    "Unmapping page %llu\n\tP4[%i]: %p\n\tP3[%i]: "
+    "%p\n\tP2[%i]: %p\n\tEntry: %i\n",
+    page,
+    p4_index,
+    p3,
+    p3_index,
+    p2,
+    p2_index,
+    p1,
+    p1_index
+  );
+#endif
   p1->pages[p1_index] = (page_entry_t){ 0 };
   flush_tlb(page);
 }

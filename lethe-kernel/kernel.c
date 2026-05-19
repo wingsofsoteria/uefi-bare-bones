@@ -158,18 +158,13 @@ int kmain()
     framebuffer->width,
     framebuffer->height
   );
-  printf("TSC: %d\n", kernel_config.tsc_freq_khz);
-  #ifdef KERNEL_DEBUG
-  kernel_init_logging(1);
-  #else
-  kernel_init_logging(5);
-  #endif
-  kernel_log_debug("Kernel offset set to %llx", hhdm_mapping);
+  klog("TSC: %d\n", kernel_config.tsc_freq_khz);
+  klog("Kernel offset set to %llx\n", hhdm_mapping);
   setup_allocator(memmap_request.response);
   kernel_init_code();
   init_config_cpuid();
   acpi_early_init(rsdp_request.response->address);
-  kernel_log_debug("Kernel finished initialization");
+  klog("Kernel finished initialization\n");
   enable_irq(1, 33, keyboard_isr);
   enable_tasking();
   enable_apic();
@@ -179,7 +174,7 @@ int kmain()
 
   while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 
-  printf("Kernel was told to exit, Goodbye!\n");
+  klog("Kernel was told to exit, Goodbye!\n");
   halt();
 }
 #else

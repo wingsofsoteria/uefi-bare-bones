@@ -1,14 +1,18 @@
 #include "initial_frame_allocator.h"
 
-#include "log.h"
 #include "memory/paging.h"
-#include "stdio.h"
 #include "types.h"
 #include "utils.h"
 
 #include <string.h>
 static frame_allocator_t allocator = { 0 };
 #ifdef KERNEL_USE_LIMINE
+  #define KERNEL_USED 0xA9
+
+  // #define DEBUG
+  #ifdef DEBUG
+    #include "log.h"
+  #endif
 static void next_usable()
 {
   struct limine_memmap_response* mmap    = allocator.memory_map;
@@ -16,36 +20,46 @@ static void next_usable()
   for (int i = 0; i < mmap->entry_count; i++)
     {
       struct limine_memmap_entry* entry = entries[i];
+  #ifdef DEBUG
+      klog("%llx %llu %llu\n", entry->base, entry->length, entry->type);
+  #endif
       if (entry->type == LIMINE_MEMMAP_USABLE)
         {
+          entry->type    = KERNEL_USED;
           allocator.next = (frame_t){ .start = false,
             .base                            = entry->base,
             .length                          = entry->length };
           return;
         }
     }
-  abort_msg("Could not find a free entry");
+  panic("Could not find a free entry\n");
 }
 
 uint64_t allocate_frame()
 {
+  #ifdef DEBUG
+  klog("%llx %llu\n", allocator.next.base, allocator.next.length);
+  #endif
   if (allocator.next.start)
     {
-      kernel_log_error("Frame was uninitialized");
+  #ifdef DEBUG
+      klog("Frame was uninitialized\n");
+  #endif
       return 0;
     }
   if (allocator.next.base == 0)
     {
       allocator.next.base   += 4096;
       allocator.next.length -= 4096;
-      kernel_log_error(
-        "Frame base was 0, adjusting to %#lx",
-        allocator.next.base
-      );
+  #ifdef DEBUG
+      klog("Frame base was 0, adjusting to %#llx\n", allocator.next.base);
+  #endif
     }
   if (allocator.next.length < 4096)
     {
-      kernel_log_error("Frame is full, moving to next frame");
+  #ifdef DEBUG
+      klog("Frame is full, moving to next frame\n");
+  #endif
       next_usable();
       return allocate_frame();
     }

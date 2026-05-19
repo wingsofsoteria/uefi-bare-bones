@@ -1,5 +1,8 @@
 #pragma once
 
+#include "assert.h"
+#include "config.h"
+
 #include <stdint.h>
 #ifdef QEMU_DEBUG
   #define SERIAL_PORT 0xE9
@@ -10,22 +13,15 @@
 
 __attribute__((__noreturn__)) static inline void halt()
 {
+  asm("cli");
   for (;;) { asm volatile("hlt"); }
   __builtin_unreachable();
 }
 
-#define abort_msg(format, ...)                   \
-  printf("ABORT [%s:%d]: ", __func__, __LINE__); \
-  printf(format, ##__VA_ARGS__);                 \
-  walk_stack();                                  \
-  halt();
+#define panic(msg) __panic(msg, __source);
 
-/*
-#define abort()                                                                \
-  printf("ABORT [%s:%d]", __func__, __LINE__);                                 \
-  walk_stack();                                                                \
-  halt();
-*/
+__attribute__((__noreturn__)) void __panic(char* msg, struct source_location);
+
 inline static uint64_t read_cr3()
 {
   uint64_t cr3;

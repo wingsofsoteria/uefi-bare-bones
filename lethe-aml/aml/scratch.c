@@ -18,6 +18,7 @@ static aml_namespace_t* create_namespace(
   uint8_t*         code
 )
 {
+  alog("\n");
   aml_namespace_t* namespace = malloc(sizeof(aml_namespace_t));
   assert(namespace != NULL);
   namespace->parent = parent;
@@ -33,6 +34,7 @@ static aml_namespace_t* create_namespace(
 
 static void prepend_str(aml_name_t* name, char* str, int len)
 {
+  alog("\n");
   int offset = len;
   assert((len + name->count) < MAX_CHARS);
   if (name->count > 0) { memmove(name->inner + len, name->inner, name->count); }
@@ -42,6 +44,7 @@ static void prepend_str(aml_name_t* name, char* str, int len)
 
 static aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
 {
+  alog("\n");
   if (key.inner[0] == '\\') { return key; }
   unimplemented(key.inner[0] == '^');
   unimplemented(key.count != 4);
@@ -49,7 +52,7 @@ static aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
   prepend_str(&resolved_key, key.inner, key.count);
   if (ns->parent != NULL)
     {
-      prepend_str(&resolved_key, ".", 1);
+      prepend_str(&resolved_key, "\n", 1);
       prepend_str(&resolved_key, ns->name, strlen(ns->name));
       return resolved_key;
     }
@@ -59,6 +62,7 @@ static aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
 
 static aml_ptr_t* create_ptr(void* data, uint8_t type)
 {
+  alog("\n");
   aml_ptr_t* ptr = malloc(sizeof(aml_ptr_t));
   ptr->data      = data;
   ptr->type      = type;
@@ -72,10 +76,11 @@ static void* get_child(
   uint8_t*         out_type
 )
 {
+  alog("\n");
   int        index    = 0;
   aml_name_t resolved = resolve_name(ns, key);
   aml_ptr_t* ptr      = hash_map_get(ns->children, resolved.inner, &index);
-  if (index == -1) return NULL;
+  if (index == -1 || ptr == NULL) return NULL;
   if (!(ptr->type & type)) return NULL;
   if (out_type != NULL) { *out_type = ptr->type; }
   return ptr->data;
@@ -87,12 +92,17 @@ static void add_child_to_namespace(
   aml_ptr_t*       data
 )
 {
+  alog("\n");
   aml_name_t resolved_name = resolve_name(ns, key);
+  alog("\n");
   hash_map_push(ns->children, resolved_name.inner, data, sizeof(aml_ptr_t));
+  alog("\n");
 }
 
 static void debug_exit(aml_namespace_t* ns)
 {
+  alog("\n");
+  hash_map_debug(_root->children);
   printf("%s\n", ns->name);
   hash_map_debug(ns->children);
   AML_EXIT();
@@ -101,6 +111,7 @@ static void debug_exit(aml_namespace_t* ns)
 #ifdef __is_libk
 static uint64_t read_mem(void* address, uint8_t access_len)
 {
+  alog("\n");
   switch (access_len)
     {
       case 8:
@@ -132,6 +143,7 @@ static uint64_t read_mem(void* address, uint8_t access_len) { return 0; }
 
 static uint64_t read_io(uint16_t port, uint8_t access_len)
 {
+  alog("\n");
   switch (access_len)
     {
       case 8:
@@ -156,12 +168,14 @@ static uint64_t read_io(uint16_t port, uint8_t access_len)
 
 static int init_aml_namespaces(uint8_t* root_code)
 {
+  alog("\n");
   aml_namespace_t* root_ns = create_namespace(NULL, "\\___", root_code);
   aml_namespace_t* gpe_ns  = create_namespace(NULL, "\\_GPE", NULL);
   aml_namespace_t* pr_ns   = create_namespace(NULL, "\\_PR_", NULL);
   aml_namespace_t* sb_ns   = create_namespace(NULL, "\\_SB_", NULL);
   aml_namespace_t* si_ns   = create_namespace(NULL, "\\_SI_", NULL);
   aml_namespace_t* tz_ns   = create_namespace(NULL, "\\_TZ_", NULL);
+
   hash_map_push(root_ns->children, "\\_GPE", gpe_ns, sizeof(aml_namespace_t));
   hash_map_push(root_ns->children, "\\_PR_", pr_ns, sizeof(aml_namespace_t));
   hash_map_push(root_ns->children, "\\_SB_", sb_ns, sizeof(aml_namespace_t));
@@ -174,6 +188,7 @@ static int init_aml_namespaces(uint8_t* root_code)
 
 static size_t parse_length(aml_namespace_t* ns)
 {
+  alog("\n");
   uint8_t lead_byte  = *ns->code++;
   uint8_t byte_count = (lead_byte >> 6) & 0b11;
   size_t  length     = lead_byte & 0x3F;
@@ -210,6 +225,7 @@ static size_t parse_length(aml_namespace_t* ns)
 
 static uint64_t term_arg_to_int(aml_namespace_t* ns)
 {
+  alog("\n");
   uint8_t op = *ns->code++;
   switch (op)
     {
@@ -350,6 +366,7 @@ static void parse_termlist(
 
 static void def_if_else(aml_namespace_t* ns)
 {
+  alog("\n");
   uint8_t* code_copy = ns->code;
   size_t   if_len    = parse_length(ns);
   uint64_t predicate = term_arg_to_int(ns);
@@ -370,6 +387,7 @@ static void def_if_else(aml_namespace_t* ns)
 
 static void parse_namestring(aml_namespace_t* ns, aml_name_t* name)
 {
+  alog("\n");
   uint8_t* copy     = ns->code;
   uint8_t* name_ptr = (uint8_t*)name->inner;
   while (*copy == '\\' || *copy == '^') { *name_ptr++ = *copy++; }
@@ -393,6 +411,7 @@ static void parse_namestring(aml_namespace_t* ns, aml_name_t* name)
 
 static void def_method(aml_namespace_t* ns)
 {
+  alog("\n");
   uint8_t*   code_copy  = ns->code;
   size_t     method_len = parse_length(ns);
   aml_name_t method_name;
@@ -404,6 +423,7 @@ static void def_method(aml_namespace_t* ns)
   method->name               = method_name;
   method->code               = ns->code;
   add_child_to_namespace(ns, method_name, create_ptr(method, TYPE_METHOD));
+  alog("\n");
   ns->code = code_copy + method_len;
 }
 
@@ -413,6 +433,7 @@ static void parse_data_object(
   uint8_t*         out_type
 )
 {
+  alog("\n");
   uint8_t op = *ns->code++;
   switch (op)
     {
@@ -506,6 +527,7 @@ static void parse_data_object(
 
 static void def_name(aml_namespace_t* ns)
 {
+  alog("\n");
   aml_name_t name;
   parse_namestring(ns, &name);
   void*   data = malloc(sizeof(void*));
@@ -523,6 +545,7 @@ static void parse_next(aml_namespace_t* /*ns*/);
 
 static void def_op_region(aml_namespace_t* ns)
 {
+  alog("\n");
   aml_name_t name;
   parse_namestring(ns, &name);
   uint8_t                 region_space  = *ns->code++;
@@ -542,6 +565,7 @@ static size_t parse_next_field_elem(
   aml_field_t*     parent
 )
 {
+  alog("\n");
   uint8_t* code_copy = ns->code;
   uint8_t  op        = *ns->code++;
   switch (op)
@@ -615,6 +639,7 @@ static size_t parse_next_field_elem(
 
 static void def_field(aml_namespace_t* ns)
 {
+  alog("\n");
   uint8_t*   code_copy = ns->code;
   size_t     field_len = parse_length(ns);
   aml_name_t name;
@@ -642,6 +667,7 @@ static void def_field(aml_namespace_t* ns)
 
 static void def_index_field(aml_namespace_t* ns)
 {
+  alog("\n");
   uint8_t*   code_copy       = ns->code;
   size_t     index_field_len = parse_length(ns);
   aml_name_t name;
@@ -653,6 +679,7 @@ static void def_index_field(aml_namespace_t* ns)
 
 static void def_scope(aml_namespace_t* ns)
 {
+  alog("\n");
   uint8_t*   code_copy = ns->code;
   size_t     scope_len = parse_length(ns);
   uint8_t*   end       = code_copy + scope_len;
@@ -684,6 +711,7 @@ static void def_scope(aml_namespace_t* ns)
 
 static void def_alias(aml_namespace_t* ns)
 {
+  alog("\n");
   aml_name_t source;
   parse_namestring(ns, &source);
   source = resolve_name(ns, source);
@@ -697,6 +725,7 @@ static void def_alias(aml_namespace_t* ns)
 
 static void parse_next(aml_namespace_t* ns)
 {
+  alog("\n");
   uint16_t op = 0;
   if (*ns->code == EXT_OP_PREFIX)
     {
@@ -764,6 +793,7 @@ static void parse_termlist(
   const uint8_t*   end
 )
 {
+  alog("\n");
   uint8_t* copy = ns->code;
   ns->code      = start;
   while (ns->code < end) { parse_next(ns); }
@@ -775,6 +805,7 @@ static void populate_children(aml_namespace_t* ns, size_t table_len)
 
 void parse_table(acpi_aml_table_t* table)
 {
+  alog("\n");
   if (!_root)
     {
       if (init_aml_namespaces(table->definition_blocks)) { return; }

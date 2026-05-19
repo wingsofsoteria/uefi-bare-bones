@@ -11,15 +11,27 @@ void  free(void*);
 void* malloc(size_t);
 void* realloc(void*, size_t);
 
-static void host_exit() { abort(); }
+#ifndef __is_libk
+static void host_exit() { exit(1); }
+#else
+extern void walk_stack();
 
+static void host_exit()
+{
+  walk_stack();
+  abort();
+}
+#endif
 #define unimplemented(expr)                           \
   if (expr) { printf("Unimplemented! %s\n", #expr); } \
   assert(!(expr))
 
 #ifdef __is_libk
+  #include <log.h>
   #include <utils.h>
+  #define alog(...) __kernel_log(__source, __VA_ARGS__)
 #else
+  #define alog(...) printf(__VA_ARGS__)
 
 inline static void outb(uint16_t port, uint64_t val) {}
 
@@ -33,14 +45,7 @@ inline static uint8_t inb(uint16_t port) { return 0; }
   #define inq  inb
 #endif
 
-#ifdef AML_DEBUG // AML_DEBUG can be defined for the host OS and the kernel so
-                 // we can't make any assumptions beyond the existence of a
-                 // printf function
-  #define AML_LOG(...) printf(__VA_ARGS__)
-#else
-  #define AML_LOG(...)
-#endif
-#define AML_EXIT()                 \
-  AML_LOG("Exiting AML parser\n"); \
+#define AML_EXIT()                \
+  printf("Exiting AML parser\n"); \
   host_exit();
 #endif

@@ -3,8 +3,8 @@
 
 // If we are told to not define our own size_t, then we
 // skip the define.
-#include "stddef.h"
-#include "stdint.h"
+#include <stddef.h>
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C"
 {

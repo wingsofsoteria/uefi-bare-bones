@@ -45,7 +45,7 @@ void setup_allocator(struct limine_memmap_response* memory_map)
   for (uint64_t i = heap_start; i <= heap_start + heap_size; i += PAGE_SIZE)
     {
       uint64_t frame = allocate_frame();
-      if (frame == 0) { abort_msg("Out of Memory"); }
+      if (frame == 0) { panic("Out of Memory"); }
       map_page(i, frame, 0b11);
     }
   set_heap_end(heap_start + heap_size);

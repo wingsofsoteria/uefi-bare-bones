@@ -27,7 +27,7 @@ void acpi_dump_tables()
   for (int i = 0; i < entries; i++)
     {
       acpi_header_t* sdt = (void*)(XSDT->tables[i] + hhdm_mapping);
-      kernel_log_debug("ACPI Table %.4s", sdt->signature);
+      klog("ACPI Table %.4s\n", sdt->signature);
     }
 }
 
@@ -43,7 +43,7 @@ void* scan_tables(const char* sig, size_t index)
   for (int i = 0; i < entries; i++)
     {
       acpi_header_t* sdt = (void*)(XSDT->tables[i] + hhdm_mapping);
-      kernel_log_debug("ACPI Table %.4s", sdt->signature);
+      klog("ACPI Table %.4s\n", sdt->signature);
       if (strncmp(sig, sdt->signature, 4) == 0)
         {
           if (current_index != index)
@@ -54,7 +54,7 @@ void* scan_tables(const char* sig, size_t index)
           return sdt;
         }
     }
-  kernel_log_error("Could not find table with signature %s", sig);
+  klog("Could not find table with signature %s\n", sig);
   return NULL;
 }
 
@@ -63,11 +63,7 @@ int acpi_early_init(void* rsdp_pointer)
   acpi_xsdp_t* rsdp = rsdp_pointer;
 
   XSDT = (void*)(rsdp->xsdt + hhdm_mapping);
-  if (!sdt_checksum(&XSDT->header))
-    {
-      kernel_log_error("Failed to parse ACPI tables\n");
-      abort();
-    }
+  if (!sdt_checksum(&XSDT->header)) { panic("Failed to parse ACPI tables\n"); }
   madt_init();
   lapic_init();
   return 0;
@@ -76,7 +72,7 @@ int acpi_early_init(void* rsdp_pointer)
 int acpi_late_init()
 {
   parse_table(scan_tables("DSDT", 0));
-  kernel_log_debug("ACPI initialization finished\n");
+  klog("ACPI initialization finished\n");
   return 0;
 }
 

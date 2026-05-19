@@ -24,7 +24,7 @@ static const task_function commands[COMMAND_COUNT] = {test, exit, rem, jump};
 */
 void checkpoint(char* name)
 {
-  kernel_log_debug("CHECKPOINT %s [yN]", name);
+  klog("CHECKPOINT %s [yN]", name);
 
   while (1)
     {
@@ -45,7 +45,7 @@ void kexit() { kernel_config.kexit = 1; }
 static void jump(void* function)
 {
   uint64_t rip = resolve_function_address((char*)(function + 1));
-  kernel_log_debug("RIP: %lx %s", rip, (char*)function);
+  klog("RIP: %lx %s\n", rip, (char*)function);
   if (rip == 0)
     {
       printf("Could not locate function %s\n", (char*)function);
@@ -58,7 +58,7 @@ static void rem(void* comment)
 {
   if (comment == NULL)
     {
-      kernel_log_error("Rem command needs an argument\n");
+      klog("Rem command needs an argument\n");
       return;
     }
   printf("REM %s\n", (char*)comment);
@@ -97,7 +97,7 @@ void execute_command()
 {
   putchar('\n');
   if (shell_cur == 0) { goto fini; }
-  kernel_log_debug("\'%s\'", shell_cmd);
+  klog("\'%s\'\n", shell_cmd);
   uint64_t rip = resolve_function_address(shell_cmd);
   /*int      index = 0;
   for (; index < COMMAND_COUNT; index++) {

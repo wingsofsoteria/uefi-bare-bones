@@ -42,7 +42,7 @@ static void mask_pic()
   outb(PIC2_DATA, 0xFF);
 }
 
-uint32_t madt_get_lapic_addr()
+uint64_t madt_get_lapic_addr()
 {
   map_page(
     madt->local_interrupt_controller_address,
@@ -90,9 +90,9 @@ uint32_t madt_get_ioapic(uint32_t gsi)
     if (current_gsi != gsi) { continue; }
     uint32_t address = MADT_ADDR32(i + 4);
     if (virtual_to_physical(address) == 0) { map_page(address, address, 0b11); }
-    kernel_log_debug("IOAPIC at %x", address);
+    klog("IOAPIC at %x\n", address);
     return address;
   }
 
-  abort_msg("No IO APIC with GSI base %d\n", gsi);
+  panic("No IO APIC found\n");
 }

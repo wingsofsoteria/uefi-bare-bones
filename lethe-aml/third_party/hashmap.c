@@ -76,7 +76,7 @@ void* hash_map_get(hash_map_t* map, char* key, int* out_index)
       uint32_t   entry_hash = fnv_32a_str(entry.key);
       if (entry_hash == hash)
         {
-          *out_index = index;
+          if (out_index) *out_index = index;
           return entry.data;
         }
       index++;
@@ -116,18 +116,27 @@ void hash_map_resize(hash_map_t* map, int max_cap)
 
 int hash_map_push(hash_map_t* map, char* key, void* data, size_t data_size)
 {
+  assert(map != NULL);
+  assert(hash_map_get(map, key, NULL) == NULL);
+  printf("pushing %s: %p to map %p\n", key, data, map);
   if (map->count >= map->capacity) { hash_map_resize(map, map->capacity * 2); }
   uint32_t hash   = fnv_32a_str(key);
   int      ignore = 0;
   if (hash_map_get(map, key, &ignore) != NULL) { return 1; }
   int index = hash % map->capacity;
-
-  while (map->inner[index].data != NULL)
+  printf("%x = %i\n", hash, index);
+  if (map->inner[index].data != NULL)
     {
-      if (strncmp(map->inner[index].key, key, strlen(key)) == 0) { abort(); }
-      index++;
-      if (index >= map->capacity) { hash_map_resize(map, map->capacity * 2); }
+      printf("map->inner[%i] == %s\n", index, map->inner[index].key);
+      hash_map_debug(map);
+      if (strncmp(map->inner[index].key, key, strlen(key)) == 0)
+        {
+          host_exit();
+        }
+      hash_map_resize(map, map->capacity * 2);
+      return hash_map_push(map, key, data, data_size);
     }
+
   assert(!map->inner[index].data);
   map->inner[index].data = data;
   memcpy(map->inner[index].key, key, strlen(key));
