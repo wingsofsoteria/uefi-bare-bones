@@ -45,18 +45,13 @@ static void prepend_str(aml_name_t* name, char* str, int len)
 static aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
 {
   alog("\n");
+  unimplemented(key.inner[0] == '^' || key.inner[0] == '\\');
   if (key.inner[0] == '\\') { return key; }
-  unimplemented(key.inner[0] == '^');
   unimplemented(key.count != 4);
   aml_name_t resolved_key = { 0, {} };
   prepend_str(&resolved_key, key.inner, key.count);
-  if (ns->parent != NULL)
-    {
-      prepend_str(&resolved_key, "\n", 1);
-      prepend_str(&resolved_key, ns->name, strlen(ns->name));
-      return resolved_key;
-    }
-  prepend_str(&resolved_key, "\\", 1);
+  prepend_str(&resolved_key, ".", 1);
+  prepend_str(&resolved_key, ns->name, strlen(ns->name));
   return resolved_key;
 }
 
@@ -69,6 +64,23 @@ static aml_ptr_t* create_ptr(void* data, uint8_t type)
   return ptr;
 }
 
+static aml_ptr_t* locate_object(aml_namespace_t* ns, aml_name_t key)
+{
+  int              index   = 0;
+  aml_namespace_t* current = ns;
+  aml_ptr_t*       ptr     = NULL;
+  while (ptr == NULL)
+    {
+      index = 0;
+      ptr   = hash_map_get(current->children, key.inner, &index);
+      if (ptr != NULL && index != -1) { return ptr; }
+      current = current->parent;
+      if (current == NULL) { break; }
+    }
+  return hash_map_get(_root->children, key.inner, NULL);
+}
+
+/*
 static void* get_child(
   aml_namespace_t* ns,
   aml_name_t       key,
@@ -77,14 +89,13 @@ static void* get_child(
 )
 {
   alog("\n");
-  int        index    = 0;
-  aml_name_t resolved = resolve_name(ns, key);
-  aml_ptr_t* ptr      = hash_map_get(ns->children, resolved.inner, &index);
+  int        index = 0;
+  aml_ptr_t* ptr   = hash_map_get(ns->children, key.inner, &index);
   if (index == -1 || ptr == NULL) return NULL;
   if (!(ptr->type & type)) return NULL;
   if (out_type != NULL) { *out_type = ptr->type; }
   return ptr->data;
-}
+}*/
 
 static void add_child_to_namespace(
   aml_namespace_t* ns,
@@ -92,11 +103,22 @@ static void add_child_to_namespace(
   aml_ptr_t*       data
 )
 {
+  aml_namespace_t* data_parent = ns;
   alog("\n");
-  aml_name_t resolved_name = resolve_name(ns, key);
-  alog("\n");
-  hash_map_push(ns->children, resolved_name.inner, data, sizeof(aml_ptr_t));
-  alog("\n");
+  // aml_name_t resolved_name = resolve_name(ns, key);
+  if (key.inner[0] == '^')
+    {
+      data_parent = ns->parent;
+      for (int i = 0; i < key.count; i++) { key.inner[i] = key.inner[i + 1]; }
+      key.inner[key.count] = 0;
+    }
+  else if (key.inner[0] == '\\')
+    {
+      char ns_name[4];
+      memcpy(ns_name, key.inner + 1, 4);
+      AML_EXIT();
+    }
+  hash_map_push(data_parent->children, key.inner, data, sizeof(aml_ptr_t));
 }
 
 static void debug_exit(aml_namespace_t* ns)
@@ -176,11 +198,11 @@ static int init_aml_namespaces(uint8_t* root_code)
   aml_namespace_t* si_ns   = create_namespace(NULL, "\\_SI_", NULL);
   aml_namespace_t* tz_ns   = create_namespace(NULL, "\\_TZ_", NULL);
 
-  hash_map_push(root_ns->children, "\\_GPE", gpe_ns, sizeof(aml_namespace_t));
-  hash_map_push(root_ns->children, "\\_PR_", pr_ns, sizeof(aml_namespace_t));
-  hash_map_push(root_ns->children, "\\_SB_", sb_ns, sizeof(aml_namespace_t));
-  hash_map_push(root_ns->children, "\\_SI_", si_ns, sizeof(aml_namespace_t));
-  hash_map_push(root_ns->children, "\\_TZ_", tz_ns, sizeof(aml_namespace_t));
+  hash_map_push(root_ns->children, "_GPE", gpe_ns, sizeof(aml_namespace_t));
+  hash_map_push(root_ns->children, "_PR_", pr_ns, sizeof(aml_namespace_t));
+  hash_map_push(root_ns->children, "_SB_", sb_ns, sizeof(aml_namespace_t));
+  hash_map_push(root_ns->children, "_SI_", si_ns, sizeof(aml_namespace_t));
+  hash_map_push(root_ns->children, "_TZ_", tz_ns, sizeof(aml_namespace_t));
   if (!root_ns) return 1;
   _root = root_ns;
   return 0;
@@ -265,9 +287,11 @@ static uint64_t term_arg_to_int(aml_namespace_t* ns)
           aml_name_t aml_name;
           aml_name.count = 4;
           memcpy(aml_name.inner, ns->code, 4);
-          uint8_t type = 0;
-          void*   ptr =
-            get_child(ns, aml_name, TYPE_NAME | TYPE_FIELD_OFFSET, &type);
+          memset(aml_name.inner + aml_name.count, 0, 1022 - aml_name.count);
+          aml_ptr_t* obj  = locate_object(ns, aml_name);
+          void*      ptr  = obj->data;
+          uint8_t    type = obj->type;
+
           if (ptr == NULL)
             {
               debug_exit(ns);
@@ -480,6 +504,17 @@ static void parse_data_object(
           *out_type            = DATA_INT;
           break;
         }
+      case QWORD_PREFIX:
+        {
+          *(uint64_t*)out_data =
+            ns->code[0] | (uint64_t)ns->code[1] << 8 |
+            (uint64_t)ns->code[2] << 16 | (uint64_t)ns->code[3] << 24 |
+            (uint64_t)ns->code[4] << 32 | (uint64_t)ns->code[5] << 40 |
+            (uint64_t)ns->code[6] << 48 | (uint64_t)ns->code[7] << 56;
+          ns->code += 8;
+          *out_type = DATA_LONG;
+          break;
+        }
       case STRING_PREFIX:
         {
           int i = 0;
@@ -649,9 +684,10 @@ static void def_field(aml_namespace_t* ns)
   field->access_type = flags & 0xF;
   field->should_lock = (flags & 0x10) != 0;
   field->update_rule = (flags & 0xC0) >> 6;
-  void* region       = get_child(ns, name, TYPE_REGION, NULL);
-  if (region == NULL) { debug_exit(ns); }
-  field->region = region;
+  aml_ptr_t* obj     = locate_object(ns, name);
+  if (obj->type != TYPE_REGION) { debug_exit(ns); }
+  if (obj == NULL) { debug_exit(ns); }
+  field->region = obj->data;
   assert((flags & 0x80) == 0);
   int offset = 0;
   while (1)
@@ -685,15 +721,22 @@ static void def_scope(aml_namespace_t* ns)
   uint8_t*   end       = code_copy + scope_len;
   aml_name_t scope_name;
   parse_namestring(ns, &scope_name);
-  aml_namespace_t* scope = get_child(ns, scope_name, TYPE_NAMESPACE, NULL);
+  aml_ptr_t*       obj   = locate_object(ns, scope_name);
+  aml_namespace_t* scope = NULL;
+  if (obj != NULL && obj->type == TYPE_NAMESPACE) { scope = obj->data; }
   if (scope == NULL)
     {
       int index = -1;
-      scope     = hash_map_get(
-        _root->children,
-        resolve_name(_root, scope_name).inner,
-        &index
-      );
+      if (scope_name.inner[0] == '\\')
+        {
+          memmove(scope_name.inner, scope_name.inner + 1, scope_name.count);
+          memset(
+            scope_name.inner + scope_name.count,
+            0,
+            1022 - scope_name.count
+          );
+        }
+      scope = hash_map_get(_root->children, scope_name.inner, &index);
       if (index == -1 || scope == NULL)
         {
           scope =
@@ -707,6 +750,22 @@ static void def_scope(aml_namespace_t* ns)
     }
 
   parse_termlist(scope, ns->code, end);
+  ns->code = end;
+}
+
+static void def_device(aml_namespace_t* ns)
+{
+  alog("\n");
+  uint8_t*   code_copy  = ns->code;
+  size_t     device_len = parse_length(ns);
+  uint8_t*   end        = code_copy + device_len;
+  aml_name_t device_name;
+  parse_namestring(ns, &device_name);
+  aml_namespace_t* device =
+    create_namespace(ns, resolve_name(ns, device_name).inner, ns->code);
+  add_child_to_namespace(ns, device_name, create_ptr(device, TYPE_NAMESPACE));
+  parse_termlist(device, ns->code, end);
+  ns->code = end;
 }
 
 static void def_alias(aml_namespace_t* ns)
@@ -714,13 +773,22 @@ static void def_alias(aml_namespace_t* ns)
   alog("\n");
   aml_name_t source;
   parse_namestring(ns, &source);
-  source = resolve_name(ns, source);
   aml_name_t alias;
   parse_namestring(ns, &alias);
   int        index = -1;
   aml_ptr_t* ref   = hash_map_get(ns->children, source.inner, &index);
   if (index == -1 || ref == NULL) { debug_exit(ns); }
   add_child_to_namespace(ns, alias, ref);
+}
+
+static void def_mutex(aml_namespace_t* ns)
+{
+  aml_name_t mutex_name;
+  parse_namestring(ns, &mutex_name);
+  aml_mutex_t* mutex = malloc(sizeof(aml_mutex_t));
+  mutex->name        = mutex_name;
+  mutex->sync_flags  = *ns->code++;
+  add_child_to_namespace(ns, mutex_name, create_ptr(mutex, TYPE_MUTEX));
 }
 
 static void parse_next(aml_namespace_t* ns)
@@ -771,6 +839,16 @@ static void parse_next(aml_namespace_t* ns)
       case SCOPE_OP:
         {
           def_scope(ns);
+          break;
+        }
+      case (EXT_OP_PREFIX << 8) | EXT_DEVICE_OP:
+        {
+          def_device(ns);
+          break;
+        }
+      case (EXT_OP_PREFIX << 8) | EXT_MUTEX_OP:
+        {
+          def_mutex(ns);
           break;
         }
       case ALIAS_OP:

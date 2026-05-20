@@ -31,7 +31,7 @@ static void host_exit()
   #include <utils.h>
   #define alog(...) __kernel_log(__source, __VA_ARGS__)
 #else
-  #define alog(...) printf(__VA_ARGS__)
+  #define alog(...)
 
 inline static void outb(uint16_t port, uint64_t val) {}
 

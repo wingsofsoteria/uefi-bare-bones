@@ -16,6 +16,8 @@ typedef struct
   void* data;
 } hash_entry;
 
+#define MAX_CAP_INC 128
+
 typedef struct hash_map
 {
   int         capacity;
@@ -88,6 +90,10 @@ void* hash_map_get(hash_map_t* map, char* key, int* out_index)
 void hash_map_resize(hash_map_t* map, int max_cap)
 {
   assert(max_cap > map->capacity);
+  if (max_cap - map->capacity > MAX_CAP_INC)
+    {
+      max_cap = map->capacity + MAX_CAP_INC;
+    }
   hash_entry* inner = calloc(max_cap, sizeof(hash_entry));
   for (int i = 0; i < map->capacity; i++)
     {
