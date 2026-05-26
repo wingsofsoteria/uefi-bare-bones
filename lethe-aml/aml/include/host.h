@@ -25,7 +25,9 @@ static void host_exit()
 #define unimplemented(expr)                           \
   if (expr) { printf("Unimplemented! %s\n", #expr); } \
   assert(!(expr))
-
+#define debug_code(x, n)                                     \
+  for (int i = 0; i < n; i++) { printf("%x ", x->code[i]); } \
+  printf("\n");
 #ifdef __is_libk
   #include <log.h>
   #include <utils.h>

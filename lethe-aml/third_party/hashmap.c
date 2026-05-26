@@ -40,17 +40,33 @@ void* __hash_map_iter_next(hash_map_t* map, int flag)
   return map->inner[iter_counter++].data;
 }
 
+void hash_map_foreach(hash_map_t* map, void (*ptr)(void*))
+{
+  for (int i = 0; i < map->capacity; i++)
+    {
+      hash_entry entry = map->inner[i];
+      if (!entry.data) { continue; }
+      uint32_t hash = fnv_32a_str(entry.key);
+      printf(
+        "%s(%x:%d:%d) -> %p\n",
+        entry.key,
+        hash,
+        hash % map->capacity,
+        i,
+        entry.data
+      );
+      ptr(entry.data);
+      printf("\n");
+    }
+}
+
 void hash_map_debug(hash_map_t* map)
 {
   printf("Map(%i) %i\n", map->capacity, map->count);
   for (int i = 0; i < map->capacity; i++)
     {
       hash_entry entry = map->inner[i];
-      if (!entry.data)
-        {
-          printf("Empty(%i)\n", i);
-          continue;
-        }
+      if (!entry.data) { continue; }
       uint32_t hash = fnv_32a_str(entry.key);
       printf(
         "%s(%x:%d:%d) -> %p\n",

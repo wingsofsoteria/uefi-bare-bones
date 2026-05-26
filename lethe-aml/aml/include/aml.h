@@ -92,6 +92,7 @@ typedef struct aml_namespace
   char*                 name;
   uint8_t*              code;
   hash_map_t*           children;
+  hash_map_t*           namespaces;
 } aml_namespace_t;
 
 #define MAX_CHARS 1022
