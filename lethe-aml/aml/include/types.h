@@ -39,7 +39,17 @@ typedef struct
 {
   hash_key label;
   uint8_t  data_type;
-  void*    data;
+
+  union
+  {
+    uint8_t               byte;
+    uint16_t              short_int;
+    uint32_t              integer;
+    uint64_t              long_int;
+    struct aml_package_t* package;
+    char*                 string;
+    struct aml_buffer_t*  buffer;
+  };
 } aml_variable_t;
 
 typedef struct
@@ -48,18 +58,25 @@ typedef struct
   uint8_t  sync_flags;
 } aml_mutex_t;
 
-typedef struct
+typedef struct aml_buffer_t
 {
   size_t   size;
   uint8_t* buffer;
 } aml_buffer_t;
 
+typedef struct aml_package_t
+{
+  size_t           num_elements;
+  aml_variable_t** elements;
+} aml_package_t;
+
 typedef struct
 {
-  hash_key name;
-  uint8_t  flags;
-  size_t   len;
-  uint8_t* code;
+  hash_key         name;
+  uint8_t          flags;
+  size_t           len;
+  uint8_t*         code;
+  aml_namespace_t* scope;
 } aml_method_t;
 
 enum VariableType

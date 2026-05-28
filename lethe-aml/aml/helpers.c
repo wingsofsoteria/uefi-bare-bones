@@ -4,6 +4,7 @@
 #include "name.h"
 #include "namespace.h"
 #include "opcodes.h"
+#include "types.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -192,15 +193,15 @@ uint64_t term_arg_to_int(aml_namespace_t* ns)
                 {
                   case DATA_BYTE:
                     {
-                      return *(uint8_t*)data->data;
+                      return data->byte;
                     }
                   case DATA_SHORT:
                     {
-                      return *(uint16_t*)data->data;
+                      return data->short_int;
                     }
                   case DATA_INT:
                     {
-                      return *(uint32_t*)data->data;
+                      return data->integer;
                     }
                   default:
                     {
@@ -482,63 +483,74 @@ size_t parse_next_field_elem(
   return 0;
 }
 
-void parse_data_object(aml_namespace_t* ns, void* out_data, uint8_t* out_type)
+static void populate_package(aml_namespace_t* ns, aml_package_t* pkg)
+{
+  for (int i = 0; i < pkg->num_elements; i++)
+    {
+      aml_variable_t* variable = malloc(sizeof(aml_variable_t));
+      parse_data_object(ns, variable);
+      pkg->elements[i] = variable;
+    }
+}
+
+void parse_data_object(aml_namespace_t* ns, aml_variable_t* var)
 {
   uint8_t op = *ns->code++;
   switch (op)
     {
       case ZERO_OP:
         {
-          *(uint8_t*)out_data = 0;
-          *out_type           = DATA_BYTE;
+          var->data_type = DATA_BYTE;
+          var->byte      = 0;
           break;
         }
       case ONE_OP:
         {
-          *(uint8_t*)out_data = 1;
-          *out_type           = DATA_BYTE;
+          var->data_type = DATA_BYTE;
+          var->byte      = 1;
           break;
         }
       case ONES_OP:
         {
-          *(uint8_t*)out_data = 0xFF;
-          *out_type           = DATA_BYTE;
+          var->data_type = DATA_BYTE;
+          var->byte      = 0xFF;
           break;
         }
       case BYTE_PREFIX:
         {
-          uint8_t data        = *ns->code++;
-          *(uint8_t*)out_data = data;
-          *out_type           = DATA_BYTE;
+          var->data_type = DATA_BYTE;
+          var->byte      = *ns->code++;
           break;
         }
       case WORD_PREFIX:
         {
-          uint8_t  lower       = *ns->code++;
-          uint8_t  upper       = *ns->code++;
-          uint16_t word        = (uint16_t)upper << 8 | lower;
-          *(uint16_t*)out_data = word;
-          *out_type            = DATA_SHORT;
+          uint8_t  lower = *ns->code++;
+          uint8_t  upper = *ns->code++;
+          uint16_t word  = (uint16_t)upper << 8 | lower;
+          var->data_type = DATA_SHORT;
+          var->short_int = word;
           break;
         }
       case DWORD_PREFIX:
         {
-          *(uint32_t*)out_data = ns->code[0] | (uint32_t)ns->code[1] << 8 |
-                                 (uint32_t)ns->code[2] << 16 |
-                                 (uint32_t)ns->code[3] << 24;
-          ns->code            += 4;
-          *out_type            = DATA_INT;
+          uint32_t dword = ns->code[0] | (uint32_t)ns->code[1] << 8 |
+                           (uint32_t)ns->code[2] << 16 |
+                           (uint32_t)ns->code[3] << 24;
+          ns->code      += 4;
+          var->data_type = DATA_INT;
+          var->integer   = dword;
           break;
         }
       case QWORD_PREFIX:
         {
-          *(uint64_t*)out_data =
+          uint64_t qword =
             ns->code[0] | (uint64_t)ns->code[1] << 8 |
             (uint64_t)ns->code[2] << 16 | (uint64_t)ns->code[3] << 24 |
             (uint64_t)ns->code[4] << 32 | (uint64_t)ns->code[5] << 40 |
             (uint64_t)ns->code[6] << 48 | (uint64_t)ns->code[7] << 56;
-          ns->code += 8;
-          *out_type = DATA_LONG;
+          ns->code      += 8;
+          var->data_type = DATA_LONG;
+          var->long_int  = qword;
           break;
         }
       case STRING_PREFIX:
@@ -546,23 +558,24 @@ void parse_data_object(aml_namespace_t* ns, void* out_data, uint8_t* out_type)
           int i = 0;
           while (ns->code[i] != 0) { i++; }
           i++;
-          free(out_data);
           char* ptr = malloc(i * sizeof(char));
           for (int j = 0; j < i; j++) { ptr[j] = *ns->code++; }
-          out_data  = ptr;
-          *out_type = DATA_STR;
+          var->data_type = DATA_STR;
+          var->string    = ptr;
           break;
         }
       case PACKAGE_OP:
         {
-          uint8_t*      code_copy    = ns->code;
-          size_t        pkg_len      = parse_length(ns);
-          uint8_t       num_elements = *ns->code++;
-          aml_buffer_t* ptr          = out_data;
-          ptr->buffer                = ns->code;
-          ptr->size                  = num_elements;
-          ns->code                   = code_copy + pkg_len;
-          *out_type                  = DATA_PKG;
+          uint8_t*       code_copy    = ns->code;
+          size_t         pkg_len      = parse_length(ns);
+          uint8_t        num_elements = *ns->code++;
+          aml_package_t* ptr          = malloc(sizeof(aml_package_t));
+          ptr->elements     = malloc(num_elements * sizeof(aml_variable_t*));
+          ptr->num_elements = num_elements;
+          populate_package(ns, ptr);
+          ns->code       = code_copy + pkg_len;
+          var->data_type = DATA_PKG;
+          var->package   = ptr;
           break;
         }
       case BUFFER_OP:
@@ -571,11 +584,12 @@ void parse_data_object(aml_namespace_t* ns, void* out_data, uint8_t* out_type)
           uint64_t buffer_size = term_arg_to_int(ns);
           uint8_t* buffer      = malloc(buffer_size * sizeof(uint8_t));
           memcpy(buffer, ns->code, buffer_size);
-          aml_buffer_t* ptr = out_data;
+          aml_buffer_t* ptr = malloc(sizeof(aml_buffer_t));
           ptr->size         = buffer_size;
           ptr->buffer       = buffer;
-          *out_type         = DATA_BUF;
           ns->code         += buffer_size;
+          var->data_type    = DATA_BUF;
+          var->buffer       = ptr;
           break;
         }
       default:

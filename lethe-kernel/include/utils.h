@@ -66,6 +66,14 @@ inline static void outb(uint16_t port, uint8_t val)
     : "memory");
 }
 
+inline static void outw(uint16_t port, uint16_t val)
+{
+  asm volatile("outw %w0, %1"
+    :
+    : "a"(val), "Nd"(port)
+    : "memory");
+}
+
 inline static uint8_t inb(uint16_t port)
 {
   uint8_t val;

@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
+extern void* scan_tables(const char*, size_t);
 #ifndef __is_libk
 
 static void host_exit() { exit(1); }

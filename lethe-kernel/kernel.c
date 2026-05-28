@@ -175,6 +175,8 @@ int kmain()
   while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 
   klog("Kernel was told to exit, Goodbye!\n");
+  shutdown();
+  // we should never get here
   halt();
 }
 #else

@@ -17,4 +17,4 @@ size_t           parse_next_field_elem(
   int              offset,
   aml_field_t*     parent
 );
-void parse_data_object(aml_namespace_t* ns, void* out_data, uint8_t* out_type);
+void parse_data_object(aml_namespace_t* ns, aml_variable_t* var);

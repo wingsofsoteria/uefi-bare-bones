@@ -2,9 +2,9 @@
 #define __KERNEL_ACPI_INTERNAL_H__
 
 #include "acpi/acpi.h"
-#include "tables.h"
 
 #include <stddef.h>
+#include <tables.h>
 
 typedef struct
 {

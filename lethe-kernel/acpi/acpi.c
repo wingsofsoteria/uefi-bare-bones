@@ -76,4 +76,4 @@ int acpi_late_init()
   return 0;
 }
 
-// void shutdown() { lai_enter_sleep(5); }
+void shutdown() { execute_sleep(5); }

@@ -48,6 +48,7 @@ void def_method(aml_namespace_t* ns)
     method_name->inner + method_name->count - KEY_LEN,
     KEY_LEN
   );
+  method->scope = create_namespace(NULL, method->name, method->code, 0, 0);
   if (method_name->inner[0] == '\\')
     {
       method_name->count     -= KEY_LEN;
@@ -62,6 +63,7 @@ void def_method(aml_namespace_t* ns)
         method->name,
         create_ptr(method, TYPE_METHOD)
       );
+      method->scope->parent = parent;
     }
   else if (method_name->inner[0] == '^')
     {
@@ -70,10 +72,12 @@ void def_method(aml_namespace_t* ns)
         method->name,
         create_ptr(method, TYPE_METHOD)
       );
+      method->scope->parent = ns->parent;
     }
   else
     {
       add_child_to_namespace(ns, method->name, create_ptr(method, TYPE_METHOD));
+      method->scope->parent = ns;
     }
   free(method_name->inner);
   free(method_name);
@@ -84,12 +88,8 @@ void def_name(aml_namespace_t* ns)
 {
   aml_name_t* name = parse_namestring(ns);
   unimplemented(name->count != KEY_LEN);
-  void*   data = malloc(sizeof(void*));
-  uint8_t type = 0;
-  parse_data_object(ns, data, &type);
   aml_variable_t* name_var = malloc(sizeof(aml_variable_t));
-  name_var->data           = data;
-  name_var->data_type      = type;
+  parse_data_object(ns, name_var);
   memcpy(name_var->label, name->inner + name->count - KEY_LEN, KEY_LEN);
   free(name->inner);
   free(name);
