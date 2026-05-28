@@ -78,7 +78,12 @@
   #include <stdint.h>
 
   #define FNV_VERSION "5.0.8 2026-01-14" /* format: major.minor YYYY-MM-DD */
-
+  #define NO_FNV_GCC_OPTIMIZATION
+  #define HAVE_64BIT_LONG_LONG
+/*
+ * 64 bit FNV-0 hash
+ */
+typedef uint64_t Fnv64_t;
 /*
  * 32 bit FNV-0 hash type
  */
@@ -99,8 +104,33 @@ typedef uint32_t Fnv32_t;
   #define FNV1_32_INIT  ((Fnv32_t)0x811C9DC5)
   #define FNV1_32A_INIT FNV1_32_INIT
 
+/*
+ * 64 bit FNV-1 non-zero initial basis
+ *
+ * The FNV-1 initial basis is the FNV-0 hash of the following 32 octets:
+ *
+ *              chongo <Landon Curt Noll> /\../\
+ *
+ * NOTE: The \'s above are not back-slashing escape characters.
+ * They are literal ASCII  backslash 0x5c characters.
+ *
+ * NOTE: The FNV-1a initial basis is the same value as FNV-1 by definition.
+ */
+  #if defined(HAVE_64BIT_LONG_LONG)
+    #define FNV1_64_INIT  ((Fnv64_t)0xCBF29CE484222325ULL)
+    #define FNV1A_64_INIT FNV1_64_INIT
+  #else /* HAVE_64BIT_LONG_LONG */
+extern const Fnv64_t fnv1_64_init;
+extern const Fnv64_t fnv1a_64_init;
+    #define FNV1_64_INIT  (fnv1_64_init)
+    #define FNV1A_64_INIT (fnv1a_64_init)
+  #endif /* HAVE_64BIT_LONG_LONG */
+
 /* hash_32a.c */
 extern Fnv32_t fnv_32a_buf(void* buf, Fnv32_t len);
 extern Fnv32_t fnv_32a_str(char* str);
+/* hash_64a.c */
+// extern Fnv64_t fnv_64a_buf(void* buf, Fnv64_t len);
+// extern Fnv64_t fnv_64a_str(char* str);
 
 #endif /* __FNV_H__ */

@@ -12,8 +12,8 @@
 
 typedef struct
 {
-  char  key[1022];
-  void* data;
+  hash_key key;
+  void*    data;
 } hash_entry;
 
 #define MAX_CAP_INC 128
@@ -46,9 +46,10 @@ void hash_map_foreach(hash_map_t* map, void (*ptr)(void*))
     {
       hash_entry entry = map->inner[i];
       if (!entry.data) { continue; }
-      uint32_t hash = fnv_32a_str(entry.key);
+      uint32_t hash = hash_value(entry.key);
       printf(
-        "%s(%x:%d:%d) -> %p\n",
+        "%.*s(%x:%d:%d) -> %p\n",
+        KEY_LEN,
         entry.key,
         hash,
         hash % map->capacity,
@@ -67,9 +68,10 @@ void hash_map_debug(hash_map_t* map)
     {
       hash_entry entry = map->inner[i];
       if (!entry.data) { continue; }
-      uint32_t hash = fnv_32a_str(entry.key);
+      uint32_t hash = hash_value(entry.key);
       printf(
-        "%s(%x:%d:%d) -> %p\n",
+        "%.*s(%x:%d:%d) -> %p\n",
+        KEY_LEN,
         entry.key,
         hash,
         hash % map->capacity,
@@ -79,9 +81,10 @@ void hash_map_debug(hash_map_t* map)
     }
 }
 
-void* hash_map_get(hash_map_t* map, char* key, int* out_index)
+void* hash_map_get(hash_map_t* map, hash_key key, int* out_index)
 {
-  uint32_t hash  = fnv_32a_str(key);
+  printf("key: %s\n", key);
+  uint32_t hash  = hash_value(key);
   int      index = hash % map->capacity;
   while (index < map->capacity)
     {
@@ -91,7 +94,7 @@ void* hash_map_get(hash_map_t* map, char* key, int* out_index)
           continue;
         }
       hash_entry entry      = map->inner[index];
-      uint32_t   entry_hash = fnv_32a_str(entry.key);
+      uint32_t   entry_hash = hash_value(entry.key);
       if (entry_hash == hash)
         {
           if (out_index) *out_index = index;
@@ -114,7 +117,7 @@ void hash_map_resize(hash_map_t* map, int max_cap)
   for (int i = 0; i < map->capacity; i++)
     {
       if (!map->inner[i].data) { continue; }
-      uint32_t hash  = fnv_32a_str(map->inner[i].key);
+      uint32_t hash  = hash_value(map->inner[i].key);
       int      index = hash % max_cap;
       while (inner[index].data)
         {
@@ -128,7 +131,7 @@ void hash_map_resize(hash_map_t* map, int max_cap)
         }
       assert(!inner[index].data);
       inner[index].data = map->inner[i].data;
-      memcpy(inner[index].key, map->inner[i].key, 1022);
+      memcpy(inner[index].key, map->inner[i].key, KEY_LEN);
     }
 
   free(map->inner);
@@ -136,13 +139,13 @@ void hash_map_resize(hash_map_t* map, int max_cap)
   map->capacity = max_cap;
 }
 
-int hash_map_push(hash_map_t* map, char* key, void* data, size_t data_size)
+int hash_map_push(hash_map_t* map, hash_key key, void* data, size_t data_size)
 {
   assert(map != NULL);
   assert(hash_map_get(map, key, NULL) == NULL);
-  printf("pushing %s: %p to map %p\n", key, data, map);
+  printf("pushing %.*s: %p to map %p\n", KEY_LEN, key, data, map);
   if (map->count >= map->capacity) { hash_map_resize(map, map->capacity * 2); }
-  uint32_t hash   = fnv_32a_str(key);
+  uint32_t hash   = hash_value(key);
   int      ignore = 0;
   if (hash_map_get(map, key, &ignore) != NULL) { return 1; }
   int index = hash % map->capacity;
@@ -151,17 +154,14 @@ int hash_map_push(hash_map_t* map, char* key, void* data, size_t data_size)
     {
       printf("map->inner[%i] == %s\n", index, map->inner[index].key);
       hash_map_debug(map);
-      if (strncmp(map->inner[index].key, key, strlen(key)) == 0)
-        {
-          host_exit();
-        }
+      if (strncmp(map->inner[index].key, key, KEY_LEN) == 0) { host_exit(); }
       hash_map_resize(map, map->capacity * 2);
       return hash_map_push(map, key, data, data_size);
     }
 
   assert(!map->inner[index].data);
   map->inner[index].data = data;
-  memcpy(map->inner[index].key, key, strlen(key));
+  memcpy(map->inner[index].key, key, KEY_LEN);
   map->count++;
   return 0;
 }
@@ -173,7 +173,7 @@ void* hash_map_pop(hash_map_t* map, char* key)
   if (entry_data == NULL) { return NULL; }
   if (index == -1) { return NULL; }
   map->inner[index].data = NULL;
-  memset(map->inner[index].key, 0, 1022);
+  memset(map->inner[index].key, 0, 4);
   map->count--;
   return entry_data;
 }
