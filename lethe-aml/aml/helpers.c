@@ -1,20 +1,16 @@
 #include "helpers.h"
 
-#include "aml.h"
 #include "defs.h"
-#include "hashmap.h"
-#include "host.h"
 #include "name.h"
 #include "namespace.h"
-#include "types.h"
+#include "opcodes.h"
 
 #include <assert.h>
-#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 aml_ptr_t* create_ptr(void* data, uint8_t type)
 {
-  alog("\n");
   aml_ptr_t* ptr = malloc(sizeof(aml_ptr_t));
   ptr->data      = data;
   ptr->type      = type;
@@ -35,46 +31,11 @@ aml_ptr_t* locate_object(aml_namespace_t* ns, aml_name_t key)
       current = current->parent;
       if (!current) { break; }
     }
-  alog("%p\n", obj);
-  debug_exit();
+  return NULL;
 }
-
-/*aml_ptr_t* locate_object(aml_namespace_t* ns, aml_name_t key)
-{
-  int              index   = 0;
-  aml_namespace_t* current = ns;
-  aml_ptr_t*       ptr     = NULL;
-
-  while (ptr == NULL)
-    {
-      index = -1;
-      ptr   = hash_map_get(current->children, key.inner, &index);
-      if (ptr != NULL && index != -1) { return ptr; }
-      current = current->parent;
-      if (current == NULL) { break; }
-    }
-  return hash_map_get(root()->children, key.inner, NULL);
-}
-
-static void* get_child(
-  aml_namespace_t* ns,
-  aml_name_t       key,
-  uint8_t          type,
-  uint8_t*         out_type
-)
-{
-  alog("\n");
-  int        index = 0;
-  aml_ptr_t* ptr   = hash_map_get(ns->children, key.inner, &index);
-  if (index == -1 || ptr == NULL) return NULL;
-  if (!(ptr->type & type)) return NULL;
-  if (out_type != NULL) { *out_type = ptr->type; }
-  return ptr->data;
-}*/
 
 void debug_exit()
 {
-  alog("\n");
   debug_namespace(root());
   AML_EXIT();
 }
@@ -82,7 +43,6 @@ void debug_exit()
 #ifdef __is_libk
 uint64_t read_mem(void* address, uint8_t access_len)
 {
-  alog("\n");
   switch (access_len)
     {
       case 8:
@@ -115,7 +75,6 @@ uint64_t read_mem(void* address, uint8_t access_len)
 
 uint64_t read_io(uint16_t port, uint8_t access_len)
 {
-  alog("\n");
   switch (access_len)
     {
       case 8:
@@ -140,7 +99,6 @@ uint64_t read_io(uint16_t port, uint8_t access_len)
 
 size_t parse_length(aml_namespace_t* ns)
 {
-  alog("\n");
   uint8_t lead_byte  = *ns->code++;
   uint8_t byte_count = lead_byte >> 6 & 0b11;
   size_t  length     = lead_byte & 0x3F;
@@ -177,7 +135,6 @@ size_t parse_length(aml_namespace_t* ns)
 
 uint64_t term_arg_to_int(aml_namespace_t* ns)
 {
-  alog("\n");
   uint8_t op = *ns->code++;
   switch (op)
     {
@@ -313,7 +270,6 @@ uint64_t term_arg_to_int(aml_namespace_t* ns)
 
 void parse_next(aml_namespace_t* ns)
 {
-  alog("\n");
   uint16_t op = 0;
   if (*ns->code == EXT_OP_PREFIX)
     {
@@ -394,7 +350,6 @@ void parse_next(aml_namespace_t* ns)
 
 void parse_termlist(aml_namespace_t* ns, uint8_t* start, const uint8_t* end)
 {
-  alog("\n");
   uint8_t* copy = ns->code;
   ns->code      = start;
   while (ns->code < end) { parse_next(ns); }
@@ -456,7 +411,6 @@ size_t parse_next_field_elem(
   aml_field_t*     parent
 )
 {
-  alog("\n");
   uint8_t* code_copy = ns->code;
   uint8_t  op        = *ns->code++;
   switch (op)
@@ -530,7 +484,6 @@ size_t parse_next_field_elem(
 
 void parse_data_object(aml_namespace_t* ns, void* out_data, uint8_t* out_type)
 {
-  alog("\n");
   uint8_t op = *ns->code++;
   switch (op)
     {

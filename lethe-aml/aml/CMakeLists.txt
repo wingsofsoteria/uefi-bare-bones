@@ -1,5 +1,5 @@
 ADD_LIBRARY(aml STATIC)
-TARGET_SOURCES(aml PRIVATE defs.c helpers.c name.c namespace.c)
+TARGET_SOURCES(aml PRIVATE interface.c defs.c helpers.c name.c namespace.c)
 TARGET_INCLUDE_DIRECTORIES(aml PUBLIC include)
 ADD_DEPENDENCIES(aml fnv)
 TARGET_LINK_LIBRARIES(aml fnv)

@@ -6,14 +6,15 @@
 #include "host.h"
 #include "name.h"
 #include "namespace.h"
+#include "opcodes.h"
 #include "types.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
 void def_if_else(aml_namespace_t* ns)
 {
-  alog("\n");
   uint8_t* code_copy = ns->code;
   size_t   if_len    = parse_length(ns);
   uint64_t predicate = term_arg_to_int(ns);
@@ -34,11 +35,9 @@ void def_if_else(aml_namespace_t* ns)
 
 void def_method(aml_namespace_t* ns)
 {
-  alog("\n");
-  uint8_t*    code_copy   = ns->code;
-  size_t      method_len  = parse_length(ns);
-  aml_name_t* method_name = parse_namestring(ns);
-  alog("%.*s\n", method_name->count, method_name->inner);
+  uint8_t*      code_copy    = ns->code;
+  size_t        method_len   = parse_length(ns);
+  aml_name_t*   method_name  = parse_namestring(ns);
   uint8_t       method_flags = *ns->code++;
   aml_method_t* method       = malloc(sizeof(aml_method_t));
   method->flags              = method_flags;
@@ -53,8 +52,11 @@ void def_method(aml_namespace_t* ns)
     {
       method_name->count     -= KEY_LEN;
       aml_namespace_t* parent = get_scope(ns, *method_name);
-      unimplemented(!parent);
-      alog("%s\n", parent->name);
+      if (!parent)
+        {
+          alog("parent is null\n");
+          debug_exit();
+        }
       add_child_to_namespace(
         parent,
         method->name,
@@ -75,13 +77,11 @@ void def_method(aml_namespace_t* ns)
     }
   free(method_name->inner);
   free(method_name);
-  alog("\n");
   ns->code = code_copy + method_len;
 }
 
 void def_name(aml_namespace_t* ns)
 {
-  alog("\n");
   aml_name_t* name = parse_namestring(ns);
   unimplemented(name->count != KEY_LEN);
   void*   data = malloc(sizeof(void*));
@@ -98,7 +98,6 @@ void def_name(aml_namespace_t* ns)
 
 void def_op_region(aml_namespace_t* ns)
 {
-  alog("\n");
   aml_name_t* name = parse_namestring(ns);
   unimplemented(name->count != KEY_LEN);
   uint8_t                 region_space  = *ns->code++;
@@ -119,7 +118,6 @@ void def_field(aml_namespace_t* ns)
   uint8_t*    code_copy = ns->code;
   size_t      field_len = parse_length(ns);
   aml_name_t* name      = parse_namestring(ns);
-  alog("%s %.*s %d\n", ns->name, name->count, name->inner, field_len);
 
   aml_ptr_t* obj = NULL;
   if (name->count > KEY_LEN)
@@ -127,17 +125,19 @@ void def_field(aml_namespace_t* ns)
       int old_count           = name->count;
       name->count            -= KEY_LEN;
       aml_namespace_t* parent = get_scope(ns, *name);
-      unimplemented(!parent);
+      if (!parent)
+        {
+          alog("parent is null\n");
+          debug_exit();
+        }
       name->count = old_count;
       trim_name(name);
-      alog("%s %s\n", name->inner, parent->name);
       obj = hash_map_get(parent->children, name->inner, NULL);
     }
   else
     {
       obj = locate_object(ns, *name);
     }
-  unimplemented(name->count != KEY_LEN);
   uint8_t      flags = *ns->code++;
   aml_field_t* field = malloc(sizeof(aml_field_t));
   field->access_type = flags & 0xF;
@@ -154,17 +154,13 @@ void def_field(aml_namespace_t* ns)
       if (len == 0) { break; }
       offset += len;
     }
-  // TODO parse field list
-  // append field list to operation region
   ns->code = code_copy + field_len;
   free(name->inner);
   free(name);
-  alog("\n");
 }
 
 void def_index_field(aml_namespace_t* ns)
 {
-  alog("\n");
   uint8_t* code_copy       = ns->code;
   size_t   index_field_len = parse_length(ns);
   // aml_name_t name;
@@ -176,7 +172,6 @@ void def_index_field(aml_namespace_t* ns)
 
 void def_scope(aml_namespace_t* ns)
 {
-  alog("\n");
   uint8_t*    code_copy  = ns->code;
   size_t      scope_len  = parse_length(ns);
   uint8_t*    end        = code_copy + scope_len;
@@ -190,6 +185,7 @@ void def_scope(aml_namespace_t* ns)
   aml_namespace_t* scope = get_scope(ns, *scope_name);
   if (scope == NULL)
     {
+      alog("could not find scope");
       debug_exit();
       // scope      = create_namespace(parent, scope_name.inner, ns->code, 0,
       // 0);
@@ -200,7 +196,6 @@ void def_scope(aml_namespace_t* ns)
 
 void def_device(aml_namespace_t* ns)
 {
-  alog("\n");
   uint8_t*         code_copy   = ns->code;
   size_t           device_len  = parse_length(ns);
   uint8_t*         end         = code_copy + device_len;
@@ -231,7 +226,6 @@ void def_device(aml_namespace_t* ns)
 
 void def_alias(aml_namespace_t* ns)
 {
-  alog("\n");
   aml_name_t* source = parse_namestring(ns);
   aml_name_t* alias  = parse_namestring(ns);
   int         index  = -1;
@@ -261,7 +255,6 @@ static void populate_children(aml_namespace_t* ns, size_t table_len)
 
 void parse_table(acpi_aml_table_t* table)
 {
-  alog("\n");
   root()->code = table->definition_blocks;
   populate_children(root(), table->length - 36);
 }

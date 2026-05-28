@@ -1,17 +1,14 @@
 #include "name.h"
 
-#include "hashmap.h"
 #include "helpers.h"
-#include "host.h"
-#include "types.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
 static void prepend_str(aml_name_t* name, char* str, int len)
 {
   debug_exit();
-  alog("\n");
   int offset = len;
   // assert((len + name->count) < MAX_CHARS);
   // if (name->count > 0) { memmove(name->inner + len, name->inner,
@@ -41,7 +38,6 @@ aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
 
 aml_name_t* parse_namestring(aml_namespace_t* ns)
 {
-  alog("\n");
   aml_name_t* name        = malloc(sizeof(aml_name_t));
   uint8_t*    copy        = ns->code;
   char        char_prefix = 0;
