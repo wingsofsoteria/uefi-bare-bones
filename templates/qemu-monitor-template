@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-qemu-system-x86_64 -net none -no-reboot -enable-kvm -cpu host,+invtsc -m 48G -drive if=pflash,format=raw,readonly=on,unit=0,file=@LETHE_TEST_FW_CODE@ -drive if=pflash,format=raw,readonly=on,unit=1,file=@LETHE_TEST_FW_VAR@ -drive file=@LETHE_OUTPUT_FILE@ -monitor stdio
+qemu-system-x86_64 -M q35 -net none -no-reboot -enable-kvm -cpu host,+invtsc -m 48G -drive if=pflash,format=raw,readonly=on,unit=0,file=@LETHE_TEST_FW_CODE@ -drive if=pflash,format=raw,readonly=on,unit=1,file=@LETHE_TEST_FW_VAR@ -drive file=@LETHE_OUTPUT_FILE@ -monitor stdio -serial file:@PROJECT_BINARY_DIR@/templates/log
