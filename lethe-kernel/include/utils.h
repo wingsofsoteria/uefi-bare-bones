@@ -4,13 +4,13 @@
 #include "config.h"
 
 #include <stdint.h>
+
 #ifdef QEMU_DEBUG
   #define SERIAL_PORT 0xE9
 #endif
 #ifdef VBOX_DEBUG
   #define SERIAL_PORT 0x3F8
 #endif
-
 __attribute__((__noreturn__)) static inline void halt()
 {
   asm("cli");

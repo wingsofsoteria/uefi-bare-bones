@@ -118,7 +118,6 @@ __attribute__((
 
 // NOLINTNEXTLINE
 void* kernel_file_address;
-
 // NOLINTNEXTLINE
 int kmain()
 {
@@ -171,7 +170,6 @@ int kmain()
   enable_interrupts();
   acpi_late_init();
   init_shell();
-
   while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 
   klog("Kernel was told to exit, Goodbye!\n");
