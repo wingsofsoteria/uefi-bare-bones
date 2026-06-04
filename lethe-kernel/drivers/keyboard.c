@@ -9,9 +9,6 @@
 #include <scancodes.h>
 #include <stdint.h>
 #include <terminal/tty.h>
-// TODO find a way to use the loop_print_definition_blocks function without
-// hanging the entire system (possible use for tasking?)
-// | I just stuck it in the main function for now
 static char    scancode_to_char(uint8_t /*byte*/);
 static uint8_t KB_STATUS[88] = { 0 };
 
@@ -63,6 +60,18 @@ void kb_handle_key()
           push_char(ch);
         }
     }
+}
+
+char getch()
+{
+  while ((inb(0x64) & 0b1) == 0) {}
+  char ch = scancode_to_char(inb(0x60));
+  if (ch == 0)
+    {
+      ksleep((kernel_duration_t){ .milliseconds = 10 });
+      return getch();
+    }
+  return ch;
 }
 
 static void init_kb_status()

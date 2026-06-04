@@ -6,12 +6,15 @@
 #include "memory/alloc.h"
 #include "terminal/tty.h"
 
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static char* shell_cmd;
 static int   shell_size;
 static int   shell_cur;
+static int   enabled = 0;
 
 /*static const char* command_list[COMMAND_COUNT] = {"test", "exit", "rem",
                                                   "jump"};
@@ -85,6 +88,7 @@ void del_char()
 
 void init_shell()
 {
+  enabled    = 1;
   shell_cur  = 0;
   shell_size = 80;
   shell_cmd  = kmalloc(shell_size * sizeof(char));
@@ -93,10 +97,61 @@ void init_shell()
 
 extern void dump_function_names();
 
+static int is_digit16(char c)
+{
+  return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') ||
+         (c >= 'a' && c <= 'f');
+}
+
+static uint64_t naive_atoi16(char* str, int len)
+{
+  char*    p     = str;
+  uint64_t value = 0;
+  for (int i = 0; i < len && *p; i++)
+    {
+      if (!is_digit16(*p)) { break; }
+      if (*p <= '9') { value = (value * 16) + (*p - '0'); }
+      if (*p >= 'A')
+        {
+          value = (value * 16) + ((*p - 'A') & (~('a' ^ 'A'))) + 10;
+        }
+      p++;
+    }
+
+  return value;
+}
+
+int shell_prompt_hex(char* msg)
+{
+  puts(msg);
+  char input[4];
+  int  len = 0;
+  for (int i = 0; i < 4; i++)
+    {
+      char ch = getch();
+      if (ch == '\n')
+        {
+          len = i + 1;
+          break;
+        }
+      input[i] = ch;
+    }
+
+  uint64_t value = naive_atoi16(input, 4);
+  return value;
+}
+
 void execute_command()
 {
+  if (!enabled)
+    {
+      shell_cur = 0;
+      shell_cmd = memset(shell_cmd, 0, shell_size);
+      return;
+    }
   putchar('\n');
   if (shell_cur == 0) { goto fini; }
+  shell_cmd[shell_cur++] = 0;
   klog("\'%s\'\n", shell_cmd);
   uint64_t rip = resolve_function_address(shell_cmd);
   /*int      index = 0;
