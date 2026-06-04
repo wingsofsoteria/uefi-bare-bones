@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-#include <sys/cdefs.h>
+#include "stdint.h"
 
+#include <stddef.h>
+#include <sys/cdefs.h>
 int    memcmp(const void*, const void*, size_t);
 void*  memcpy(void* restrict dest, const void* restrict src, size_t);
 void*  memmove(void*, const void*, size_t);
