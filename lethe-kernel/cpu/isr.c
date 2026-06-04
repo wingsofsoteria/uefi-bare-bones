@@ -17,7 +17,6 @@ void register_handler(int vector, interrupt handler)
 isr_stack_t* apic_timer_isr(isr_stack_t* stack)
 {
   ticks = 0;
-  printf("==TSC==\n");
   return stack;
 }
 
