@@ -7,6 +7,7 @@
 #include "name.h"
 #include "namespace.h"
 #include "opcodes.h"
+#include "tables.h"
 #include "types.h"
 
 #include <assert.h>
@@ -253,8 +254,8 @@ void def_mutex(aml_namespace_t* ns)
 static void populate_children(aml_namespace_t* ns, size_t table_len)
 { parse_termlist(ns, ns->code, ns->code + table_len); }
 
-void parse_table(acpi_aml_table_t* table)
+void parse_table(acpi_aml_t* table)
 {
-  root()->code = table->definition_blocks;
-  populate_children(root(), table->length - 36);
+  root()->code = table->data;
+  populate_children(root(), table->header.length - 36);
 }

@@ -4,20 +4,6 @@
 
 #include <stdint.h>
 
-typedef struct
-{
-  char     signature[4];
-  uint32_t length;
-  uint8_t  revision;
-  uint8_t  checksum;
-  uint8_t  oem_id[6];
-  uint64_t oem_table_id;
-  uint32_t oem_revision;
-  uint32_t creator_id;
-  uint32_t creator_revision;
-  uint8_t  definition_blocks[];
-} __attribute__((packed)) acpi_aml_table_t;
-
 typedef struct aml_namespace
 {
   struct aml_namespace* parent;
