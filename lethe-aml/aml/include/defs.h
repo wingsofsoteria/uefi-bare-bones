@@ -11,3 +11,4 @@ void def_scope(aml_namespace_t* ns);
 void def_device(aml_namespace_t* ns);
 void def_alias(aml_namespace_t* ns);
 void def_mutex(aml_namespace_t* ns);
+void def_create_word_field(aml_namespace_t* ns);

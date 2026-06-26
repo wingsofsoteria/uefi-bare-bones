@@ -61,13 +61,14 @@
 #define TYPE_NAME         (1 << 3)
 #define TYPE_FIELD_OFFSET (1 << 4)
 #define TYPE_MUTEX        (1 << 5)
+#define TYPE_WORD_FIELD   (1 << 6)
 
-#define DATA_STR   (1 << 0)
-#define DATA_PKG   (1 << 1)
-#define DATA_BUF   (1 << 2)
-#define DATA_BYTE  (1 << 3)
-#define DATA_SHORT (1 << 4)
-#define DATA_INT   (1 << 5)
-#define DATA_LONG  (1 << 6)
-
+#define DATA_UNINIT 0
+#define DATA_STR    (1 << 0)
+#define DATA_PKG    (1 << 1)
+#define DATA_BUF    (1 << 2)
+#define DATA_BYTE   (1 << 3)
+#define DATA_SHORT  (1 << 4)
+#define DATA_INT    (1 << 5)
+#define DATA_LONG   (1 << 6)
 #endif

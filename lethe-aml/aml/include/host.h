@@ -39,8 +39,8 @@ extern void  free(void*);
 #define unimplemented(expr)                           \
   if (expr) { printf("Unimplemented! %s\n", #expr); } \
   assert(!(expr))
-#define debug_code(x, n)                                     \
-  for (int i = 0; i < n; i++) { printf("%x ", x->code[i]); } \
+#define debug_code(ns, count)                                     \
+  for (int i = 0; i < count; i++) { printf("%x ", ns->code[i]); } \
   printf("\n");
 
 #define AML_EXIT()                \

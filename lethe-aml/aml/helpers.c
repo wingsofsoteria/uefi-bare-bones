@@ -1,6 +1,8 @@
 #include "helpers.h"
 
 #include "defs.h"
+#include "hashmap.h"
+#include "host.h"
 #include "name.h"
 #include "namespace.h"
 #include "opcodes.h"
@@ -132,6 +134,37 @@ size_t parse_length(aml_namespace_t* ns)
     }
 
   return 0;
+}
+
+aml_buffer_t* term_arg_to_buffer(aml_namespace_t* ns)
+{
+  // assume op is for a name segment
+  hash_key name;
+  memcpy(name, ns->code, KEY_LEN);
+  aml_ptr_t* obj =
+    locate_object(ns, (aml_name_t){ .count = KEY_LEN, .inner = name });
+  switch (obj->type)
+    {
+      case TYPE_NAME:
+        {
+          aml_variable_t* var = obj->data;
+          if (var->data_type == DATA_BUF)
+            {
+              ns->code += KEY_LEN;
+              return var->buffer;
+            }
+          printf("var->data_type = %d\n", var->data_type);
+          debug_exit();
+          break;
+        }
+      default:
+        {
+          printf("%p\n%d\n", obj->data, obj->type);
+          debug_exit();
+          break;
+        }
+    }
+  return NULL;
 }
 
 uint64_t term_arg_to_int(aml_namespace_t* ns)
@@ -333,6 +366,10 @@ void parse_next(aml_namespace_t* ns)
           def_alias(ns);
           break;
         }
+      case CREATE_WORDFIELD_OP:
+        {
+          def_create_word_field(ns);
+        }
       case (EXT_OP_PREFIX << 8) | 0x83:
         {
           uint8_t* copy = ns->code;
@@ -342,7 +379,8 @@ void parse_next(aml_namespace_t* ns)
         }
       default:
         {
-          printf("%x\n", op);
+          printf("%x ", op);
+          debug_code(ns, 5);
           debug_exit();
           break;
         }
@@ -594,7 +632,10 @@ void parse_data_object(aml_namespace_t* ns, aml_variable_t* var)
         }
       default:
         {
-          debug_exit();
+          ns->code--;
+          printf("%.4s", ns->code);
+          memcpy(var->label, ns->code, KEY_LEN);
+          var->data_type = DATA_UNINIT;
           break;
         }
     }

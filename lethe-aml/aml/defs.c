@@ -251,6 +251,22 @@ void def_mutex(aml_namespace_t* ns)
   add_child_to_namespace(ns, mutex->name, create_ptr(mutex, TYPE_MUTEX));
 }
 
+void def_create_word_field(aml_namespace_t* ns)
+{
+  aml_buffer_t* buffer     = term_arg_to_buffer(ns);
+  uint64_t      byte_index = term_arg_to_int(ns);
+  aml_name_t*   name       = parse_namestring(ns);
+  unimplemented(name->count != KEY_LEN);
+  aml_word_field_t* word_field = malloc(sizeof(aml_word_field_t));
+  memcpy(word_field->name, name->inner, KEY_LEN);
+  word_field->field = (uint16_t*)((char*)buffer->buffer + byte_index);
+  add_child_to_namespace(
+    ns,
+    word_field->name,
+    create_ptr(word_field, TYPE_WORD_FIELD)
+  );
+}
+
 static void populate_children(aml_namespace_t* ns, size_t table_len)
 { parse_termlist(ns, ns->code, ns->code + table_len); }
 

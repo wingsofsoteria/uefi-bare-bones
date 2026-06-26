@@ -153,3 +153,9 @@ typedef struct
   uint8_t type;
   void*   data;
 } aml_ptr_t;
+
+typedef struct
+{
+  hash_key  name;
+  uint16_t* field;
+} aml_word_field_t;
