@@ -109,12 +109,11 @@ const Fnv64_t fnv1a_64_init = { 0x84222325, 0xCBF29CE4 };
  * NOTE: To use the recommended 64 bit FNV-1a hash, use FNV1A_64_INIT as the
  *	 hval arg on the first call to either fnv_64a_buf() or fnv_64a_str().
  */
-Fnv64_t fnv_64a_buf(void* buf, size_t len)
+Fnv64_t fnv_64a_buf(void* buf, Fnv64_t len)
 {
   unsigned char* bp   = (unsigned char*)buf; /* start of buffer */
   unsigned char* be   = bp + len;            /* beyond end of buffer */
   Fnv64_t        hval = FNV1A_64_INIT;
-#if defined(HAVE_64BIT_LONG_LONG)
   /*
    * FNV-1a hash each octet of the buffer
    */
@@ -125,79 +124,8 @@ Fnv64_t fnv_64a_buf(void* buf, size_t len)
       hval ^= (Fnv64_t)*bp++;
 
       /* multiply by the 64 bit FNV magic prime mod 2^64 */
-  #if defined(NO_FNV_GCC_OPTIMIZATION)
       hval *= FNV_64_PRIME;
-  #else  /* NO_FNV_GCC_OPTIMIZATION */
-      hval += (hval << 1) + (hval << 4) + (hval << 5) + (hval << 7) +
-              (hval << 8) + (hval << 40);
-  #endif /* NO_FNV_GCC_OPTIMIZATION */
     }
-
-#else /* HAVE_64BIT_LONG_LONG */
-
-  unsigned long val[4]; /* hash value in base 2^16 */
-  unsigned long tmp[4]; /* tmp 64 bit value */
-
-  /*
-   * Convert Fnv64_t hval into a base 2^16 array
-   */
-  val[0]  = hval.w32[0];
-  val[1]  = (val[0] >> 16);
-  val[0] &= 0xFFFF;
-  val[2]  = hval.w32[1];
-  val[3]  = (val[2] >> 16);
-  val[2] &= 0xFFFF;
-
-  /*
-   * FNV-1a hash each octet of the buffer
-   */
-  while (bp < be)
-    {
-
-      /* xor the bottom with the current octet */
-      val[0] ^= (unsigned long)*bp++;
-
-      /*
-       * multiply by the 64 bit FNV magic prime mod 2^64
-       *
-       * Using 0x100000001b3 we have the following digits base 2^16:
-       *
-       *	0x0	0x100	0x0	0x1b3
-       *
-       * which is the same as:
-       *
-       *	0x0	1<<FNV_64_PRIME_SHIFT	0x0	FNV_64_PRIME_LOW
-       */
-      /* multiply by the lowest order digit base 2^16 */
-      tmp[0] = val[0] * FNV_64_PRIME_LOW;
-      tmp[1] = val[1] * FNV_64_PRIME_LOW;
-      tmp[2] = val[2] * FNV_64_PRIME_LOW;
-      tmp[3] = val[3] * FNV_64_PRIME_LOW;
-      /* multiply by the other non-zero digit */
-      tmp[2] += val[0] << FNV_64_PRIME_SHIFT; /* tmp[2] += val[0] * 0x100 */
-      tmp[3] += val[1] << FNV_64_PRIME_SHIFT; /* tmp[3] += val[1] * 0x100 */
-      /* propagate carries */
-      tmp[1] += (tmp[0] >> 16);
-      val[0]  = tmp[0] & 0xFFFF;
-      tmp[2] += (tmp[1] >> 16);
-      val[1]  = tmp[1] & 0xFFFF;
-      val[3]  = tmp[3] + (tmp[2] >> 16);
-      val[2]  = tmp[2] & 0xFFFF;
-      /*
-       * Doing a val[3] &= 0xffff; is not really needed since it simply
-       * removes multiples of 2^64.  We can discard these excess bits
-       * outside of the loop when we convert to Fnv64_t.
-       */
-    }
-
-  /*
-   * Convert base 2^16 array back into an Fnv64_t
-   */
-  hval.w32[1] = ((val[3] << 16) | val[2]);
-  hval.w32[0] = ((val[1] << 16) | val[0]);
-
-#endif /* HAVE_64BIT_LONG_LONG */
-
   /* return our new hash value */
   return hval;
 }

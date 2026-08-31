@@ -40,34 +40,34 @@ void enable_irq(int irq, int vector, interrupt handler)
 static void dump_stack(isr_stack_t* stack)
 {
   printf("STACK:%p\n", stack);
-  printf("%9s:%lx\n", stack_member(rflags));
-  printf("%9s:%lx\n", stack_member(cs));
+  printf("%9s:%llx\n", stack_member(rflags));
+  printf("%9s:%llx\n", stack_member(cs));
   printf(
-    "%9s:[%lx] %s\n",
+    "%9s:[%llx] %s\n",
     stack_member(rip),
     resolve_function_name(stack->rip)
   );
-  printf("%9s:%ld\n", stack_member(err));
-  printf("%9s:%lx\n", stack_member(isr));
-  printf("%9s:%lx\n", stack_member(rax));
-  printf("%9s:%lx\n", stack_member(rbx));
-  printf("%9s:%lx\n", stack_member(rcx));
-  printf("%9s:%lx\n", stack_member(rdx));
-  printf("%9s:%lx\n", stack_member(rsi));
-  printf("%9s:%lx\n", stack_member(rdi));
-  printf("%9s:%lx\n", stack_member(rbp));
-  printf("%9s:%lx\n", stack_member(r8));
-  printf("%9s:%lx\n", stack_member(r9));
-  printf("%9s:%lx\n", stack_member(r10));
-  printf("%9s:%lx\n", stack_member(r11));
-  printf("%9s:%lx\n", stack_member(r12));
-  printf("%9s:%lx\n", stack_member(r13));
-  printf("%9s:%lx\n", stack_member(r14));
-  printf("%9s:%lx\n", stack_member(r15));
+  printf("%9s:%llu\n", stack_member(err));
+  printf("%9s:%llx\n", stack_member(isr));
+  printf("%9s:%llx\n", stack_member(rax));
+  printf("%9s:%llx\n", stack_member(rbx));
+  printf("%9s:%llx\n", stack_member(rcx));
+  printf("%9s:%llx\n", stack_member(rdx));
+  printf("%9s:%llx\n", stack_member(rsi));
+  printf("%9s:%llx\n", stack_member(rdi));
+  printf("%9s:%llx\n", stack_member(rbp));
+  printf("%9s:%llx\n", stack_member(r8));
+  printf("%9s:%llx\n", stack_member(r9));
+  printf("%9s:%llx\n", stack_member(r10));
+  printf("%9s:%llx\n", stack_member(r11));
+  printf("%9s:%llx\n", stack_member(r12));
+  printf("%9s:%llx\n", stack_member(r13));
+  printf("%9s:%llx\n", stack_member(r14));
+  printf("%9s:%llx\n", stack_member(r15));
   uint64_t cr2;
   asm volatile("mov %%cr2, %0"
     : "=r"(cr2));
-  printf("%9s:%lx\n", "cr2", cr2);
+  printf("%9s:%llx\n", "cr2", cr2);
   walk_stack();
 }
 

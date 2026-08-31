@@ -1,192 +1,166 @@
 #include "hashmap.h"
 
 #include "fnv.h"
-#include "host.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#define RESIZE_VAL       2
+#define INITIAL_CAPACITY 4
+#define LOAD_FACTOR      0.75F
+#define hash_value(x)    fnv_64a_buf(x, KEY_LEN)
+
+extern void* calloc(size_t, size_t);
+extern void* malloc(size_t);
+extern void  free(void*);
 
 typedef struct
 {
-  hash_key key;
-  void*    data;
-} hash_entry;
+  const char* key;
+  void*       value;
+} hm_entry;
 
-#define MAX_CAP_INC 128
-
-typedef struct hash_map
+struct hm
 {
-  int         capacity;
-  int         count;
-  hash_entry* inner;
-} hash_map_t;
+  hm_entry* entries;
+  size_t    capacity;
+  size_t    count;
+};
 
-static int iter_counter = 0;
+static char* hm_strdup(const char* str)
 
-bool __hash_map_iter_has_next(hash_map_t* map)
-{ return iter_counter < map->count; }
-
-void* __hash_map_iter_next(hash_map_t* map, int flag)
 {
-  if (flag)
-    {
-      iter_counter = 0;
-      return NULL;
-    }
-  return map->inner[iter_counter++].data;
+  char* new_str = calloc(KEY_LEN, sizeof(char));
+  if (!new_str) { return NULL; }
+  memcpy(new_str, str, KEY_LEN);
+  return new_str;
 }
 
-void hash_map_foreach(hash_map_t* map, void (*ptr)(void*))
+static const char* set_entry(
+  hm_entry*   entries,
+  size_t      capacity,
+  const char* key,
+  void*       value,
+  size_t*     plength
+)
 {
-  for (int i = 0; i < map->capacity; i++)
+  uint64_t hash  = hash_value(key);
+  size_t   index = hash % capacity;
+  while (entries[index].key != NULL)
     {
-      hash_entry entry = map->inner[i];
-      if (!entry.data) { continue; }
-      uint32_t hash = hash_value(entry.key);
-      printf(
-        "%.*s(%x:%d:%d) -> %p\n",
-        KEY_LEN,
-        entry.key,
-        hash,
-        hash % map->capacity,
-        i,
-        entry.data
-      );
-      ptr(entry.data);
-      printf("\n");
-    }
-}
-
-void hash_map_debug(hash_map_t* map)
-{
-  printf("Map(%i) %i\n", map->capacity, map->count);
-  for (int i = 0; i < map->capacity; i++)
-    {
-      hash_entry entry = map->inner[i];
-      if (!entry.data) { continue; }
-      uint32_t hash = hash_value(entry.key);
-      printf(
-        "%.*s(%x:%d:%d) -> %p\n",
-        KEY_LEN,
-        entry.key,
-        hash,
-        hash % map->capacity,
-        i,
-        entry.data
-      );
-    }
-}
-
-void* hash_map_get(hash_map_t* map, hash_key key, int* out_index)
-{
-  printf("key: %s\n", key);
-  uint32_t hash  = hash_value(key);
-  int      index = hash % map->capacity;
-  while (index < map->capacity)
-    {
-      if (!map->inner[index].data)
+      if (memcmp(key, entries[index].key, KEY_LEN) == 0)
         {
-          index++;
-          continue;
+          entries[index].value = value;
+          return entries[index].key;
         }
-      hash_entry entry      = map->inner[index];
-      uint32_t   entry_hash = hash_value(entry.key);
-      if (entry_hash == hash)
+      index = (index + 1) % capacity;
+    }
+  if (plength != NULL)
+    {
+      key = hm_strdup(key);
+      if (!key) return NULL;
+      (*plength)++;
+    }
+  entries[index].key   = (char*)key;
+  entries[index].value = value;
+  return key;
+}
+
+static bool hm_expand(hm* map)
+{
+  size_t capacity = map->capacity * RESIZE_VAL;
+  if (capacity < map->capacity) { return false; }
+  hm_entry* entries = calloc(capacity, sizeof(hm_entry));
+  if (!entries) { return false; }
+  for (size_t i = 0; i < map->capacity; i++)
+    {
+      hm_entry entry = map->entries[i];
+      if (entry.key != NULL)
         {
-          if (out_index) *out_index = index;
-          return entry.data;
+          set_entry(entries, capacity, entry.key, entry.value, NULL);
         }
-      index++;
     }
-
-  return NULL;
+  free(map->entries);
+  map->capacity = capacity;
+  map->entries  = entries;
+  return true;
 }
 
-void hash_map_resize(hash_map_t* map, int max_cap)
+hm* hm_create()
 {
-  assert(max_cap > map->capacity);
-  if (max_cap - map->capacity > MAX_CAP_INC)
-    {
-      max_cap = map->capacity + MAX_CAP_INC;
-    }
-  hash_entry* inner = calloc(max_cap, sizeof(hash_entry));
-  for (int i = 0; i < map->capacity; i++)
-    {
-      if (!map->inner[i].data) { continue; }
-      uint32_t hash  = hash_value(map->inner[i].key);
-      int      index = hash % max_cap;
-      while (inner[index].data)
-        {
-          index++;
-          if (index >= max_cap)
-            {
-              free(inner);
-              hash_map_resize(map, max_cap * 2);
-              return;
-            }
-        }
-      assert(!inner[index].data);
-      inner[index].data = map->inner[i].data;
-      memcpy(inner[index].key, map->inner[i].key, KEY_LEN);
-    }
-
-  free(map->inner);
-  map->inner    = inner;
-  map->capacity = max_cap;
-}
-
-int hash_map_push(hash_map_t* map, hash_key key, void* data, size_t data_size)
-{
-  assert(map != NULL);
-  assert(hash_map_get(map, key, NULL) == NULL);
-  printf("pushing %.*s: %p to map %p\n", KEY_LEN, key, data, map);
-  if (map->count >= map->capacity) { hash_map_resize(map, map->capacity * 2); }
-  uint32_t hash   = hash_value(key);
-  int      ignore = 0;
-  if (hash_map_get(map, key, &ignore) != NULL) { return 1; }
-  int index = hash % map->capacity;
-  printf("%x = %i\n", hash, index);
-  if (map->inner[index].data != NULL)
-    {
-      printf("map->inner[%i] == %s\n", index, map->inner[index].key);
-      hash_map_debug(map);
-      if (strncmp(map->inner[index].key, key, KEY_LEN) == 0) { host_exit(); }
-      hash_map_resize(map, map->capacity * 2);
-      return hash_map_push(map, key, data, data_size);
-    }
-
-  assert(!map->inner[index].data);
-  map->inner[index].data = data;
-  memcpy(map->inner[index].key, key, KEY_LEN);
-  map->count++;
-  return 0;
-}
-
-void* hash_map_pop(hash_map_t* map, char* key)
-{
-  int   index      = -1;
-  void* entry_data = hash_map_get(map, key, &index);
-  if (entry_data == NULL) { return NULL; }
-  if (index == -1) { return NULL; }
-  map->inner[index].data = NULL;
-  memset(map->inner[index].key, 0, 4);
-  map->count--;
-  return entry_data;
-}
-
-void* hash_map_create(int max_cap)
-{
-  hash_map_t* map = malloc(sizeof(hash_map_t));
-  if (map == NULL) { return NULL; }
-  map->capacity = max_cap;
+  hm* map = malloc(sizeof(hm));
+  if (!map) { return NULL; }
   map->count    = 0;
-  map->inner    = calloc(max_cap, sizeof(hash_entry));
-  memset(map->inner, 0, max_cap * sizeof(hash_entry));
-  if (map->inner == NULL)
+  map->capacity = INITIAL_CAPACITY;
+  map->entries  = calloc(INITIAL_CAPACITY, sizeof(hm_entry));
+  if (!map->entries)
     {
       free(map);
       return NULL;
     }
   return map;
+}
+
+void* hm_get(hm* map, const char* key)
+{
+  uint64_t hash  = hash_value(key);
+  size_t   index = hash % map->capacity;
+  while (map->entries[index].key != NULL)
+    {
+      if (memcmp(map->entries[index].key, key, KEY_LEN) == 0)
+        {
+          return map->entries[index].value;
+        }
+      index = (index + 1) % map->capacity;
+    }
+
+  return NULL;
+}
+
+const char* hm_set(hm* map, const char* key, void* value)
+{
+  assert(value);
+  if (map->count >= (map->capacity * LOAD_FACTOR))
+    {
+      if (!hm_expand(map)) { return NULL; }
+    }
+  return set_entry(map->entries, map->capacity, key, value, &map->count);
+}
+
+hmi hm_iter(hm* map)
+{
+  hmi it;
+  it._map   = map;
+  it._index = 0;
+  return it;
+}
+
+bool hm_next(hmi* it)
+{
+  hm* map = it->_map;
+  while (it->_index < map->capacity)
+    {
+      size_t i = it->_index;
+      it->_index++;
+      if (map->entries[i].key)
+        {
+          hm_entry entry = map->entries[i];
+          it->key        = entry.key;
+          it->value      = entry.value;
+          return true;
+        }
+    }
+  return false;
+}
+
+static void print_entry(const char* key, void* value)
+{ printf("%s = %p\n", key, value); }
+
+void hm_debug(hmi* it) { hm_foreach(it, print_entry); }
+
+void hm_foreach(hmi* it, void (*ptr)(const char* key, void*))
+{
+  while (hm_next(it)) { ptr(it->key, it->value); }
 }

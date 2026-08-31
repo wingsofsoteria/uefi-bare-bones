@@ -1,39 +1,55 @@
 #include "name.h"
 
-#include "helpers.h"
+#include "hashmap.h"
+#include "host.h"
+#include "namespace.h"
+#include "types.h"
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-static void prepend_str(aml_name_t* name, char* str, int len)
-{
-  debug_exit();
-  int offset = len;
-  // assert((len + name->count) < MAX_CHARS);
-  // if (name->count > 0) { memmove(name->inner + len, name->inner,
-  // name->count); }
-  memcpy(name->inner, str, len);
-  // name->count += len;
-}
-
 aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
 {
-  debug_exit();
-  alog("%s %d\n", key.inner, key.count);
-  unimplemented(key.inner[0] == '^' || key.inner[0] == '\\');
-  aml_name_t resolved_key = { 0, {} };
-  // if (key.count > 4 && key.count % 4 == 0)
-  //   {
-  //     prepend_str(&resolved_key, key.inner, key.count);
-  //     prepend_str(&resolved_key, "\\", 1);
-  //     printf("%s -> %s\n", key.inner, resolved_key.inner);
-  //     return resolved_key;
-  //   }
-  // prepend_str(&resolved_key, key.inner, key.count);
-  prepend_str(&resolved_key, ".", 1);
-  prepend_str(&resolved_key, ns->name, strlen(ns->name));
-  return resolved_key;
+  unimplemented(key.inner[0] == '^');
+  if (ns == root() || key.inner[0] == '\\')
+    {
+      char* copy = malloc(key.count * sizeof(char));
+      memcpy(copy, key.inner, key.count);
+      return (aml_name_t){ .count = key.count, .inner = copy };
+    }
+  int levels = 0;
+  // first loop is to calculate how many parent namespaces exist between `ns`
+  // and `root()`
+  aml_namespace_t* current = ns;
+  while (current->parent)
+    {
+      levels++;
+      current = current->parent;
+    }
+  // sanity checks
+  assert(current == root());
+  assert(levels > 0);
+  // each namespace only has KEY_LEN chars + the name we are resolving + 1 for
+  // the root char
+  size_t size = levels * KEY_LEN * sizeof(char);
+  size       += key.count + 1;
+
+  char* absolute_name = malloc(size);
+  // second loop is to prepend each namespace's name to the final string
+  int offset = size - key.count;
+  memcpy(absolute_name + offset, key.inner, key.count);
+  offset -= KEY_LEN;
+  current = ns;
+  while (current->parent)
+    {
+      memcpy(absolute_name + offset, current->name, KEY_LEN);
+      offset -= KEY_LEN;
+      current = current->parent;
+    }
+  absolute_name[0] = '\\';
+  aml_log("%s\n", absolute_name);
+  return (aml_name_t){ .count = size, .inner = absolute_name };
 }
 
 aml_name_t* parse_namestring(aml_namespace_t* ns)
@@ -81,7 +97,7 @@ aml_name_t* parse_namestring(aml_namespace_t* ns)
 aml_name_t* trim_name(aml_name_t* name)
 {
   if (name->count <= KEY_LEN) { return name; }
-  alog("%s -> ", name->inner);
+  aml_log("%s -> ", name->inner);
   char* inner = malloc(KEY_LEN);
   memcpy(inner, name->inner + name->count - KEY_LEN, KEY_LEN);
   free(name->inner);

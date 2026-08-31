@@ -130,7 +130,7 @@ extern const Fnv64_t fnv1a_64_init;
 extern Fnv32_t fnv_32a_buf(void* buf, Fnv32_t len);
 extern Fnv32_t fnv_32a_str(char* str);
 /* hash_64a.c */
-// extern Fnv64_t fnv_64a_buf(void* buf, Fnv64_t len);
-// extern Fnv64_t fnv_64a_str(char* str);
+extern Fnv64_t fnv_64a_buf(void* buf, Fnv64_t len);
+extern Fnv64_t fnv_64a_str(char* str);
 
 #endif /* __FNV_H__ */

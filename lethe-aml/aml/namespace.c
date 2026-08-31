@@ -1,24 +1,22 @@
 #include "namespace.h"
 
 #include "hashmap.h"
+#include "helpers.h"
 #include "host.h"
+#include "opcodes.h"
+#include "stddef.h"
 #include "types.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
 static void push_namespace(aml_namespace_t* parent, aml_namespace_t* this)
-{
-  hash_map_push(parent->namespaces, this->name, this, sizeof(aml_namespace_t));
-}
+{ hm_set(parent->namespaces, this->name, this); }
 
 aml_namespace_t* create_namespace(
   aml_namespace_t* parent,
   hash_key         name,
-  uint8_t*         code,
-  uint32_t         children,
-  uint32_t         namespaces
+  uint8_t*         code
 )
 {
   aml_namespace_t* namespace = malloc(sizeof(aml_namespace_t));
@@ -26,49 +24,86 @@ aml_namespace_t* create_namespace(
   namespace->parent = parent;
   namespace->code   = code;
   memcpy(namespace->name, name, KEY_LEN);
-  namespace->children = hash_map_create(children ? children : 1);
+  namespace->children = hm_create();
   if (!namespace->children) { return NULL; }
-  namespace->namespaces = hash_map_create(namespaces ? namespaces : 1);
+  namespace->namespaces = hm_create();
   if (!namespace->namespaces) { return NULL; }
   if (parent) { push_namespace(parent, namespace); }
   return namespace;
 }
 
-aml_namespace_t* locate_namespace(aml_namespace_t* parent, aml_name_t key)
+void add_child_to_namespace(aml_namespace_t* ns, hash_key key, aml_ptr_t* data)
+{ hm_set(ns->children, key, data); }
+
+void debug_ptr(const char* key, void* entry)
 {
-  aml_namespace_t* current = parent;
-  aml_namespace_t* ns      = NULL;
-  while (ns == NULL)
+  aml_ptr_t* ptr = entry;
+  switch (ptr->type)
     {
-      ns = hash_map_get(current->namespaces, key.inner, NULL);
-      if (ns) { return ns; }
-      current = current->parent;
-      if (!current) { break; }
+      case TYPE_NAME:
+        {
+          aml_variable_t* variable = ptr->data;
+          valid_name(&(aml_name_t){ KEY_LEN, variable->label });
+          aml_log("%s ", variable->label);
+          switch (variable->data_type)
+            {
+              case DATA_BYTE:
+                {
+                  printf("%d\n", variable->byte);
+                  break;
+                }
+              case DATA_BUF:
+                {
+                  aml_buffer_t* buf = variable->buffer;
+                  for (int i = 0; i < buf->size; i++)
+                    {
+                      printf("%x ", buf->buffer[i]);
+                    }
+                  printf("\n");
+                }
+              case DATA_PKG:
+                {
+                  aml_package_t* pkg = variable->package;
+                  for (int i = 0; i < pkg->num_elements; i++)
+                    {
+                      debug_ptr(NULL, pkg->elements[i]);
+                    }
+                }
+              default:
+                {
+                  printf("\n");
+                  break;
+                }
+            }
+        }
+      default:
+        {
+          break;
+        }
     }
-  return NULL;
 }
 
-void add_child_to_namespace(aml_namespace_t* ns, hash_key key, aml_ptr_t* data)
-{ hash_map_push(ns->children, key, data, sizeof(aml_ptr_t)); }
-
-void debug_namespace(void* ptr)
+void debug_namespace(const char* key, void* ptr)
 {
   if (!ptr) { return; }
   aml_namespace_t* ns = ptr;
-  printf("%s\n", ns->name);
-  hash_map_debug(ns->children);
-  hash_map_foreach(ns->namespaces, debug_namespace);
+  aml_log("%s\n", ns->name);
+  hmi child_iter = hm_iter(ns->children);
+  hm_foreach(&child_iter, debug_ptr);
+  hmi ns_iter = hm_iter(ns->namespaces);
+
+  hm_foreach(&ns_iter, debug_namespace);
 }
 
 static aml_namespace_t* init_aml_namespaces()
 {
-  aml_namespace_t* root_ns = create_namespace(NULL, "\\___", NULL, 8, 4);
+  aml_namespace_t* root_ns = create_namespace(NULL, "\\___", NULL);
   if (!root_ns) { AML_EXIT(); }
-  if (!create_namespace(root_ns, "_GPE", NULL, 0, 0)) { AML_EXIT(); }
-  if (!create_namespace(root_ns, "_PR_", NULL, 0, 0)) { AML_EXIT(); }
-  if (!create_namespace(root_ns, "_SB_", NULL, 8, 8)) { AML_EXIT(); }
-  if (!create_namespace(root_ns, "_SI_", NULL, 0, 0)) { AML_EXIT(); }
-  if (!create_namespace(root_ns, "_TZ_", NULL, 0, 0)) { AML_EXIT(); }
+  if (!create_namespace(root_ns, "_GPE", NULL)) { AML_EXIT(); }
+  if (!create_namespace(root_ns, "_PR_", NULL)) { AML_EXIT(); }
+  if (!create_namespace(root_ns, "_SB_", NULL)) { AML_EXIT(); }
+  if (!create_namespace(root_ns, "_SI_", NULL)) { AML_EXIT(); }
+  if (!create_namespace(root_ns, "_TZ_", NULL)) { AML_EXIT(); }
   return root_ns;
 }
 

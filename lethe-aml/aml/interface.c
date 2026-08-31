@@ -7,34 +7,8 @@
 #include "tables.h"
 #include "types.h"
 
-#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-
-aml_ptr_t* get_object(char* static_key)
-{
-  unimplemented(static_key[0] != '\\');
-  size_t len = strlen(static_key) - 1;
-  char*  key = malloc(len);
-  memcpy(key, static_key + 1, len);
-  aml_ptr_t* ptr;
-  if (len == 4) { ptr = hash_map_get(root()->children, key, NULL); }
-  else
-    {
-      char* scope_name = malloc(len - 4);
-      memcpy(scope_name, key, len - 4);
-      aml_name_t       scope_key = { len, scope_name };
-      aml_namespace_t* scope     = get_scope(root(), scope_key);
-      free(scope_name);
-      scope_key = (aml_name_t){ 0 };
-      assert(scope);
-      memmove(key, key + len - 4, 4);
-      ptr = hash_map_get(scope->children, key, NULL);
-    }
-  free(key);
-  return ptr;
-}
 
 static uint64_t variable_to_int(aml_variable_t* variable)
 {
@@ -56,6 +30,11 @@ static uint64_t variable_to_int(aml_variable_t* variable)
         {
           return variable->long_int;
         }
+      case DATA_UNINIT:
+        {
+          printf("%s\n", variable->string);
+          break;
+        }
     }
   return UINT64_MAX;
 }
@@ -73,18 +52,18 @@ void execute_sleep(int state)
         }
       default:
         {
-          printf("sleep state %d unimplemented\n", state);
+          aml_log("sleep state %d unimplemented\n", state);
           AML_EXIT();
         }
     }
 
-  aml_ptr_t* obj = hash_map_get(root()->children, name, NULL);
+  aml_ptr_t* obj = hm_get(root()->children, name);
   if (!obj)
     {
-      printf("Could not locate sleep object %s\n", name);
+      aml_log("Could not locate sleep object %s\n", name);
       AML_EXIT();
     }
-  printf("%d\n", obj->type);
+  aml_log("%d\n", obj->type);
   uint64_t slp_typa = 0;
   uint64_t slp_typb = 0;
   switch (obj->type)
@@ -96,14 +75,21 @@ void execute_sleep(int state)
             {
               case DATA_PKG:
                 {
-                  aml_package_t*  pkg          = variable->package;
-                  aml_variable_t* var_slp_typa = pkg->elements[0];
-                  aml_variable_t* var_slp_typb = pkg->elements[1];
-                  slp_typa                     = variable_to_int(var_slp_typa);
-                  slp_typb                     = variable_to_int(var_slp_typb);
+                  aml_package_t* pkg = variable->package;
+                  // todo write proper type checks for these since it WILL cause
+                  // issues later
+                  aml_variable_t* var_slp_typa = pkg->elements[0]->data;
+                  aml_variable_t* var_slp_typb = pkg->elements[1]->data;
+                  aml_log(
+                    "TYPA %d TYPB %d",
+                    var_slp_typa->data_type,
+                    var_slp_typb->data_type
+                  );
+                  slp_typa = variable_to_int(var_slp_typa);
+                  slp_typb = variable_to_int(var_slp_typb);
                   if (slp_typa == UINT64_MAX || slp_typb == UINT64_MAX)
                     {
-                      printf(
+                      aml_log(
                         "Failed to cast aml_variable_t to type uint64_t\n"
                       );
                       AML_EXIT();
@@ -112,7 +98,7 @@ void execute_sleep(int state)
                 }
               default:
                 {
-                  printf("unknown data_type %d\n", variable->data_type);
+                  aml_log("unknown data_type %d\n", variable->data_type);
                   AML_EXIT();
                 }
             }
@@ -120,11 +106,11 @@ void execute_sleep(int state)
         }
       default:
         {
-          printf("unknown type %d\n", obj->type);
+          aml_log("unknown type %d\n", obj->type);
           AML_EXIT();
         }
     }
-  aml_ptr_t* _pts = hash_map_get(root()->children, "_PTS", NULL);
+  aml_ptr_t* _pts = hm_get(root()->children, "_PTS");
   if (_pts)
     { // execute _PTS
     }

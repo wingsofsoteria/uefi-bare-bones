@@ -4,16 +4,20 @@
 
 #include <stdint.h>
 
+typedef struct
+{
+  uint8_t type;
+  void*   data;
+} aml_ptr_t;
+
 typedef struct aml_namespace
 {
   struct aml_namespace* parent;
   hash_key              name;
   uint8_t*              code;
-  hash_map_t*           children;
-  hash_map_t*           namespaces;
+  hm*                   children;
+  hm*                   namespaces;
 } aml_namespace_t;
-
-#define MAX_CHARS 1022
 
 typedef struct aml_name
 {
@@ -52,8 +56,8 @@ typedef struct aml_buffer_t
 
 typedef struct aml_package_t
 {
-  size_t           num_elements;
-  aml_variable_t** elements;
+  size_t      num_elements;
+  aml_ptr_t** elements;
 } aml_package_t;
 
 typedef struct
@@ -147,12 +151,6 @@ typedef struct
   hash_key     name;
   aml_field_t* parent;
 } aml_named_field_t;
-
-typedef struct
-{
-  uint8_t type;
-  void*   data;
-} aml_ptr_t;
 
 typedef struct
 {

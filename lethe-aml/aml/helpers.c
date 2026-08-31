@@ -9,8 +9,12 @@
 #include "types.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#define DEBUG
 
 aml_ptr_t* create_ptr(void* data, uint8_t type)
 {
@@ -20,26 +24,139 @@ aml_ptr_t* create_ptr(void* data, uint8_t type)
   return ptr;
 }
 
-aml_ptr_t* locate_object(aml_namespace_t* ns, aml_name_t key)
+static void* stage3(
+  aml_namespace_t* ns,
+  char*            static_key,
+  size_t           len,
+  bool             namespace
+)
 {
-  alog("%s %s %d\n", ns->name, key.inner, key.count);
-  unimplemented(key.count != KEY_LEN);
-  unimplemented(key.inner[0] == '\\');
   aml_namespace_t* current = ns;
-  aml_ptr_t*       obj     = NULL;
-  while (obj == NULL)
+  void*            ptr     = NULL;
+  do
     {
-      obj = hash_map_get(current->children, key.inner, NULL);
-      if (obj) { return obj; }
+      ptr = namespace ? hm_get(current->namespaces, static_key)
+                      : hm_get(current->children, static_key);
+      if (ptr) { return ptr; }
       current = current->parent;
-      if (!current) { break; }
+      if (!current) { return NULL; }
     }
-  return NULL;
+  while (true);
+}
+
+// this will ALWAYS do the search relative to ns
+static aml_namespace_t* resolve_scope(
+  aml_namespace_t* ns,
+  char*            static_key,
+  size_t           len
+)
+{
+  if (len % KEY_LEN != 0) return NULL;
+  size_t           rem = len;
+  char             key[KEY_LEN];
+  size_t           i       = 0;
+  aml_namespace_t* next_ns = ns;
+  while (rem)
+    {
+      memcpy(key, static_key + i, KEY_LEN);
+      void* ptr = hm_get(next_ns->namespaces, key);
+      if (!ptr) { return NULL; }
+      next_ns = ptr;
+      rem    -= KEY_LEN;
+      i      += KEY_LEN;
+    }
+
+  if (!next_ns || next_ns == ns) { return NULL; }
+  return next_ns;
+}
+
+static void* stage2(
+  aml_namespace_t* ns,
+  char*            static_key,
+  size_t           len,
+  bool             namespace
+)
+{
+  char key[KEY_LEN] = { 0 };
+  if (len == KEY_LEN)
+    {
+      memcpy(key, static_key, KEY_LEN);
+      return namespace ? hm_get(ns->namespaces, key)
+                       : hm_get(ns->children, key);
+    }
+  size_t scope_len = len - KEY_LEN;
+  char*  scope_key = malloc(scope_len);
+  if (!scope_key) { return NULL; }
+  memcpy(scope_key, static_key, scope_len);
+  memcpy(key, static_key + scope_len, KEY_LEN);
+
+#ifdef DEBUG
+  aml_log("%s %s %s %d\n", key, scope_key, static_key, len);
+#endif
+  aml_namespace_t* scope = resolve_scope(ns, scope_key, scope_len);
+  free(scope_key);
+  if (!scope) { return NULL; }
+  return namespace ? hm_get(scope->namespaces, key)
+                   : hm_get(scope->children, key);
+}
+
+void* locate_object(
+  aml_namespace_t* ns,
+  char*            static_key,
+  size_t           len,
+  bool             namespace
+)
+{
+  aml_name_t test_name = (aml_name_t){ len, static_key };
+  if (len == 1) { return root(); }
+  if (!valid_name(&test_name))
+    {
+      aml_log("Key is not valid");
+      debug_exit();
+    }
+  if (len == KEY_LEN) { return stage3(ns, static_key, len, namespace); }
+
+  aml_namespace_t* scope = NULL;
+  switch (static_key[0])
+    {
+      case '^':
+        {
+          if (!ns->parent) { return NULL; }
+          scope = ns->parent;
+          len  -= 1;
+          memmove(static_key, static_key + 1, len);
+          break;
+        }
+      case '\\':
+        {
+          scope = root();
+          len  -= 1;
+          memmove(static_key, static_key + 1, len);
+          break;
+        }
+      default:
+        {
+          scope = ns;
+          break;
+        }
+    }
+
+#ifdef DEBUG
+  aml_log(
+    "Searching: %.4s for key %.*s with len %d\n",
+    scope->name,
+    test_name.count,
+    test_name.inner,
+    test_name.count
+  );
+#endif
+  return stage2(scope, static_key, len, namespace);
 }
 
 void debug_exit()
 {
-  debug_namespace(root());
+  debug_namespace("\\___", root());
+
   AML_EXIT();
 }
 
@@ -141,8 +258,7 @@ aml_buffer_t* term_arg_to_buffer(aml_namespace_t* ns)
   // assume op is for a name segment
   hash_key name;
   memcpy(name, ns->code, KEY_LEN);
-  aml_ptr_t* obj =
-    locate_object(ns, (aml_name_t){ .count = KEY_LEN, .inner = name });
+  aml_ptr_t* obj = locate_object(ns, name, KEY_LEN, false);
   switch (obj->type)
     {
       case TYPE_NAME:
@@ -153,13 +269,17 @@ aml_buffer_t* term_arg_to_buffer(aml_namespace_t* ns)
               ns->code += KEY_LEN;
               return var->buffer;
             }
-          printf("var->data_type = %d\n", var->data_type);
+#ifdef DEBUG
+          aml_log("var->data_type = %d\n", var->data_type);
+#endif
           debug_exit();
           break;
         }
       default:
         {
-          printf("%p\n%d\n", obj->data, obj->type);
+#ifdef DEBUG
+          aml_log("%p\n%d\n", obj->data, obj->type);
+#endif
           debug_exit();
           break;
         }
@@ -202,13 +322,42 @@ uint64_t term_arg_to_int(aml_namespace_t* ns)
           ns->code    += 4;
           return out;
         }
+      case LNOT_OP:
+        {
+          uint64_t predicate = term_arg_to_int(ns);
+          return !predicate;
+        }
+      case LEQUAL_OP:
+        {
+          uint64_t term1 = term_arg_to_int(ns);
+          uint64_t term2 = term_arg_to_int(ns);
+          return term1 == term2;
+        }
+      case LAND_OP:
+        {
+          uint64_t term1 = term_arg_to_int(ns);
+          uint64_t term2 = term_arg_to_int(ns);
+          return term1 && term2;
+        }
+      case LLESS_OP:
+        {
+          uint64_t term1 = term_arg_to_int(ns);
+          uint64_t term2 = term_arg_to_int(ns);
+          return term1 < term2;
+        }
+      case LGREATER_OP:
+        {
+          uint64_t term1 = term_arg_to_int(ns);
+          uint64_t term2 = term_arg_to_int(ns);
+          return term1 > term2;
+        }
       default:
         {
           ns->code--;
           hash_key name;
           memcpy(name, ns->code, KEY_LEN);
-          aml_ptr_t* obj =
-            locate_object(ns, (aml_name_t){ .count = KEY_LEN, .inner = name });
+          aml_ptr_t* obj = locate_object(ns, name, KEY_LEN, false);
+          if (!obj) { debug_exit(); }
           void*   ptr  = obj->data;
           uint8_t type = obj->type;
 
@@ -379,8 +528,10 @@ void parse_next(aml_namespace_t* ns)
         }
       default:
         {
-          printf("%x ", op);
+#ifdef DEBUG
+          aml_log("%x ", op);
           debug_code(ns, 5);
+#endif
           debug_exit();
           break;
         }
@@ -393,55 +544,6 @@ void parse_termlist(aml_namespace_t* ns, uint8_t* start, const uint8_t* end)
   ns->code      = start;
   while (ns->code < end) { parse_next(ns); }
   ns->code = copy;
-}
-
-// current is the namespace that this function was executed in, not necessarily
-// the namespace that the key points to key is a valid aml namestring (XXXX,
-// ^XYXY, ^YYYY.XXXX, \\XXXX.YYYY.ZZZZ, etc)
-aml_namespace_t* get_scope(aml_namespace_t* current, aml_name_t key)
-{
-  alog("%s %.*s %d\n", current->name, key.count, key.inner, key.count);
-  aml_namespace_t* ns        = NULL;
-  aml_namespace_t* parent_ns = current;
-  size_t           count     = key.count;
-  size_t           offset    = 0;
-  if (key.inner[0] == '\\')
-    {
-      if (key.count == 1) return root();
-      hash_key parent;
-      memcpy(parent, key.inner + 1, KEY_LEN);
-      count    -= KEY_LEN + 1;
-      offset    = KEY_LEN + 1;
-      parent_ns = hash_map_get(root()->namespaces, parent, NULL);
-      if (key.count == 5) return parent_ns;
-    }
-  if (parent_ns)
-    {
-      alog("%.*s %.*s\n", KEY_LEN, parent_ns->name, count, key.inner + offset);
-    }
-  unimplemented(key.inner[0] == '^');
-  while (count > KEY_LEN)
-    {
-      hash_key ns_name;
-      memcpy(ns_name, key.inner + offset, KEY_LEN);
-      offset += KEY_LEN;
-      count  -= KEY_LEN;
-      if (offset > key.count) debug_exit();
-      alog(
-        "%.*s %.*s %d %d %.*s\n",
-        KEY_LEN,
-        ns_name,
-        KEY_LEN,
-        parent_ns->name,
-        count,
-        offset,
-        count,
-        key.inner + offset
-      );
-      parent_ns = hash_map_get(parent_ns->namespaces, ns_name, NULL);
-      if (!parent_ns) { debug_exit(); }
-    }
-  return hash_map_get(parent_ns->namespaces, key.inner + offset, NULL);
 }
 
 size_t parse_next_field_elem(
@@ -494,15 +596,12 @@ size_t parse_next_field_elem(
           ns->code--;
           hash_key name;
           memcpy(name, ns->code, KEY_LEN);
-          ns->code += KEY_LEN;
-          for (int i = 0; i < KEY_LEN; i++)
+          ns->code         += KEY_LEN;
+          aml_name_t string = (aml_name_t){ KEY_LEN, name };
+          if (!valid_name(&string))
             {
-              if (name[i] >= '0' && name[i] <= '9') { continue; }
-              if (name[i] >= 'A' && name[i] <= 'Z') { continue; }
-              if (name[i] >= 'a' && name[i] <= 'z') { continue; }
-              if (name[i] == '_') { continue; }
               ns->code = code_copy;
-              return 0;
+              return UINT64_MAX;
             }
           aml_named_field_t* field = malloc(sizeof(aml_named_field_t));
           field->len               = parse_length(ns);
@@ -518,21 +617,43 @@ size_t parse_next_field_elem(
           break;
         }
     }
-  return 0;
+  return UINT64_MAX;
 }
 
 static void populate_package(aml_namespace_t* ns, aml_package_t* pkg)
 {
   for (int i = 0; i < pkg->num_elements; i++)
     {
+      uint8_t* code_copy = ns->code;
+#ifdef DEBUG
+      debug_code(ns, 4);
+#endif
+      aml_name_t*     name     = parse_namestring(ns);
       aml_variable_t* variable = malloc(sizeof(aml_variable_t));
-      parse_data_object(ns, variable);
-      pkg->elements[i] = variable;
+      if (!valid_name(name) || name->count == 0)
+        {
+          ns->code = code_copy;
+          parse_data_object(ns, variable);
+        }
+      else
+        {
+          variable->data_type      = DATA_UNINIT;
+          aml_name_t resolved_name = resolve_name(ns, *name);
+          variable->string         = resolved_name.inner;
+        }
+      free(name);
+      pkg->elements[i] = create_ptr(variable, TYPE_NAME);
     }
+#ifdef DEBUG
+  aml_log("end\n");
+#endif
 }
 
 void parse_data_object(aml_namespace_t* ns, aml_variable_t* var)
 {
+#ifdef DEBUG
+  debug_code(ns, 4);
+#endif
   uint8_t op = *ns->code++;
   switch (op)
     {
@@ -602,16 +723,21 @@ void parse_data_object(aml_namespace_t* ns, aml_variable_t* var)
           var->string    = ptr;
           break;
         }
+      case VAR_PACKAGE_OP:
       case PACKAGE_OP:
         {
-          uint8_t*       code_copy    = ns->code;
-          size_t         pkg_len      = parse_length(ns);
-          uint8_t        num_elements = *ns->code++;
-          aml_package_t* ptr          = malloc(sizeof(aml_package_t));
-          ptr->elements     = malloc(num_elements * sizeof(aml_variable_t*));
-          ptr->num_elements = num_elements;
+          uint8_t* code_copy = ns->code;
+          size_t   pkg_len   = parse_length(ns);
+          uint8_t  num_elements;
+          if (op == PACKAGE_OP) { num_elements = *ns->code++; }
+          else
+            {
+              num_elements = term_arg_to_int(ns);
+            }
+          aml_package_t* ptr = malloc(sizeof(aml_package_t));
+          ptr->elements      = malloc(num_elements * sizeof(aml_variable_t*));
+          ptr->num_elements  = num_elements;
           populate_package(ns, ptr);
-          ns->code       = code_copy + pkg_len;
           var->data_type = DATA_PKG;
           var->package   = ptr;
           break;
@@ -632,11 +758,48 @@ void parse_data_object(aml_namespace_t* ns, aml_variable_t* var)
         }
       default:
         {
-          ns->code--;
-          printf("%.4s", ns->code);
-          memcpy(var->label, ns->code, KEY_LEN);
-          var->data_type = DATA_UNINIT;
+          unimplemented(true);
           break;
         }
     }
 }
+
+int __aml_log(struct source_location location, char* fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  printf("[%s:%d] ", location.function, location.line);
+  int written = vprintf(fmt, args);
+  va_end(args);
+  return written;
+}
+
+bool valid_name(aml_name_t* name)
+{
+#ifdef DEBUG
+  aml_log("\n");
+#endif
+  int starting_point = 0;
+  if (name->inner[0] == '\\' || name->inner[0] == '^') { starting_point = 1; }
+  for (int i = starting_point; i < name->count; i++)
+    {
+#ifdef DEBUG
+      printf("%x ", name->inner[i]);
+#endif
+      if (
+        (name->inner[i] < 'A' || name->inner[i] > 'Z') &&
+        (name->inner[i] < '0' || name->inner[i] > '9') && name->inner[i] != '_'
+      )
+        {
+#ifdef DEBUG
+          putchar('\n');
+#endif
+          return false;
+        }
+    }
+#ifdef DEBUG
+  putchar('\n');
+#endif
+  return true;
+}
+

@@ -1,2 +1,2 @@
 ADD_LIBRARY(fnv STATIC)
-TARGET_SOURCES(fnv PRIVATE hash_32a.c hashmap.c)
+TARGET_SOURCES(fnv PRIVATE hash_64a.c hash_32a.c hashmap.c)

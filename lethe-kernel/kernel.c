@@ -174,6 +174,7 @@ int kmain()
 
   klog("Kernel was told to exit, Goodbye!\n");
   shutdown();
+  klog("UH OH");
   // we should never get here
   halt();
 }

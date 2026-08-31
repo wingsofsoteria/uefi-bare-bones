@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void def_if_else(aml_namespace_t* ns)
@@ -49,37 +50,40 @@ void def_method(aml_namespace_t* ns)
     method_name->inner + method_name->count - KEY_LEN,
     KEY_LEN
   );
-  method->scope = create_namespace(NULL, method->name, method->code, 0, 0);
-  if (method_name->inner[0] == '\\')
+  method->scope          = create_namespace(NULL, method->name, method->code);
+  aml_namespace_t* scope = NULL;
+  if (method_name->count == KEY_LEN || method_name->count == KEY_LEN + 1)
     {
-      method_name->count     -= KEY_LEN;
-      aml_namespace_t* parent = get_scope(ns, *method_name);
-      if (!parent)
+      switch (method_name->inner[0])
         {
-          alog("parent is null\n");
-          debug_exit();
+          case '\\':
+            {
+              scope = root();
+              break;
+            }
+          case '^':
+            {
+              scope = ns->parent;
+              break;
+            }
+          default:
+            {
+              scope = ns;
+              break;
+            }
         }
-      add_child_to_namespace(
-        parent,
-        method->name,
-        create_ptr(method, TYPE_METHOD)
-      );
-      method->scope->parent = parent;
-    }
-  else if (method_name->inner[0] == '^')
-    {
-      add_child_to_namespace(
-        ns->parent,
-        method->name,
-        create_ptr(method, TYPE_METHOD)
-      );
-      method->scope->parent = ns->parent;
     }
   else
     {
-      add_child_to_namespace(ns, method->name, create_ptr(method, TYPE_METHOD));
-      method->scope->parent = ns;
+      size_t scope_len  = method_name->count - KEY_LEN;
+      char*  scope_name = malloc(scope_len);
+      if (!scope_name) { debug_exit(); }
+      memcpy(scope_name, method_name->inner, scope_len);
+      scope = locate_object(ns, scope_name, scope_len, true);
     }
+  if (!scope) { debug_exit(); }
+  add_child_to_namespace(scope, method->name, create_ptr(method, TYPE_METHOD));
+  method->scope->parent = scope;
   free(method_name->inner);
   free(method_name);
   ns->code = code_copy + method_len;
@@ -120,25 +124,7 @@ void def_field(aml_namespace_t* ns)
   size_t      field_len = parse_length(ns);
   aml_name_t* name      = parse_namestring(ns);
 
-  aml_ptr_t* obj = NULL;
-  if (name->count > KEY_LEN)
-    {
-      int old_count           = name->count;
-      name->count            -= KEY_LEN;
-      aml_namespace_t* parent = get_scope(ns, *name);
-      if (!parent)
-        {
-          alog("parent is null\n");
-          debug_exit();
-        }
-      name->count = old_count;
-      trim_name(name);
-      obj = hash_map_get(parent->children, name->inner, NULL);
-    }
-  else
-    {
-      obj = locate_object(ns, *name);
-    }
+  aml_ptr_t*   obj   = locate_object(ns, name->inner, name->count, false);
   uint8_t      flags = *ns->code++;
   aml_field_t* field = malloc(sizeof(aml_field_t));
   field->access_type = flags & 0xF;
@@ -152,7 +138,7 @@ void def_field(aml_namespace_t* ns)
   while (1)
     {
       size_t len = parse_next_field_elem(ns, offset, field);
-      if (len == 0) { break; }
+      if (len == UINT64_MAX) { break; }
       offset += len;
     }
   ns->code = code_copy + field_len;
@@ -183,10 +169,25 @@ void def_scope(aml_namespace_t* ns)
       ns->code = end;
       return;
     }
-  aml_namespace_t* scope = get_scope(ns, *scope_name);
+
+  aml_namespace_t* scope =
+    locate_object(ns, scope_name->inner, scope_name->count, true);
   if (scope == NULL)
     {
-      alog("could not find scope");
+      aml_log("could not find scope %s\n", scope_name->inner);
+      if (scope_name->count > KEY_LEN)
+        {
+          char  parent[KEY_LEN];
+          char* self = calloc(scope_name->count - KEY_LEN, sizeof(char));
+          memcpy(parent, scope_name->inner + 1, KEY_LEN);
+          memcpy(
+            self,
+            scope_name->inner + KEY_LEN + 1,
+            scope_name->count - KEY_LEN
+          );
+          aml_log("%s %s\n", parent, self);
+          aml_namespace_t* parent_ns = locate_object(ns, parent, KEY_LEN, true);
+        }
       debug_exit();
       // scope      = create_namespace(parent, scope_name.inner, ns->code, 0,
       // 0);
@@ -201,24 +202,21 @@ void def_device(aml_namespace_t* ns)
   size_t           device_len  = parse_length(ns);
   uint8_t*         end         = code_copy + device_len;
   aml_name_t*      device_name = parse_namestring(ns);
-  aml_namespace_t* device      = get_scope(ns, *device_name);
+  aml_namespace_t* device =
+    locate_object(ns, device_name->inner, device_name->count, true);
 
   if (!device)
     {
       aml_namespace_t* parent = ns;
-      if (device_name->inner[0] == '\\')
+      if (device_name->count > KEY_LEN)
         {
-          aml_name_t name;
-          name.count = device_name->count - KEY_LEN;
-          name.inner = malloc(device_name->count - KEY_LEN);
-          memcpy(name.inner, device_name->inner, device_name->count - KEY_LEN);
-          parent = get_scope(ns, name);
-          free(name.inner);
+          size_t len = device_name->count - KEY_LEN;
+          char*  key = malloc(len);
+          memcpy(key, device_name->inner, len);
+          parent      = locate_object(ns, key, len, true);
           device_name = trim_name(device_name);
         }
-      unimplemented(device_name->inner[0] == '^');
-      unimplemented(device_name->count != KEY_LEN);
-      device = create_namespace(parent, device_name->inner, ns->code, 4, 0);
+      device = create_namespace(parent, device_name->inner, ns->code);
     }
 
   parse_termlist(device, ns->code, end);
@@ -229,11 +227,10 @@ void def_alias(aml_namespace_t* ns)
 {
   aml_name_t* source = parse_namestring(ns);
   aml_name_t* alias  = parse_namestring(ns);
-  int         index  = -1;
   unimplemented(source->count != KEY_LEN);
   unimplemented(alias->count != KEY_LEN);
-  aml_ptr_t* ref = hash_map_get(ns->children, source->inner, &index);
-  if (index == -1 || ref == NULL) { debug_exit(); }
+  aml_ptr_t* ref = hm_get(ns->children, source->inner);
+  if (ref == NULL) { debug_exit(); }
   add_child_to_namespace(ns, alias->inner, ref);
   free(alias->inner);
   free(source->inner);

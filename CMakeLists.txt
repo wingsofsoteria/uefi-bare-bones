@@ -16,7 +16,8 @@ ADD_COMPILE_OPTIONS(-ffreestanding
         -mno-sse2
         -fno-PIC
         -fno-PIE
-        $<$<CONFIG:DEBUG>:-g>
+        -mcmodel=large
+	$<$<CONFIG:DEBUG>:-g>
         $<$<NOT:$<CONFIG:DEBUG>>:-O2>)
 
 ADD_LINK_OPTIONS(

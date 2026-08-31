@@ -192,11 +192,12 @@ inline static struct boundary_tag* absorb_right(struct boundary_tag* tag)
   return tag;
 }
 
+#include "log.h"
+
 inline static struct boundary_tag* split_tag(struct boundary_tag* tag)
 {
   unsigned int remainder =
     tag->real_size - sizeof(struct boundary_tag) - tag->size;
-
   struct boundary_tag* new_tag =
     (struct boundary_tag*)((unsigned char*)tag + sizeof(struct boundary_tag) +
                            tag->size);
@@ -354,8 +355,9 @@ void* malloc(size_t size)
 #endif
 
   unsigned int remainder =
-    tag->real_size - size - sizeof(struct boundary_tag) * 2; // Support a new
-                                                             // tag + remainder
+    tag->real_size - size - (sizeof(struct boundary_tag) * 2); // Support a new
+                                                               // tag +
+                                                               // remainder
 
   if (
     ((int)(remainder) > 0) /*&& ( (tag->real_size - remainder) >= (1<<MINEXP))*/

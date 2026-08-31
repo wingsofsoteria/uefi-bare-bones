@@ -23,11 +23,17 @@
 #define ONE_OP          0x01
 #define ONES_OP         0xFF
 #define EXT_REVISION_OP 0x30
+#define LNOT_OP         0x92
+#define LEQUAL_OP       0x93
+#define LAND_OP         0x90
+#define LLESS_OP        0x95
+#define LGREATER_OP     0x94
 // expressions
 #define EXT_ACQUIRE_OP 0x23
 #define ADD_OP         0x72
 #define BUFFER_OP      0x11
 #define PACKAGE_OP     0x12
+#define VAR_PACKAGE_OP 0x13
 // namespace modifiers
 #define ALIAS_OP 0x06
 #define NAME_OP  0x08
@@ -62,6 +68,7 @@
 #define TYPE_FIELD_OFFSET (1 << 4)
 #define TYPE_MUTEX        (1 << 5)
 #define TYPE_WORD_FIELD   (1 << 6)
+#define TYPE_HACK         0
 
 #define DATA_UNINIT 0
 #define DATA_STR    (1 << 0)
