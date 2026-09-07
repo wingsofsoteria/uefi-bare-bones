@@ -6,10 +6,10 @@
 #include <stdint.h>
 
 #ifdef QEMU_DEBUG
-  #define SERIAL_PORT 0xE9
+#define SERIAL_PORT 0xE9
 #endif
 #ifdef VBOX_DEBUG
-  #define SERIAL_PORT 0x3F8
+#define SERIAL_PORT 0x3F8
 #endif
 __attribute__((__noreturn__)) static inline void halt()
 {
@@ -113,7 +113,16 @@ inline static uint64_t rdtsc()
   return ((high << 32) | low);
 }
 
-void     abort();
-void     walk_stack();
-char*    resolve_function_name(uint64_t);
-uint64_t resolve_function_address(char*);
+inline static uint64_t read_rsp()
+{
+  uint64_t rsp;
+  asm volatile("mov %%rsp, %0"
+    : "=r"(rsp));
+  return rsp;
+}
+
+extern void jump_usermode(void* rip);
+void        abort();
+void        walk_stack();
+char*       resolve_function_name(uint64_t);
+uint64_t    resolve_function_address(char*);

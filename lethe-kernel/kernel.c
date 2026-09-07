@@ -1,3 +1,4 @@
+#include "cpu/tss.h"
 #include "shell.h"
 #include "stdlib.h"
 #include "utils.h"
@@ -20,6 +21,7 @@
 #include <terminal/pixel.h>
 #include <terminal/tty.h>
 #include <types.h>
+
 // BTW if anyone ever actually tries to read this code, it might be some of the
 // worst code I have ever or will ever write
 // my methodology for actually writing this damn thing was (random burst of
@@ -39,6 +41,10 @@
 // ability to quickly edit the tasks in queue since it requires looking through
 // the ENTIRE list starting at the idle task)
 // NOLINTNEXTLINE
+static void test_usermode() {
+  for (;;);
+  asm volatile("cli"); // expect a GPF exception
+}
 
 extern void kernel_init_code();
 uint64_t    hhdm_mapping = 0;
@@ -48,6 +54,7 @@ static void common_init_start()
   asm volatile("cli");
   load_gdt();
   load_idt();
+  init_tss();
 }
 
 #ifdef KERNEL_USE_LIMINE
@@ -169,7 +176,8 @@ int kmain()
   enable_apic();
   enable_interrupts();
   acpi_late_init();
-  init_shell();
+  klog("%p", test_usermode);
+  jump_usermode(test_usermode - hhdm_mapping);
   while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 
   klog("Kernel was told to exit, Goodbye!\n");
@@ -192,9 +200,7 @@ int _start(kernel_bootinfo_t* bootinfo, void* ptr)
   init_config_cpuid();
   // setup_allocator(bootinfo->mmap);
 
-  uint64_t rsp = 0;
-  asm volatile("mov %%rsp, %0"
-    : "=a"(rsp));
+  uint64_t rsp = read_rsp();
   printf(
     "provided stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\nactive "
     "stack space:\n\tTOP: %x\n\tBOTTOM: %x\n\tSIZE: %l\n",
