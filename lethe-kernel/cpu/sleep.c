@@ -23,11 +23,12 @@ static uint64_t duration_to_ms(kernel_duration_t duration)
 void ksleep(kernel_duration_t duration)
 {
   uint64_t deadline = rdtsc();
-  if (kernel_config.timer_source & 0b10)
+  if (kernel_config.timers.timer_source & 0b10)
     {
       ticks          = 1;
       uint64_t nanos = duration_to_ns(duration);
-      deadline = deadline + (nanos * kernel_config.tsc_freq_khz / MS_PER_NS);
+      deadline =
+        deadline + (nanos * kernel_config.timers.tsc_freq_khz / MS_PER_NS);
       // signal_idle(deadline);
       set_tsc_deadline(deadline);
     }

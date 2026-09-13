@@ -1,4 +1,5 @@
 #include "cpu/tss.h"
+#include "pci/pci.h"
 #include "shell.h"
 #include "stdlib.h"
 #include "utils.h"
@@ -123,6 +124,7 @@ __attribute__((
   .revision = 0
 };
 
+
 // NOLINTNEXTLINE
 void* kernel_file_address;
 // NOLINTNEXTLINE
@@ -154,8 +156,8 @@ int kmain()
   if (executable_request.response == NULL) halt();
 
   if (tsc_frequency.response != NULL)
-    kernel_config.tsc_freq_khz = tsc_frequency.response->frequency * 1000;
-
+    kernel_config.timers.tsc_freq_khz =
+      tsc_frequency.response->frequency * 1000;
   kernel_file_address = executable_request.response->executable_file->address;
   common_init_start();
   init_fb(
@@ -164,7 +166,7 @@ int kmain()
     framebuffer->width,
     framebuffer->height
   );
-  klog("TSC: %d\n", kernel_config.tsc_freq_khz);
+  klog("TSC: %d\n", kernel_config.timers.tsc_freq_khz);
   klog("Kernel offset set to %llx\n", hhdm_mapping);
   setup_allocator(memmap_request.response);
   kernel_init_code();
@@ -177,7 +179,8 @@ int kmain()
   enable_interrupts();
   acpi_late_init();
   klog("%p", test_usermode);
-  jump_usermode(test_usermode - hhdm_mapping);
+  init_pci();
+  init_shell();
   while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 
   klog("Kernel was told to exit, Goodbye!\n");

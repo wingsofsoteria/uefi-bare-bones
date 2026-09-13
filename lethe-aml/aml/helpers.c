@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG
+// #define DEBUG
 
 aml_ptr_t* create_ptr(void* data, uint8_t type)
 {
@@ -207,7 +207,7 @@ uint64_t read_io(uint16_t port, uint8_t access_len)
         }
       case 32:
         {
-          return ind(port);
+          return inl(port);
         }
       default:
         {

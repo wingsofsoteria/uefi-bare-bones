@@ -33,7 +33,7 @@ inline static uint8_t inb(uint16_t port) { return 0; }
 #define outw outb
 #define inw  inb
 #define outd outb
-#define ind  inb
+#define inl  inb
 #define outq outb
 #define inq  inb
 

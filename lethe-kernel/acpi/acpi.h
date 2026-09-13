@@ -2,8 +2,10 @@
 #define __KERNEL_ACPI_INTERNAL_H__
 
 #include "acpi/acpi.h"
+#include "acpi/mcfg.h"
 
 #include <stddef.h>
+#include <stdint.h>
 #include <tables.h>
 
 typedef struct
@@ -27,10 +29,14 @@ typedef struct
   uint8_t  page_protection;
 } __attribute__((packed)) acpi_hpet_t;
 
-// TODO i'm saving my fingers from manually typing out all members of the FADT
-// table by just shoving it all in arrays. I'll add them as needed
+typedef struct
+{
+  acpi_header_t                   header;
+  struct mmio_configuration_space config_space[];
+} __attribute__((packed)) acpi_mcfg_t;
 
 typedef struct
+
 {
   acpi_header_t header;
   uint32_t      local_interrupt_controller_address;
@@ -76,12 +82,12 @@ typedef struct
   )
 
 void                              madt_init();
+void                              init_mcfg();
 void                              lapic_init();
 uint32_t                          madt_get_ioapic(uint32_t gsi);
 uint64_t                          madt_get_lapic_addr();
 madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq);
 uint32_t                          lapic_read(uint16_t offset);
 void                              lapic_write(uint16_t offset, uint32_t value);
-void*                             scan_tables(const char*, size_t);
 
 #endif

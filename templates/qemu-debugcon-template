@@ -1,2 +1,18 @@
 #!/usr/bin/env bash
-qemu-system-x86_64 -M q35 -net none -no-reboot -cpu max,+invtsc -m 48G -d int -drive if=pflash,format=raw,readonly=on,unit=0,file=@LETHE_TEST_FW_CODE@ -drive if=pflash,format=raw,readonly=on,unit=1,file=@LETHE_TEST_FW_VAR@ -drive file=@LETHE_OUTPUT_FILE@ -D log -debugcon stdio 1> >(tee log >&2)
+qemu-system-x86_64 \
+-M q35 \
+-net none \
+-no-reboot \
+-cpu host,+invtsc \
+-enable-kvm \
+-m 48G \
+-d int \
+-device pci-testdev \
+-device pcie-root-port \
+-device pcie-pci-bridge \
+-device qemu-xhci \
+-drive if=pflash,format=raw,readonly=on,unit=0,file=@LETHE_TEST_FW_CODE@ \
+-drive if=pflash,format=raw,readonly=on,unit=1,file=@LETHE_TEST_FW_VAR@ \
+-drive file=@LETHE_OUTPUT_FILE@ \
+-D log \
+-debugcon stdio 1> >(tee log >&2)

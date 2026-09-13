@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 
+// #define DEBUG
+
 aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
 {
   unimplemented(key.inner[0] == '^');
@@ -48,7 +50,9 @@ aml_name_t resolve_name(aml_namespace_t* ns, aml_name_t key)
       current = current->parent;
     }
   absolute_name[0] = '\\';
+#ifdef DEBUG
   aml_log("%s\n", absolute_name);
+#endif
   return (aml_name_t){ .count = size, .inner = absolute_name };
 }
 
@@ -97,7 +101,9 @@ aml_name_t* parse_namestring(aml_namespace_t* ns)
 aml_name_t* trim_name(aml_name_t* name)
 {
   if (name->count <= KEY_LEN) { return name; }
+#ifdef DEBUG
   aml_log("%s -> ", name->inner);
+#endif
   char* inner = malloc(KEY_LEN);
   memcpy(inner, name->inner + name->count - KEY_LEN, KEY_LEN);
   free(name->inner);

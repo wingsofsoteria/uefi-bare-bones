@@ -66,6 +66,7 @@ int acpi_early_init(void* rsdp_pointer)
   if (!sdt_checksum(&XSDT->header)) { panic("Failed to parse ACPI tables\n"); }
   madt_init();
   lapic_init();
+  init_mcfg();
   return 0;
 }
 

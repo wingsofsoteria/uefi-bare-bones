@@ -174,7 +174,9 @@ void def_scope(aml_namespace_t* ns)
     locate_object(ns, scope_name->inner, scope_name->count, true);
   if (scope == NULL)
     {
+#ifdef DEBUG
       aml_log("could not find scope %s\n", scope_name->inner);
+#endif
       if (scope_name->count > KEY_LEN)
         {
           char  parent[KEY_LEN];
@@ -185,7 +187,9 @@ void def_scope(aml_namespace_t* ns)
             scope_name->inner + KEY_LEN + 1,
             scope_name->count - KEY_LEN
           );
+#ifdef DEBUG
           aml_log("%s %s\n", parent, self);
+#endif
           aml_namespace_t* parent_ns = locate_object(ns, parent, KEY_LEN, true);
         }
       debug_exit();

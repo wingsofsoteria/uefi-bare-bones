@@ -32,16 +32,19 @@ void init_config_cpuid()
       klog("MSRs unsupported\n");
     }
 
-  if (ecx & bit_TSCDeadline) { kernel_config.apic_tsc_deadline = 0b1; }
+  if (ecx & bit_TSCDeadline) { kernel_config.timers.apic_tsc_deadline = 0b1; }
   supported = __get_cpuid(0x80000007, &unused, &unused, &unused, &edx);
-  if (supported && (edx & (1 << 8))) { kernel_config.tsc_invariant = 0b1; }
+  if (supported && (edx & (1 << 8)))
+    {
+      kernel_config.timers.tsc_invariant = 0b1;
+    }
 
   supported = __get_cpuid(0x15, &eax, &ebx, &ecx, &edx);
   if (supported)
     {
       klog("CPUID 0x15: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
       // leaf 15 gives the tsc freq in hz so divide by 1000
-      kernel_config.tsc_freq_khz = (ecx * (ebx / eax)) / 1000;
+      kernel_config.timers.tsc_freq_khz = (ecx * (ebx / eax)) / 1000;
     }
   supported = __get_cpuid(0x16, &eax, &ebx, &ecx, &edx);
   if (supported)
@@ -49,7 +52,7 @@ void init_config_cpuid()
       klog("CPUID 0x16: eax %d, ebx %d, ecx %d, edx %d\n", eax, ebx, ecx, edx);
       // leaf 16 gives the processor base frequency in mhz so multiply by 1000
       // for tsc frequency in khz
-      kernel_config.tsc_freq_khz = eax * 1000;
+      kernel_config.timers.tsc_freq_khz = eax * 1000;
     }
 }
 
@@ -86,7 +89,7 @@ void enable_pit()
   MAYBE_CLI;
   pit_init();
   enable_irq(0, 34, pic_timer_isr);
-  kernel_config.timer_source |= 0b001;
+  kernel_config.timers.timer_source |= 0b001;
   MAYBE_STI;
 }
 
@@ -95,11 +98,12 @@ void enable_apic()
   MAYBE_CLI;
 
   // TODO faster tsc calibration
-  if (kernel_config.tsc_freq_khz == 0)
+  if (kernel_config.timers.tsc_freq_khz == 0)
     {
       if (
         kernel_config.interrupt_source != 0b10 ||
-        !kernel_config.apic_tsc_deadline || !kernel_config.tsc_invariant
+        !kernel_config.timers.apic_tsc_deadline ||
+        !kernel_config.timers.tsc_invariant
       )
         {
           klog("APIC timer unsupported, switching to pit");
@@ -116,13 +120,13 @@ void enable_apic()
           klog("TSC is unreliable\n");
           return;
         }
-      kernel_config.tsc_freq_khz = frequency;
+      kernel_config.timers.tsc_freq_khz = frequency;
     }
   register_handler(32, apic_timer_isr);
   apic_enable_timer();
   disable_irq(0, 34);
   // tell the kernel that the PIT is no longer usable for interrupts
-  kernel_config.timer_source &= ~(0b001);
-  kernel_config.timer_source |= 0b010;
+  kernel_config.timers.timer_source &= ~(0b001);
+  kernel_config.timers.timer_source |= 0b010;
   MAYBE_STI;
 }
