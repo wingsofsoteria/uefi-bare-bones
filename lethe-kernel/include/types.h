@@ -12,3 +12,7 @@
 #define ALIGN_DOWN(x, a) (x & ~a)
 #define PAGE_ALIGN(x)    (x & ~4096)
 extern uint64_t hhdm_mapping;
+extern int      _kernel_end_addr;
+extern int      _kernel_start_addr;
+extern uint64_t heap_start;
+extern uint64_t heap_size;

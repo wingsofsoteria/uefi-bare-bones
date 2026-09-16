@@ -12,9 +12,8 @@
 #include <stdalign.h>
 #include <stdint.h>
 #ifdef KERNEL_USE_LIMINE
-extern int      _kernel_end_addr;
-static uint64_t heap_start = 0x444444440000;
-static uint64_t heap_size  = 0x20000;
+uint64_t heap_start = 0;
+uint64_t heap_size  = 0x20000;
 
 void* kmalloc(size_t size) { return malloc(size); }
 

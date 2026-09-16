@@ -10,6 +10,8 @@
 #include "memory/paging.h"
 #include "types.h"
 #include "utils.h"
+
+#include <stdint.h>
 static acpi_madt_t* madt = NULL;
 
 inline static void io_wait(void) { outb(0x80, 0); }
@@ -45,16 +47,11 @@ static void mask_pic()
 
 uint64_t madt_get_lapic_addr()
 {
-  map_page(
-    madt->local_interrupt_controller_address + hhdm_mapping,
-    madt->local_interrupt_controller_address,
-    0b11
-  );
-  klog(
-    "LAPIC at %llx\n",
-    madt->local_interrupt_controller_address + hhdm_mapping
-  );
-  return madt->local_interrupt_controller_address + hhdm_mapping;
+  uint64_t virtual_address =
+    madt->local_interrupt_controller_address + hhdm_mapping;
+  map_page(virtual_address, madt->local_interrupt_controller_address, 0b11);
+  klog("LAPIC at %llx\n", virtual_address);
+  return virtual_address;
 }
 
 void madt_init()
@@ -94,6 +91,7 @@ uint64_t madt_get_ioapic(uint32_t gsi)
     uint32_t current_gsi = MADT_ADDR32(i + 8);
     if (current_gsi != gsi) { continue; }
     uint32_t address = MADT_ADDR32(i + 4);
+
     if (virtual_to_physical(address + hhdm_mapping) == 0)
       {
         map_page(address + hhdm_mapping, address, 0b11);

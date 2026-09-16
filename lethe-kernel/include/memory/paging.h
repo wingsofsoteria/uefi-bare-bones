@@ -8,3 +8,4 @@
 void     unmap_page(uint64_t);
 uint64_t virtual_to_physical(uint64_t);
 void     map_page(uint64_t, uint64_t, uint16_t);
+uint64_t map_page_nearest(uint64_t, uint64_t, uint16_t);

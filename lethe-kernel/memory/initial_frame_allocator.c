@@ -7,12 +7,12 @@
 #include <string.h>
 static frame_allocator_t allocator = { 0 };
 #ifdef KERNEL_USE_LIMINE
-  #define KERNEL_USED 0xA9
+#define KERNEL_USED 0xA9
 
-  // #define DEBUG
-  #ifdef DEBUG
-    #include "log.h"
-  #endif
+// #define DEBUG
+#ifdef DEBUG
+#include "log.h"
+#endif
 static void next_usable()
 {
   struct limine_memmap_response* mmap    = allocator.memory_map;
@@ -20,9 +20,9 @@ static void next_usable()
   for (int i = 0; i < mmap->entry_count; i++)
     {
       struct limine_memmap_entry* entry = entries[i];
-  #ifdef DEBUG
+#ifdef DEBUG
       klog("%llx %llu %llu\n", entry->base, entry->length, entry->type);
-  #endif
+#endif
       if (entry->type == LIMINE_MEMMAP_USABLE)
         {
           entry->type    = KERNEL_USED;
@@ -37,29 +37,29 @@ static void next_usable()
 
 uint64_t allocate_frame()
 {
-  #ifdef DEBUG
+#ifdef DEBUG
   klog("%llx %llu\n", allocator.next.base, allocator.next.length);
-  #endif
+#endif
   if (allocator.next.start)
     {
-  #ifdef DEBUG
+#ifdef DEBUG
       klog("Frame was uninitialized\n");
-  #endif
+#endif
       return 0;
     }
   if (allocator.next.base == 0)
     {
       allocator.next.base   += 4096;
       allocator.next.length -= 4096;
-  #ifdef DEBUG
+#ifdef DEBUG
       klog("Frame base was 0, adjusting to %#llx\n", allocator.next.base);
-  #endif
+#endif
     }
   if (allocator.next.length < 4096)
     {
-  #ifdef DEBUG
+#ifdef DEBUG
       klog("Frame is full, moving to next frame\n");
-  #endif
+#endif
       next_usable();
       return allocate_frame();
     }

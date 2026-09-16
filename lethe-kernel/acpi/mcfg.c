@@ -4,6 +4,7 @@
 #include "acpi/acpi.h"
 #include "config.h"
 #include "log.h"
+#include "memory/paging.h"
 #include "pci/pci.h"
 #include "types.h"
 

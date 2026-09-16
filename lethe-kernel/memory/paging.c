@@ -5,11 +5,12 @@
 #include "types.h"
 #include "utils.h"
 
+#include <stdint.h>
+
 static page_table_t* page_table = NULL;
 // #define DEBUG
-#ifdef DEBUG
-  #include "log.h"
-#endif
+#include "log.h"
+
 uint64_t virtual_to_physical(uint64_t virtual)
 {
   uint16_t p4_index = (virtual >> 12 >> 9 >> 9 >> 9) & 0x1FF;
@@ -133,7 +134,8 @@ void map_page(uint64_t page, uint64_t frame, uint16_t flags)
 #endif
   if (p1->pages[p1_index].present)
     {
-      panic("Page is already mapped\n");
+      klog("Page is already mapped: %llx -> %llx\n", frame, page);
+      panic(" ");
       return;
     }
   set_entry(&p1->pages[p1_index], frame, flags);
@@ -171,6 +173,18 @@ void unmap_page(uint64_t page)
 #endif
   p1->pages[p1_index] = (page_entry_t){ 0 };
   flush_tlb(page);
+}
+
+uint64_t map_page_nearest(uint64_t desired_page, uint64_t frame, uint16_t flags)
+{
+  uint64_t virtual_addr = desired_page;
+  if (virtual_addr == hhdm_mapping || virtual_addr == 0)
+    {
+      virtual_addr += 0x1000;
+    }
+  while (virtual_to_physical(virtual_addr) != 0) { virtual_addr += 0x1000; }
+  map_page(virtual_addr, frame, flags);
+  return virtual_addr;
 }
 
 void init_page_table()

@@ -2,8 +2,11 @@
 
 #include "config.h"
 #include "log.h"
+#include "memory/alloc.h"
+#include "memory/paging.h"
 #include "pci_internal.h"
 #include "stdbool.h"
+#include "stddef.h"
 #include "types.h"
 #include "utils.h"
 
@@ -16,6 +19,75 @@
  * else abort
  * */
 
+struct pci_bus
+{
+  struct pci_device* parent;
+  struct pci_device* dev_list;
+  struct pci_bus*    next;
+  uint8_t            index;
+};
+
+struct pci_device
+{
+  struct pci_device* parent_device;
+  struct pci_bus*    parent_bus;
+  struct pci_device* next;
+  struct pci_device* functions;
+  uint8_t            index;
+};
+
+static struct pci_device* new_device(struct pci_bus* bus, uint8_t index)
+{
+  struct pci_device* device = kmalloc(sizeof(struct pci_device));
+  device->parent_device     = NULL;
+  device->parent_bus        = bus;
+  device->index             = index;
+  device->functions         = NULL;
+  device->next              = bus->dev_list;
+  bus->dev_list             = device;
+  return device;
+}
+
+static struct pci_device* new_function(
+  struct pci_bus*    bus,
+  struct pci_device* device,
+  uint8_t            index
+)
+{
+  struct pci_device* function = kmalloc(sizeof(struct pci_device));
+  function->functions         = NULL;
+  function->parent_device     = device;
+  function->parent_bus        = bus;
+  function->index             = index;
+  function->next              = device->functions;
+  device->functions           = function;
+  return function;
+}
+
+static struct pci_bus* new_bus(struct pci_device* device, uint8_t index)
+{
+  struct pci_bus* bus = kmalloc(sizeof(struct pci_bus));
+  bus->index          = index;
+  bus->dev_list       = NULL;
+  bus->parent         = device;
+  bus->next           = NULL;
+  return bus;
+}
+
+static struct pci_bus* root_bus()
+{
+  static struct pci_bus* root = NULL;
+  if (root == NULL) { root = new_bus(NULL, 0); }
+  return root;
+}
+
+static struct pci_device* root_device()
+{
+  static struct pci_device* root = NULL;
+  if (root == NULL) { root = new_device(root_bus(), 0); }
+  return root;
+}
+
 static uint32_t get_pci_device_register(
   uint64_t bus,
   uint8_t  device,
@@ -24,8 +96,8 @@ static uint32_t get_pci_device_register(
 )
 {
   uint32_t value;
-  if (bus > 255) // I only really need mmio accesses for segment group > 1 (eg
-                 // bus > 255)
+  if (kernel_config.has_mcfg) // I only really need mmio accesses for segment
+                              // group > 1 (eg bus > 255)
     {
       uint64_t ecam_base_addr = get_mmio_ecam_addr(bus);
       uint64_t physical_address =
@@ -70,49 +142,58 @@ static struct pci_device_descriptor get_device_descriptor(
   return pci_device;
 }
 
-static void check_function(struct pci_device_descriptor);
+static void check_function(struct pci_device*, struct pci_device_descriptor);
 
-static void check_device(uint8_t bus, uint8_t device)
+static void check_device(struct pci_bus* bus, uint8_t device)
 {
-  uint32_t register_0 = get_pci_device_register(bus, device, 0, 0);
+  uint32_t register_0 = get_pci_device_register(bus->index, device, 0, 0);
   uint16_t vendor_id  = register_0 & 0xFFFF;
   if (vendor_id == 0xFFFF) return;
   klog(
     "got device at bus %d device %d function 0: %0.8x\n",
-    bus,
+    bus->index,
     device,
     register_0
   );
-  struct pci_device_descriptor desc = get_device_descriptor(bus, device, 0);
-  check_function(desc);
+  struct pci_device*           self = new_device(bus, device);
+  struct pci_device_descriptor desc =
+    get_device_descriptor(bus->index, device, 0);
+  check_function(self, desc);
   uint8_t header_type = desc.registers[3].bits_8.upper_mid;
   if (header_type & 0x80)
     {
       klog("device is multi-function\n");
       for (int function = 1; function < 8; function++)
         {
-          desc      = get_device_descriptor(bus, device, function);
+          desc      = get_device_descriptor(bus->index, device, function);
           vendor_id = desc.registers[0].bits_16.lower;
           if (vendor_id == 0xFFFF) continue;
-
+          struct pci_device* func = new_function(bus, self, function);
           klog(
             "got device at bus %d device %d function %d: %0.8x\n",
-            bus,
+            bus->index,
             device,
             function,
             desc.registers[0].bits_32
           );
-          check_function(desc);
+          check_function(func, desc);
         }
     }
 }
 
-static void check_bus(uint8_t bus)
+static void check_bus(struct pci_device* parent, uint8_t bus)
 {
-  for (int device = 0; device < 32; device++) { check_device(bus, device); }
+  struct pci_bus* bus_structure = new_bus(parent, bus);
+  for (int device = 0; device < 32; device++)
+    {
+      check_device(bus_structure, device);
+    }
 }
 
-static void check_function(struct pci_device_descriptor desc)
+static void check_function(
+  struct pci_device*           self,
+  struct pci_device_descriptor desc
+)
 {
   uint8_t base_class = desc.registers[2].bits_8.upper;
   uint8_t sub_class  = desc.registers[2].bits_8.upper_mid;
@@ -121,7 +202,7 @@ static void check_function(struct pci_device_descriptor desc)
     {
       uint8_t secondary_bus = desc.registers[6].bits_8.lower_mid;
       klog("got secondary bus %d\n", secondary_bus);
-      check_bus(secondary_bus);
+      check_bus(self, secondary_bus);
     }
 }
 
@@ -136,17 +217,19 @@ static void scan_pci_space()
           desc               = get_device_descriptor(0, 0, i);
           uint16_t vendor_id = desc.registers[0].bits_16.lower;
           if (vendor_id == 0xFFFF) break;
+          struct pci_device* function =
+            new_function(root_bus(), root_device(), i);
           klog(
             "got device at bus 0 device 0 function %x: %0.8x\n",
             i,
             desc.registers[0].bits_32
           );
-          check_bus(i);
+          check_bus(function, i);
         }
     }
   else
     {
-      check_bus(0);
+      check_bus(root_device(), 0);
     }
 }
 

@@ -124,7 +124,6 @@ __attribute__((
   .revision = 0
 };
 
-
 // NOLINTNEXTLINE
 void* kernel_file_address;
 // NOLINTNEXTLINE
@@ -167,7 +166,14 @@ int kmain()
     framebuffer->height
   );
   klog("TSC: %d\n", kernel_config.timers.tsc_freq_khz);
-  klog("Kernel offset set to %llx\n", hhdm_mapping);
+  klog(
+    "Kernel offsets\nHHDM Start %llx\nKernel Mapping %p - %p\nKernel Size: "
+    "%td\n",
+    hhdm_mapping,
+    &_kernel_start_addr,
+    &_kernel_end_addr,
+    &_kernel_end_addr - &_kernel_start_addr
+  );
   setup_allocator(memmap_request.response);
   kernel_init_code();
   init_config_cpuid();
