@@ -46,11 +46,15 @@ static void mask_pic()
 uint64_t madt_get_lapic_addr()
 {
   map_page(
-    madt->local_interrupt_controller_address,
+    madt->local_interrupt_controller_address + hhdm_mapping,
     madt->local_interrupt_controller_address,
     0b11
   );
-  return madt->local_interrupt_controller_address;
+  klog(
+    "LAPIC at %llx\n",
+    madt->local_interrupt_controller_address + hhdm_mapping
+  );
+  return madt->local_interrupt_controller_address + hhdm_mapping;
 }
 
 void madt_init()
