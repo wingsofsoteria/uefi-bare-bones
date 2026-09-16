@@ -4,7 +4,6 @@
 
 #include "acpi.h"
 #include "acpi/pic.h"
-#include "types.h"
 
 #include <stdint.h>
 
@@ -20,8 +19,8 @@ static void write_ioapic(
 
 static uint32_t read_ioapic(uint64_t ioregsel, const uint8_t offset)
 {
-  *(volatile uint32_t*)(ioregsel + hhdm_mapping) = offset;
-  return *(volatile uint32_t*)(ioregsel + 0x10 + hhdm_mapping);
+  *(volatile uint32_t*)(ioregsel) = offset;
+  return *(volatile uint32_t*)(ioregsel + 0x10);
 }
 
 static void set_redirection_table_entry(
@@ -40,7 +39,7 @@ static void set_redirection_table_entry(
 
 void ioapic_disable_irq(int irq)
 {
-  uint32_t                          register_selector = madt_get_ioapic(0);
+  uint64_t                          register_selector = madt_get_ioapic(0);
   madt_interrupt_source_override_t* interrupt_overrides =
     madt_get_override_for_irq(irq);
   uint32_t pin = 0x10 + (irq * 2);
@@ -53,7 +52,7 @@ void ioapic_disable_irq(int irq)
 
 void ioapic_enable_irq(int irq, int vector)
 {
-  uint32_t                          register_selector = madt_get_ioapic(0);
+  uint64_t                          register_selector = madt_get_ioapic(0);
   madt_interrupt_source_override_t* interrupt_overrides =
     madt_get_override_for_irq(irq);
   ioapic_redtbl_t redirection_table;

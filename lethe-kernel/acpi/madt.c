@@ -8,6 +8,7 @@
 #include "config.h"
 #include "log.h"
 #include "memory/paging.h"
+#include "types.h"
 #include "utils.h"
 static acpi_madt_t* madt = NULL;
 
@@ -80,7 +81,7 @@ madt_interrupt_source_override_t* madt_get_override_for_irq(uint8_t irq)
   return NULL;
 }
 
-uint32_t madt_get_ioapic(uint32_t gsi)
+uint64_t madt_get_ioapic(uint32_t gsi)
 {
   MADT_LOOP
   {
@@ -89,9 +90,12 @@ uint32_t madt_get_ioapic(uint32_t gsi)
     uint32_t current_gsi = MADT_ADDR32(i + 8);
     if (current_gsi != gsi) { continue; }
     uint32_t address = MADT_ADDR32(i + 4);
-    if (virtual_to_physical(address) == 0) { map_page(address, address, 0b11); }
-    klog("IOAPIC at %x\n", address);
-    return address;
+    if (virtual_to_physical(address + hhdm_mapping) == 0)
+      {
+        map_page(address + hhdm_mapping, address, 0b11);
+      }
+    klog("IOAPIC at %llx\n", address + hhdm_mapping);
+    return address + hhdm_mapping;
   }
 
   panic("No IO APIC found\n");
