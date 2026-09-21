@@ -25,6 +25,10 @@ union pci_register
 
 struct pci_device_descriptor
 {
+  uint64_t           ecam_base_addr;
+  uint8_t            bus;
+  uint8_t            device;
+  uint8_t            function;
   union pci_register registers[0x12];
 };
 
