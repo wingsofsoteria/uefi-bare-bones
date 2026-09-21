@@ -4,6 +4,7 @@
 #include "cpu/isr.h"
 #include "cpu/sleep.h"
 #include "memory/alloc.h"
+#include "queue.h"
 #include "utils.h"
 
 #include <assert.h>
@@ -15,44 +16,13 @@
 static task_t* current = NULL;
 static task_t* kernel  = NULL;
 
-static int           TASK_COUNT;
-static task_queue_t* LIVE_QUEUE = NULL;
-static task_queue_t* IDLE_QUEUE = NULL;
+static int      TASK_COUNT;
+static queue_t* LIVE_QUEUE = NULL;
+static queue_t* IDLE_QUEUE = NULL;
 
 static void idle()
 {
   while (1) { asm volatile("hlt"); }
-}
-
-static void push_queue(task_queue_t* queue, task_t* task)
-{
-  if (((queue->head + 1) % queue->capacity) == queue->tail)
-    {
-      return; // queue is full
-    }
-  queue->_inner[queue->tail] = task;
-  queue->tail                = (queue->tail + 1) % queue->capacity;
-}
-
-static task_t* pop_queue(task_queue_t* queue)
-{
-  if (queue->head == queue->tail) { return kernel; }
-  task_t* task = queue->_inner[queue->head];
-  queue->head  = (queue->head + 1) % queue->capacity;
-  if (task == NULL) { return pop_queue(queue); }
-  return task;
-}
-
-static task_queue_t* new_queue()
-{
-  task_queue_t* queue = kmalloc(sizeof(task_queue_t));
-  assert(queue != NULL);
-  queue->head     = 0;
-  queue->tail     = 0;
-  queue->capacity = TASK_QUEUE_SIZE;
-  queue->_inner   = kmalloc(queue->capacity * sizeof(task_t*));
-
-  return queue;
 }
 
 int get_task_id() { return current->task_id; }
@@ -111,7 +81,7 @@ void switch_task(isr_stack_t* ctx)
   ctx = copy_ctx(ctx, current->ctx);
 }
 
-static task_t* remove_task(task_queue_t* queue, int id)
+static task_t* remove_task(queue_t* queue, int id)
 {
   if (id == 0) // id is 0 for the kernel / idle task so we never want to remove
                // that on accident
@@ -120,7 +90,7 @@ static task_t* remove_task(task_queue_t* queue, int id)
     }
   for (int i = 0; i < queue->capacity; i++)
     {
-      if (queue->_inner[i]->task_id != id) { continue; }
+      if (((task_t*)queue->_inner[i])->task_id != id) { continue; }
       task_t* task     = queue->_inner[i];
       queue->_inner[i] = NULL;
       return task;

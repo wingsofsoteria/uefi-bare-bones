@@ -1,7 +1,6 @@
 #pragma once
 #include <cpu/idt.h>
 #include <stdint.h>
-#define TASK_QUEUE_SIZE 10
 
 typedef void (*task_function)(void*);
 
@@ -13,15 +12,6 @@ typedef struct
   int          task_id;
   uint64_t     deadline;
 } task_t;
-
-typedef struct
-{
-  task_t** _inner;
-  int      head;
-  int      tail;
-  int      capacity;
-
-} task_queue_t;
 
 void create_task(task_function, void*);
 

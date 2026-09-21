@@ -184,7 +184,6 @@ int kmain()
   enable_apic();
   enable_interrupts();
   acpi_late_init();
-  klog("%p", test_usermode);
   init_pci();
   init_shell();
   while (kernel_config.kexit == 0) { asm volatile("hlt"); }

@@ -36,9 +36,9 @@ file(CREATE_LINK
   SYMBOLIC
 )
 #ADD_SUBDIRECTORY(lethe-aml)
-ADD_SUBDIRECTORY(lethe-aml/third_party)
+ADD_SUBDIRECTORY(lethe-utils)
+INCLUDE_DIRECTORIES(lethe-utils/include)
 ADD_SUBDIRECTORY(lethe-aml/aml)
-TARGET_INCLUDE_DIRECTORIES(fnv PRIVATE lethe-aml/aml/include)
 ADD_SUBDIRECTORY(lethe-kernel)
 ADD_SUBDIRECTORY(lethe-bootloaders)
 TARGET_INCLUDE_DIRECTORIES(acpi PRIVATE lethe-aml/aml/include)
