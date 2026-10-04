@@ -2,6 +2,7 @@
 
 #include "initial_frame_allocator.h"
 #include "paging_internal.h"
+#include "stddef.h"
 #include "types.h"
 #include "utils.h"
 
@@ -81,13 +82,35 @@ static void set_entry(page_entry_t* entry, uint64_t address, uint16_t flags)
   entry->write_through   = (flags & 0x8) >> 3;
   entry->cache_disable   = (flags & 0x10) >> 4;
   entry->accessed        = (flags & 0x20) >> 5;
-  entry->unused_1        = 0;
+  entry->unused_1        = 1;
   entry->page_size       = (flags & 0x40) >> 6;
   entry->unused_2        = 0;
   entry->address         = (address >> 12);
   entry->unused_3        = 0;
   entry->execute_disable = (flags & 0x80) >> 7;
 }
+
+static page_entry_t get_entry(uint64_t page)
+{
+  uint16_t p4_index    = (page >> 12 >> 9 >> 9 >> 9) & 0x1FF;
+  uint16_t p3_index    = (page >> 12 >> 9 >> 9) & 0x1FF;
+  uint16_t p2_index    = (page >> 12 >> 9) & 0x1FF;
+  uint16_t p1_index    = (page >> 12) & 0x1FF;
+  uint64_t p3_physical = page_table->pages[p4_index].address << 12;
+  if (p3_physical == 0) { return (page_entry_t){ 0 }; }
+  page_table_t* p3          = (void*)(p3_physical + hhdm_mapping);
+  uint64_t      p2_physical = p3->pages[p3_index].address << 12;
+  if (p2_physical == 0) { return (page_entry_t){ 0 }; }
+  page_table_t* p2          = (void*)(p2_physical + hhdm_mapping);
+  uint64_t      p1_physical = p2->pages[p2_index].address << 12;
+  if (p1_physical == 0) { return (page_entry_t){ 0 }; }
+  page_table_t* p1         = (void*)(p1_physical + hhdm_mapping);
+  uint64_t      page_entry = p1->pages[p1_index].address << 12;
+  if (page_entry == 0) { return (page_entry_t){ 0 }; }
+  return p1->pages[p1_index];
+}
+
+static int is_free(uint64_t virtual) { return !get_entry(virtual).unused_1; }
 
 static void __allocate_entry(
   page_table_t* table,
@@ -173,6 +196,51 @@ void unmap_page(uint64_t page)
 #endif
   p1->pages[p1_index] = (page_entry_t){ 0 };
   flush_tlb(page);
+}
+
+static uint64_t get_free_region(uint64_t start, uint64_t num_pages)
+{
+  uint64_t virtual;
+  int      found_region = 1;
+  uint64_t search_start = start;
+  while (true)
+    {
+      ALIGN_UP(search_start, PAGE_SIZE);
+      virtual      = search_start;
+      found_region = 1;
+      for (int i = 0; i < num_pages; i++)
+        {
+          int free = is_free(virtual);
+          virtual += PAGE_SIZE;
+          if (!free)
+            {
+              found_region = 0;
+              search_start = virtual;
+              break;
+            }
+        }
+      if (found_region) { return search_start; }
+    }
+  return UINT64_MAX;
+}
+
+uint64_t map_contiguous_pages(
+  uint64_t desired_start,
+  uint64_t physical_start,
+  uint64_t num_pages,
+  uint16_t flags
+)
+{
+  uint64_t virtual  = get_free_region(desired_start, num_pages);
+  uint64_t copy     = virtual;
+  uint64_t physical = physical_start;
+  for (int i = 0; i < num_pages; i++)
+    {
+      map_page(virtual, physical, flags);
+      virtual  += PAGE_SIZE;
+      physical += PAGE_SIZE;
+    }
+  return copy;
 }
 
 uint64_t map_page_nearest(uint64_t desired_page, uint64_t frame, uint16_t flags)
