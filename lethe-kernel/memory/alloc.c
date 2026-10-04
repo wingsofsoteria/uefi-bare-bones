@@ -3,6 +3,7 @@
 #include "initial_frame_allocator.h"
 #include "liballoc.h"
 #include "list_allocator.h"
+#include "loaders/limine.h"
 #include "memory/paging.h"
 #include "paging_internal.h"
 #include "stdio.h"
@@ -45,9 +46,10 @@ void setup_allocator(struct limine_memmap_response* memory_map)
     {
       uint64_t frame = allocate_frame();
       if (frame == 0) { panic("Out of Memory"); }
-      map_page(i, frame, 0b11);
+      map_page(i, frame, PAGE_WRITABLE | PAGE_PRESENT);
     }
   set_heap_end(heap_start + heap_size);
   add_region(heap_start, heap_size / PAGE_SIZE);
 }
+
 #endif

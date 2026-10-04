@@ -11,7 +11,7 @@ static list_allocator_t allocator = { 0 };
 static uint64_t         heap_end  = 0;
 // #define DEBUG
 #ifdef DEBUG
-  #include "log.h"
+#include "log.h"
 #endif
 // NOLINTNEXTLINE
 void set_heap_end(uint64_t val) { heap_end = val; }
@@ -27,7 +27,7 @@ static void increase_heap_size(int pages)
     {
       uint64_t frame = allocate_frame();
       if (frame == 0) { panic("Out of Memory\n"); }
-      map_page(i, frame, 0b11);
+      map_page(i, frame, PAGE_WRITABLE | PAGE_PRESENT);
     }
   heap_end = new_heap_end;
   add_region(heap_start, pages);
