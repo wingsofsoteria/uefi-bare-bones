@@ -107,10 +107,8 @@ isr_stack_t* exception_handler(isr_stack_t* stack)
         }
       case 13:
         {
-          printf(
-            "===GENERAL PROTECTION FAULT===\n\tError Code: %lu",
-            stack->err
-          );
+          printf("\nGeneral Protection Fault\n");
+          dump_stack(stack);
           halt();
         }
       case 14:
