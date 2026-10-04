@@ -1,23 +1,17 @@
 #include "terminal/pixel.h"
 
+#include "loaders/limine.h"
+#include "log.h"
+#include "stdbool.h"
 #include "terminal/tty.h"
+
+#include <stdint.h>
 
 static uint64_t fb_base;
 static uint32_t fb_pitch;
 static int      fb_yres;
 static int      fb_xres;
-
-void init_fb(uint64_t base, uint32_t pitch, int x, int y)
-{
-  if (base == 0)
-    {
-      for (;;) {}
-    }
-  fb_base  = base;
-  fb_pitch = pitch;
-  fb_xres  = x;
-  fb_yres  = y;
-}
+static bool     initialized = false;
 
 void test_pixels()
 {
@@ -34,6 +28,7 @@ void test_pixels()
 
 void fill(int start_x, int start_y, int width, int height, uint32_t color)
 {
+  if (!initialized) return;
   for (int x = start_x; x < start_x + width; x++)
     {
       for (int y = start_y; y < start_y + height; y++)
@@ -50,4 +45,19 @@ void clear_screen()
 }
 
 void put_pixel(int x, int y, uint32_t color)
-{ *(uint32_t*)(fb_base + (fb_pitch * y) + (4 * x)) = color; }
+{
+  if (!initialized) return;
+  *(uint32_t*)(fb_base + (fb_pitch * y) + (4 * x)) = color;
+}
+
+void init_fb(void* data)
+{
+  struct limine_framebuffer_response* ptr = data;
+  klog("ptr: %p %p\n", ptr, ptr->framebuffers);
+  fb_base     = (uint64_t)ptr->framebuffers[0]->address;
+  fb_pitch    = ptr->framebuffers[0]->pitch;
+  fb_xres     = ptr->framebuffers[0]->width;
+  fb_yres     = ptr->framebuffers[0]->height;
+  initialized = true;
+}
+

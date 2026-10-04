@@ -1,13 +1,10 @@
 #include "pci/pci.h"
 
-#include "config.h"
 #include "log.h"
 #include "memory/alloc.h"
-#include "memory/paging.h"
 #include "pci_internal.h"
 #include "stdbool.h"
 #include "stddef.h"
-#include "types.h"
 #include "utils.h"
 
 #include <stdint.h>
@@ -19,23 +16,6 @@
  * else if UEFI PCI bus support protocol is present; goto mechanism #1
  * else abort
  * */
-
-struct pci_bus
-{
-  struct pci_device* parent;
-  struct pci_device* dev_list;
-  struct pci_bus*    next;
-  uint8_t            index;
-};
-
-struct pci_device
-{
-  struct pci_device_descriptor* descriptor;
-  struct pci_device*            parent_device;
-  struct pci_bus*               parent_bus;
-  struct pci_device*            next;
-  struct pci_device*            functions;
-};
 
 static struct pci_device* new_device(
   struct pci_bus*               bus,
@@ -108,28 +88,14 @@ static uint32_t get_pci_device_register(
   uint8_t  reg
 )
 {
-  uint32_t value;
-  if (bus > 255) // I only really need mmio accesses for segment
-                 // group > 1 (eg bus > 255)
-    {
-      uint64_t ecam_base_addr = get_mmio_ecam_addr(bus);
-      uint64_t physical_address =
-        ecam_base_addr + (bus << 20 | device << 15 | function << 12);
-      void* configuration_space = (void*)(physical_address + hhdm_mapping);
-      value = *(volatile uint32_t*)(configuration_space + (reg * 4));
-    }
-  else
-    {
-      uint32_t lbus      = (uint32_t)bus;
-      uint32_t ldevice   = (uint32_t)device;
-      uint32_t lfunction = (uint32_t)function;
-      uint8_t  offset    = reg * 4;
-      uint32_t address = (uint32_t)(lbus << 16 | ldevice << 11 |
-                                    lfunction << 8 | (offset & 0xFC) | 1 << 31);
-      outl(CONFIG_ADDRESS, address);
-      value = inl(CONFIG_DATA);
-    }
-  return value;
+  uint32_t lbus      = (uint32_t)bus;
+  uint32_t ldevice   = (uint32_t)device;
+  uint32_t lfunction = (uint32_t)function;
+  uint8_t  offset    = reg * 4;
+  uint32_t address   = (uint32_t)(lbus << 16 | ldevice << 11 | lfunction << 8 |
+                                  (offset & 0xFC) | 1 << 31);
+  outl(CONFIG_ADDRESS, address);
+  return inl(CONFIG_DATA);
 }
 
 static struct pci_device_descriptor* get_device_descriptor(
@@ -140,10 +106,9 @@ static struct pci_device_descriptor* get_device_descriptor(
 {
   struct pci_device_descriptor* pci_device =
     kmalloc(sizeof(struct pci_device_descriptor));
-  pci_device->bus            = bus;
-  pci_device->device         = device;
-  pci_device->function       = function;
-  pci_device->ecam_base_addr = get_mmio_ecam_addr(bus);
+  pci_device->bus      = bus;
+  pci_device->device   = device;
+  pci_device->function = function;
   for (int i = 0; i < 0x10; i++)
     {
       pci_device->registers[i].bits_32 =
@@ -212,40 +177,46 @@ static void debug_function(struct pci_device* device)
   if (!device) return;
   printf(
     "\t\tFunction\n\t\t\tBus %d\n\t\t\tDevice %d\n\t\t\tFunction %d\n\t\t\tId: "
-    "%0.4x:%0.4x\n",
+    "%0.4x:%0.4x\n\t\t\tClass %0.4x:%0.4x\n\t\t\tHeader %0.1d\n",
     device->descriptor->bus,
     device->descriptor->device,
     device->descriptor->function,
     device->descriptor->registers[0].bits_16.upper,
-    device->descriptor->registers[0].bits_16.lower
+    device->descriptor->registers[0].bits_16.lower,
+    device->descriptor->registers[2].bits_16.upper,
+    device->descriptor->registers[2].bits_16.lower,
+    device->descriptor->registers[3].bits_8.upper_mid & 0x7F
   );
   debug_function(device->next);
 }
 
-static void debug_device(struct pci_device* device)
+static void debug_device(struct pci_device* device, int once)
 {
   if (!device) return;
   printf(
     "\tDevice\n\t\tBus %d\n\t\tDevice %d\n\t\tFunction %d\n\t\tId: "
-    "%0.4x:%0.4x\n",
+    "%0.4x:%0.4x\n\t\tClass %0.4x:%0.4x\n\t\tHeader %0.1d\n",
     device->descriptor->bus,
     device->descriptor->device,
     device->descriptor->function,
     device->descriptor->registers[0].bits_16.upper,
-    device->descriptor->registers[0].bits_16.lower
+    device->descriptor->registers[0].bits_16.lower,
+    device->descriptor->registers[2].bits_16.upper,
+    device->descriptor->registers[2].bits_16.lower,
+    device->descriptor->registers[3].bits_8.upper_mid & 0x7F
   );
   debug_function(device->functions);
-  debug_device(device->next);
+  if (!once) debug_device(device->next, 0);
 }
 
 static void debug_bus(struct pci_bus* bus)
 {
   if (!bus) return;
-  debug_device(bus->dev_list);
+  debug_device(bus->dev_list, 0);
   debug_bus(bus->next);
 }
 
-static void debug_pci() { debug_bus(root_bus()); }
+void debug_pci() { debug_bus(root_bus()); }
 
 static void scan_pci_space()
 {
@@ -267,7 +238,96 @@ static void scan_pci_space()
     {
       for (int i = 0; i < 32; i++) { check_device(root_bus(), i); }
     }
-  debug_pci();
+}
+
+static struct pci_device* search_bus_for_match(
+  struct pci_device* device,
+  int                register_number,
+  uint32_t           compare_value,
+  uint32_t           register_mask
+)
+{
+  if (!device) return NULL;
+  uint32_t actual_value =
+    device->descriptor->registers[register_number].bits_32 & register_mask;
+  klog(
+    "A: %x M: %x C: %x\n",
+    device->descriptor->registers[register_number].bits_32,
+    actual_value,
+    compare_value
+  );
+  if (actual_value == compare_value) return device;
+  void* ptr = search_bus_for_match(
+    device->functions,
+    register_number,
+    compare_value,
+    register_mask
+  );
+  if (ptr) return ptr;
+  return search_bus_for_match(
+    device->next,
+    register_number,
+    compare_value,
+    register_mask
+  );
+}
+
+static struct pci_device* search_for_match(
+  struct pci_bus* bus,
+  int             register_number,
+  uint32_t        compare_value,
+  uint32_t        register_mask
+)
+{
+  if (!bus) return NULL;
+  struct pci_device* device = search_bus_for_match(
+    bus->dev_list,
+    register_number,
+    compare_value,
+    register_mask
+  );
+  if (!device)
+    return search_for_match(
+      bus->next,
+      register_number,
+      compare_value,
+      register_mask
+    );
+  return device;
+}
+
+void* locate_pci_device(uint32_t class_code, uint32_t sub_class_code)
+{
+  int      register_number = 0x2;
+  uint32_t compare_value   = class_code << 24 | sub_class_code << 16;
+  uint32_t register_mask   = 0xFFFF0000;
+  compare_value           &= register_mask;
+  return search_for_match(
+    root_bus(),
+    register_number,
+    compare_value,
+    register_mask
+  );
+}
+
+bool pci_compare_value(
+  void*    handle,
+  int      register_number,
+  uint32_t value,
+  uint32_t mask
+)
+{
+  if (!handle) return false;
+  struct pci_device* device = (struct pci_device*)handle;
+  uint32_t           actual_value =
+    device->descriptor->registers[register_number].bits_32 & mask;
+  return value == actual_value;
+}
+
+uint32_t get_register_value(void* handle, int register_number)
+{
+  if (!handle) return 0;
+  return ((struct pci_device*)handle)->descriptor->registers[register_number].bits_32;
 }
 
 bool init_pci()
