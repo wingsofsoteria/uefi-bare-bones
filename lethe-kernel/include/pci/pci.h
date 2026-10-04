@@ -4,41 +4,14 @@
 
 #include <stdint.h>
 
-union pci_register
-{
-  struct
-  {
-    uint16_t lower;
-    uint16_t upper;
-  } __attribute__((packed)) bits_16;
+void* get_mmio_ecam_addr(uint16_t group, uint8_t bus);
+bool  init_pci();
+void* locate_pci_device(uint32_t class, uint32_t sub_class);
+bool  pci_compare_value(
+  void*    handle,
+  int      register_number,
+  uint32_t value,
+  uint32_t mask
+);
 
-  struct
-  {
-    uint8_t lower;
-    uint8_t lower_mid;
-    uint8_t upper_mid;
-    uint8_t upper;
-  } __attribute((packed)) bits_8;
-
-  uint32_t bits_32;
-};
-
-struct pci_device_descriptor
-{
-  uint64_t           ecam_base_addr;
-  uint8_t            bus;
-  uint8_t            device;
-  uint8_t            function;
-  union pci_register registers[0x12];
-};
-
-struct pci_device_pointer
-{
-  uint64_t ecam_base_addr;
-  uint8_t  bus;
-  uint8_t  device;
-  uint8_t  function;
-};
-
-uint64_t get_mmio_ecam_addr(uint8_t bus);
-bool     init_pci();
+uint32_t get_register_value(void* handle, int register_number);
