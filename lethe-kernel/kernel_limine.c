@@ -1,5 +1,4 @@
 #include "acpi/acpi.h"
-#include "kernel.h"
 #include "memory/alloc.h"
 #include "stdbool.h"
 #include "stddef.h"
@@ -15,13 +14,12 @@
     0xFAB91A6940FCB9CF,              \
     0x785C6ED015D3E316,              \
     0x181E920A7852B9D9 }
-// NOLINTBEGIN
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
 
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile struct limine_framebuffer_request framebuffer_request = {
@@ -29,7 +27,7 @@ __attribute__((
   .revision = 0,
 };
 
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile struct limine_memmap_request memmap_request = {
@@ -37,7 +35,7 @@ __attribute__((
   .revision = 0,
 };
 
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile struct limine_hhdm_request hhdm_request = {
@@ -45,7 +43,7 @@ __attribute__((
   .revision = 0,
 };
 
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile struct limine_paging_mode_request paging_mode_request = {
@@ -56,7 +54,7 @@ __attribute__((
   .min_mode = LIMINE_PAGING_MODE_X86_64_4LVL,
 };
 
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile struct limine_rsdp_request rsdp_request = {
@@ -64,7 +62,7 @@ __attribute__((
   .revision = 0,
 };
 
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile struct limine_executable_file_request executable_request = {
@@ -72,7 +70,7 @@ __attribute__((
   .revision = 0,
 };
 
-__attribute__((
+static __attribute__((
   used,
   section(".limine_requests")
 )) volatile struct limine_tsc_frequency_request tsc_frequency = {
@@ -83,8 +81,8 @@ __attribute__((
 #define LIMINE_REQUESTS_END_MARKER { 0xADC0E0531BB10D03, 0x9572709F31764C62 }
 
 uint64_t hhdm_mapping = 0;
+// NOLINTNEXTLINE
 void*    kernel_file_address;
-// NOLINTEND
 
 static void feature_check()
 {
@@ -119,6 +117,7 @@ static void feature_check()
   kernel_file_address = executable_request.response->executable_file->address;
 }
 
+// NOLINTNEXTLINE
 void bootloader_specific_init()
 {
   feature_check();

@@ -1,4 +1,3 @@
-#include "kernel.h"
 
 #include "cpu/tss.h"
 #include "pci/pci.h"
