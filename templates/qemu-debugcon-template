@@ -11,6 +11,9 @@ qemu-system-x86_64 \
 -device pcie-root-port \
 -device pcie-pci-bridge \
 -device qemu-xhci \
+-device ahci,id=ahci \
+-device ide-hd,drive=disk,bus=ahci.0 \
+-drive if=none,format=raw,file=@LETHE_COPY_FILE@,id=disk \
 -drive if=pflash,format=raw,readonly=on,unit=0,file=@LETHE_TEST_FW_CODE@ \
 -drive if=pflash,format=raw,readonly=on,unit=1,file=@LETHE_TEST_FW_VAR@ \
 -drive file=@LETHE_OUTPUT_FILE@ \

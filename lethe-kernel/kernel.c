@@ -55,6 +55,7 @@ static void common_init_start()
   init_config_cpuid();
 }
 
+extern void init_ahci();
 extern void bootloader_specific_init();
 // NOLINTNEXTLINE
 int kmain()
@@ -78,6 +79,7 @@ int kmain()
   enable_interrupts();
   acpi_late_init();
   init_pci();
+  init_ahci();
   init_shell();
   while (kernel_config.kexit == 0) { asm volatile("hlt"); }
 

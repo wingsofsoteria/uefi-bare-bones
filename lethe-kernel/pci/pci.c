@@ -244,7 +244,8 @@ static struct pci_device* search_bus_for_match(
   struct pci_device* device,
   int                register_number,
   uint32_t           compare_value,
-  uint32_t           register_mask
+  uint32_t           register_mask,
+  uint32_t*          skip_count
 )
 {
   if (!device) return NULL;
@@ -256,19 +257,29 @@ static struct pci_device* search_bus_for_match(
     actual_value,
     compare_value
   );
-  if (actual_value == compare_value) return device;
+  if (actual_value == compare_value)
+    {
+      if (!(*skip_count)) { return device; }
+      (*skip_count)--;
+    }
   void* ptr = search_bus_for_match(
     device->functions,
     register_number,
     compare_value,
-    register_mask
+    register_mask,
+    skip_count
   );
-  if (ptr) return ptr;
+  if (ptr)
+    {
+      if (!(*skip_count)) { return ptr; }
+      (*skip_count)--;
+    }
   return search_bus_for_match(
     device->next,
     register_number,
     compare_value,
-    register_mask
+    register_mask,
+    skip_count
   );
 }
 
@@ -276,7 +287,8 @@ static struct pci_device* search_for_match(
   struct pci_bus* bus,
   int             register_number,
   uint32_t        compare_value,
-  uint32_t        register_mask
+  uint32_t        register_mask,
+  uint32_t*       skip_count
 )
 {
   if (!bus) return NULL;
@@ -284,19 +296,25 @@ static struct pci_device* search_for_match(
     bus->dev_list,
     register_number,
     compare_value,
-    register_mask
+    register_mask,
+    skip_count
   );
   if (!device)
     return search_for_match(
       bus->next,
       register_number,
       compare_value,
-      register_mask
+      register_mask,
+      skip_count
     );
   return device;
 }
 
-void* locate_pci_device(uint32_t class_code, uint32_t sub_class_code)
+void* locate_pci_device(
+  uint32_t class_code,
+  uint32_t sub_class_code,
+  uint32_t skip_count
+)
 {
   int      register_number = 0x2;
   uint32_t compare_value   = class_code << 24 | sub_class_code << 16;
@@ -306,7 +324,8 @@ void* locate_pci_device(uint32_t class_code, uint32_t sub_class_code)
     root_bus(),
     register_number,
     compare_value,
-    register_mask
+    register_mask,
+    &skip_count
   );
 }
 

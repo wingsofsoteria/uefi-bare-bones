@@ -8,9 +8,12 @@
   #define KERNEL_START 0xFFFF800000000000
 #endif
 */
-#define ALIGN_UP(x, a)   ((x + a - 1) & ~(a - 1))
-#define ALIGN_DOWN(x, a) (x & ~a)
-#define PAGE_ALIGN(x)    (x & ~4096)
+#define ALIGN_UP(x, a)     ((x + a - 1) & ~(a - 1))
+#define ALIGN_DOWN(x, a)   (x & ~a)
+#define PAGE_ALIGN(x)      (x & ~4096)
+#define IS_ALIGNED(x, a)   ((x & (a - 1)) == 0)
+#define IS_PAGE_ALIGNED(x) IS_ALIGNED(x, PAGE_SIZE)
+
 extern uint64_t hhdm_mapping;
 extern int      _kernel_end_addr;
 extern int      _kernel_start_addr;
