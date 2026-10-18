@@ -1,5 +1,6 @@
 #include "pci/pci.h"
 
+#include "cpu/sleep.h"
 #include "log.h"
 #include "memory/alloc.h"
 #include "pci_internal.h"
@@ -7,6 +8,7 @@
 #include "stddef.h"
 #include "utils.h"
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -81,19 +83,47 @@ static struct pci_device* root_device()
   return root;
 }
 
-static uint32_t get_pci_device_register(
-  uint64_t bus,
+static uint32_t get_pci_device_address(
+  uint8_t  bus,
   uint8_t  device,
   uint8_t  function,
-  uint8_t  reg
+  uint32_t reg
 )
 {
   uint32_t lbus      = (uint32_t)bus;
   uint32_t ldevice   = (uint32_t)device;
   uint32_t lfunction = (uint32_t)function;
-  uint8_t  offset    = reg * 4;
-  uint32_t address   = (uint32_t)(lbus << 16 | ldevice << 11 | lfunction << 8 |
-                                  (offset & 0xFC) | 1 << 31);
+  uint32_t loffset   = reg * 4;
+  return (
+    lbus << 16 | ldevice << 11 | lfunction << 8 | (loffset & 0xFC) | 1 << 31
+  );
+}
+
+static uint32_t get_pci_device_register(
+  uint8_t  bus,
+  uint8_t  device,
+  uint8_t  function,
+  uint32_t reg
+)
+{
+  uint32_t address = get_pci_device_address(bus, device, function, reg);
+  outl(CONFIG_ADDRESS, address);
+  return inl(CONFIG_DATA);
+}
+
+static uint32_t set_pci_device_register(
+  uint8_t  bus,
+  uint8_t  device,
+  uint8_t  function,
+  uint32_t reg,
+  uint32_t value
+)
+{
+  uint32_t address = get_pci_device_address(bus, device, function, reg);
+  klog("%x\n", reg);
+  klog("%x\n", address);
+  outl(CONFIG_ADDRESS, address);
+  outl(CONFIG_DATA, value);
   outl(CONFIG_ADDRESS, address);
   return inl(CONFIG_DATA);
 }
@@ -343,10 +373,36 @@ bool pci_compare_value(
   return value == actual_value;
 }
 
+int set_register_value(void* handle, int register_number, uint32_t value)
+{
+  if (!handle) return 0;
+  struct pci_device* device    = ((struct pci_device*)handle);
+  uint32_t           new_value = set_pci_device_register(
+    device->descriptor->bus,
+    device->descriptor->device,
+    device->descriptor->function,
+    register_number,
+    value
+  );
+  klog("%d: %x -> %x\n", register_number, value, new_value);
+  // assert(new_value == value);
+  return 1;
+}
+
 uint32_t get_register_value(void* handle, int register_number)
 {
   if (!handle) return 0;
-  return ((struct pci_device*)handle)->descriptor->registers[register_number].bits_32;
+  struct pci_device* device = ((struct pci_device*)handle);
+  if (register_number < 0x12)
+    {
+      return device->descriptor->registers[register_number].bits_32;
+    }
+  return get_pci_device_register(
+    device->descriptor->bus,
+    device->descriptor->device,
+    device->descriptor->function,
+    register_number
+  );
 }
 
 bool init_pci()

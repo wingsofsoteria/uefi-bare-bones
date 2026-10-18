@@ -25,6 +25,12 @@ static void idle()
   while (1) { asm volatile("hlt"); }
 }
 
+isr_stack_t* task_switch_isr(isr_stack_t* stack)
+{
+  switch_task(stack);
+  return stack;
+}
+
 int get_task_id() { return current->task_id; }
 
 // the kernel task is just meant to be a halt loop to prevent the task switching

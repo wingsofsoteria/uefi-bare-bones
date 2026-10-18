@@ -13,6 +13,20 @@
 #include <stdint.h>
 struct kernel_config kernel_config;
 
+extern volatile uint64_t ticks;
+
+isr_stack_t* apic_timer_isr(isr_stack_t* stack)
+{
+  ticks = 0;
+  return stack;
+}
+
+isr_stack_t* pic_timer_isr(isr_stack_t* stack)
+{
+  if (ticks > 0) { ticks--; }
+  return stack;
+}
+
 void init_config_cpuid()
 {
   kernel_config      = (struct kernel_config){ 0 };

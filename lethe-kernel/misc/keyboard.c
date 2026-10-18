@@ -1,6 +1,6 @@
 #include "keyboard.h"
 
-#include "cpu/isr.h"
+#include "cpu/idt.h"
 #include "cpu/sleep.h"
 #include "log.h"
 #include "shell.h"
@@ -74,7 +74,13 @@ char getch()
   return ch;
 }
 
-static void init_kb_status()
+isr_stack_t* keyboard_isr(isr_stack_t* stack)
+{
+  kb_handle_key();
+  return stack;
+}
+
+void init_kb_status()
 {
   klog("Initialized PS2 Keyboard");
   // memset(KB_STATUS, 0, 88 * sizeof(uint8_t));

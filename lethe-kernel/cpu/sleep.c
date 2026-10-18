@@ -2,11 +2,13 @@
 #include "cpu/sleep.h"
 
 #include "config.h"
-#include "cpu/idt.h"
 #include "cpu/tsc.h"
 #include "utils.h"
 
 #include <stdint.h>
+
+volatile uint64_t ticks;
+// volatile uint8_t  tsc_waiting;
 
 static uint64_t duration_to_ns(kernel_duration_t duration)
 {

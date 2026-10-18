@@ -37,8 +37,7 @@ extern void set_idt(idt_ptr_t*);
 
 extern void* isr_stub_table[IDT_ENTRY_COUNT];
 
-void                     load_idt();
-void                     disable_irq(int irq, int vector);
-void                     enable_irq(int irq, int vector, interrupt handler);
-extern volatile uint64_t ticks;
-extern volatile uint8_t  tsc_waiting;
+void load_idt();
+void disable_irq(int irq, int vector);
+void enable_irq(int irq, int vector, interrupt handler);
+

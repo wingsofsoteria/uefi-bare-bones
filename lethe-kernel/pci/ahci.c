@@ -1,9 +1,11 @@
+#include "cpu/idt.h"
 #include "log.h"
 #include "memory/paging.h"
 #include "pci/pci.h"
 #include "types.h"
 
 #include <stdint.h>
+#include <stdio.h>
 
 #define SATA_SIG_ATA   0x00000101 // SATA drive
 #define SATA_SIG_ATAPI 0xEB140101 // SATAPI drive
@@ -111,8 +113,11 @@ void debug_ahci(ahci_mem_t* abar)
   );
 }
 
-static void init_sata_drive(ahci_port_t* port)
+static void init_sata_drive(ahci_port_t* port) {}
+
+static void init_port(ahci_port_t* port)
 {
+  if ((port->ssts & 0b111) != 0x3) return;
   uint64_t clb = port->clb | (uint64_t)port->clbu << 32;
   uint64_t fb  = port->fb | (uint64_t)port->fbu << 32;
   if (!IS_PAGE_ALIGNED(clb)) { clb = PAGE_ALIGN(clb); }
@@ -128,11 +133,6 @@ static void init_sata_drive(ahci_port_t* port)
     fb,
     PAGE_PRESENT | PAGE_WRITABLE | PAGE_CACHE_DISABLE
   );
-}
-
-static void init_port(ahci_port_t* port)
-{
-  if ((port->ssts & 0b111) != 0x3) return;
   switch (port->sig)
     {
       case SATA_SIG_ATA:
@@ -162,33 +162,48 @@ static void enumerate_ahci_devices(ahci_mem_t* abar)
 
 static void enumerate_ahci_controllers(int max)
 {
-  for (int i = 0; i < max; i++)
-    {
-      void* controller_handle = locate_pci_device(0x1, 0x6, i);
-      if (!controller_handle) break;
-      if (!pci_compare_value(controller_handle, 3, 0, 0x007F0000))
-        {
-          klog(
-            "got header type: 0x%x instead of 0x0\n",
-            get_register_value(controller_handle, 3)
-          );
-          break;
-        }
-      uint32_t    phys_addr = get_register_value(controller_handle, 0x9);
-      ahci_mem_t* abar      = (void*)map_page_nearest(
-        phys_addr + hhdm_mapping,
-        phys_addr,
-        PAGE_PRESENT | PAGE_WRITABLE | PAGE_CACHE_DISABLE
-      );
-      klog("AHCI Base Address Register: %p\n", abar);
-      debug_ahci(abar);
-      enumerate_ahci_devices(abar);
-    }
+  for (int i = 0; i < max; i++) {}
+}
+
+extern int check_msi_capability(void*);
+
+extern int enable_msi(
+  void*     device_handle,
+  int       msi_cap_offset,
+  interrupt handler
+);
+
+isr_stack_t* ahci_irq(isr_stack_t* stack)
+{
+  printf("cries\n");
+  return stack;
 }
 
 void init_ahci()
 {
-  enumerate_ahci_controllers(1);
+  void* controller_handle = locate_pci_device(0x1, 0x6, 0);
+  if (!controller_handle) return;
+  if (!pci_compare_value(controller_handle, 3, 0, 0x007F0000))
+    {
+      klog(
+        "got header type: 0x%x instead of 0x0\n",
+        get_register_value(controller_handle, 3)
+      );
+      return;
+    }
+  int msi_cap = check_msi_capability(controller_handle);
+
+  if (msi_cap) { enable_msi(controller_handle, msi_cap, ahci_irq); }
+  uint32_t    phys_addr = get_register_value(controller_handle, 0x9);
+  ahci_mem_t* abar      = (void*)map_page_nearest(
+    phys_addr + hhdm_mapping,
+    phys_addr,
+    PAGE_PRESENT | PAGE_WRITABLE | PAGE_CACHE_DISABLE
+  );
+  klog("AHCI Base Address Register: %p\n", abar);
+  debug_ahci(abar);
+  enumerate_ahci_devices(abar);
+
   klog(
     "debug: %zx %zx %zx %zx\n",
     sizeof(ahci_ghc_t),

@@ -65,5 +65,6 @@ typedef struct
   uint32_t global_system_interrupt_base;
 } __attribute__((packed)) acpi_io_apic_structure_t;
 
-void apic_enable_timer();
-void apic_sleep(uint64_t duration);
+void     apic_enable_timer();
+uint64_t lapic_addr_phys();
+void     apic_sleep(uint64_t duration);

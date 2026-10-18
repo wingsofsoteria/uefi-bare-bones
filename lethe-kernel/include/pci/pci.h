@@ -19,3 +19,4 @@ bool pci_compare_value(
 );
 
 uint32_t get_register_value(void* handle, int register_number);
+int      set_register_value(void* handle, int register_number, uint32_t value);

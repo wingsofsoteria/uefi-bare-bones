@@ -1,10 +1,11 @@
 #include "cpu/pit.h"
 
-#include "cpu/idt.h"
 #include "utils.h"
 
 #include <config.h>
 #include <stdint.h>
+
+extern volatile uint64_t ticks;
 
 uint16_t pit_count()
 {

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
+#-enable-kvm \
+#-cpu host,+invtsc,+syscall \
+#-m 48G \
+
 qemu-system-x86_64 \
 -M q35 \
 -net none \
 -no-reboot \
 -no-shutdown \
--enable-kvm \
--cpu host,+invtsc,+syscall \
--m 48G \
 -device pci-testdev \
 -device pcie-root-port \
 -device pcie-pci-bridge \

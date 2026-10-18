@@ -72,7 +72,7 @@ int acpi_early_init(void* rsdp_pointer)
 
 int acpi_late_init()
 {
-  parse_table(scan_tables("DSDT", 0));
+  // parse_table(scan_tables("DSDT", 0));
   klog("ACPI initialization finished\n");
   return 0;
 }

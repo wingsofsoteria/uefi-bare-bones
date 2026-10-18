@@ -56,6 +56,7 @@ static void common_init_start()
 }
 
 extern void init_ahci();
+extern void init_kb_status();
 extern void bootloader_specific_init();
 // NOLINTNEXTLINE
 int kmain()
@@ -73,7 +74,7 @@ int kmain()
     &_kernel_end_addr - &_kernel_start_addr
   );
   klog("Kernel finished initialization\n");
-  enable_irq(1, 33, keyboard_isr);
+  init_kb_status();
   enable_tasking();
   enable_apic();
   enable_interrupts();

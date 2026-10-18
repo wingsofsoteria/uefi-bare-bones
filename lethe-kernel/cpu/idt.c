@@ -2,6 +2,7 @@
 #include "cpu/idt.h"
 
 #include "cpu/isr.h"
+#include "stddef.h"
 #include "trace.h"
 #include "utils.h"
 
@@ -11,8 +12,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-volatile uint64_t                           ticks;
-volatile uint8_t                            tsc_waiting;
 __attribute__((aligned(4096))) static idt_t idt;
 
 static isr_stack_t* blank_handler(isr_stack_t* stack) { return stack; }
@@ -133,6 +132,7 @@ void load_idt()
   for (int i = 0; i < IDT_ENTRY_COUNT; i++)
     {
       set_idt_entry_simple(i, isr_stub_table[i]);
+      isr_handler_table[i] = NULL;
     }
   idt_ptr_t ptr;
   ptr.size   = (sizeof(idt_t)) - 1;

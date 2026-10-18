@@ -1,6 +1,7 @@
 // TODO properly configure LAPIC
 
 #include "acpi.h"
+#include "types.h"
 #include "utils.h"
 
 #include <stdint.h>
@@ -13,6 +14,8 @@ uint32_t lapic_read(uint16_t offset)
 { return *(volatile uint32_t*)(lapic_addr + offset); }
 
 void lapic_init() { lapic_addr = madt_get_lapic_addr(); }
+
+uint64_t lapic_addr_phys() { return lapic_addr - hhdm_mapping; }
 
 void lapic_enable()
 {

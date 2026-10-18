@@ -3,9 +3,6 @@ qemu-system-x86_64 \
 -M q35 \
 -net none \
 -no-reboot \
--cpu host,+invtsc \
--enable-kvm \
--m 48G \
 -d int \
 -device pci-testdev \
 -device pcie-root-port \
