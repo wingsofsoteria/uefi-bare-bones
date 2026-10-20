@@ -16,6 +16,7 @@ lethe-misc/fat.img
 lethe-misc/test.vdi
 lethe-misc/fs.dmp
 lethe-kernel/font.psf
+documents
 *.o
 *.a
 lethe-aml/aml/unused.c

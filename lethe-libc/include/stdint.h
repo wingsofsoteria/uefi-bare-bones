@@ -15,3 +15,4 @@ typedef signed long        ptrdiff_t;
 typedef __INTMAX_TYPE__    intmax_t;
 typedef __UINTMAX_TYPE__   uintmax_t;
 #define UINT64_MAX 0xFFFFFFFFFFFFFFFFULL
+#define UINT32_MAX 0xFFFFFFFFUL
