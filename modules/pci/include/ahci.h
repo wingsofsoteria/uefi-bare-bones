@@ -1,0 +1,264 @@
+#pragma once
+
+#include "stdbool.h"
+
+#include <stdint.h>
+#define SATA_SIG_ATA   0x00000101 // SATA drive
+#define SATA_SIG_ATAPI 0xEB140101 // SATAPI drive
+#define SATA_SIG_SEMB  0xC33C0101 // Enclosure management bridge
+#define SATA_SIG_PM    0x96690101 // Port multiplier
+
+#define FIS_TYPE_REG_H2D   0x27
+#define FIS_TYPE_REG_D2H   0x34
+#define FIS_TYPE_DMA_ACT   0x39
+#define FIS_TYPE_DMA_SETUP 0x41
+#define FIS_TYPE_DATA      0x46
+#define FIS_TYPE_BIST      0x58
+#define FIS_TYPE_PIO_SETUP 0x5F
+#define FIS_TYPE_DEV_BITS  0xA1
+
+#define GHC_AHCI_ENABLE      (1 << 31)
+#define GHC_INTERRUPT_ENABLE (1 << 1)
+
+typedef volatile struct ahci_host_capabilities_layout
+{
+  uint8_t np : 5;   // number of ports
+  uint8_t sxs : 1;  // supports external SATA
+  uint8_t ems : 1;  // supports enclosure management
+  uint8_t cccs : 1; // supports command completion coalescing
+  uint8_t ncs : 4;  // number of command slots
+  uint8_t psc : 1;  // supports transitions to the partial state
+  uint8_t ssc : 1;  // supports transitions to the slumber state
+  uint8_t pmd : 1;  // supports multiple DRQ block transfer through PIO
+  uint8_t fbss : 1; // supports FIS switching
+  uint8_t spm : 1;  // supports port multiplier
+  uint8_t sam : 1;  // supports AHCI mode only
+  uint8_t reserved : 1;
+  uint8_t iss : 4;   // max interface speed
+  uint8_t sclo : 1;  // supports command list override
+  uint8_t sal : 1;   // supports LED activity
+  uint8_t salp : 1;  // supports aggressive link power management
+  uint8_t sss : 1;   // supports staggered spin-up
+  uint8_t smps : 1;  // supports mechanical presence switch
+  uint8_t ssntf : 1; // supports SNotification register (HBA_PORT.SNTF)
+  uint8_t sncq : 1;  // supports native command queuing
+  uint8_t s64a : 1;  // supports 64-bit addressing
+} ahci_cap_t;
+
+typedef volatile struct ahci_generic_host_control_layout
+{
+  ahci_cap_t cap;       // host capabilities
+  uint32_t   ghc;       // global host control
+  uint32_t   is;        // interrupt status
+  uint32_t   pi;        // ports implemented
+  uint32_t   vs;        // version
+  uint32_t   ccc_ctl;   // command completion coalescing control
+  uint32_t   ccc_ports; // command completion coalescing ports
+  uint32_t   em_loc;    // enclosure management location
+  uint32_t   em_ctl;    // enclosure management control
+  uint32_t   cap2;      // extended host capabilities
+  uint32_t   bohc;      // bios/os handoff control and status
+} ahci_ghc_t;
+
+typedef volatile struct ahci_port_register_layout
+{
+  uint32_t clb;  // command list base address
+  uint32_t clbu; // command list base address upper
+  uint32_t fb;   // FIS base address
+  uint32_t fbu;  // FIS base address upper
+  uint32_t is;   // interrupt status
+  uint32_t ie;   // interrupt enable
+  uint32_t cmd;  // command and status
+  uint32_t reserved;
+  uint32_t tfd;    // task file data
+  uint32_t sig;    // signature
+  uint32_t ssts;   // serial ATA status
+  uint32_t sctl;   // serial ATA control
+  uint32_t serr;   // serial ATA error
+  uint32_t sact;   // serial ATA active
+  uint32_t ci;     // command issue
+  uint32_t sntf;   // serial ATA notification
+  uint32_t fbs;    // FIS based switching control
+  uint32_t devslp; // device sleep
+  uint8_t  reserved_2[0x28];
+  uint8_t  vs[0xF]; // vendor specific
+} ahci_port_t;
+
+typedef volatile struct ahci_memory_register_layout
+{
+  ahci_ghc_t  ghc;
+  uint8_t     reserved[0xA0 - 0x2C];
+  uint8_t     vendor_specific[0x100 - 0xA0];
+  ahci_port_t ports[1];
+} ahci_mem_t;
+
+typedef struct ahci_fis_register_host_to_device
+{
+  uint8_t  fis_type;
+  uint8_t  pmport : 4;
+  uint8_t  rsv0 : 3;
+  uint8_t  c : 1;
+  uint8_t  cmd;
+  uint8_t  featurel;
+  uint8_t  lba0;
+  uint8_t  lba1;
+  uint8_t  lba2;
+  uint8_t  dev;
+  uint8_t  lba3;
+  uint8_t  lba4;
+  uint8_t  lba5;
+  uint8_t  featureh;
+  uint8_t  countl;
+  uint8_t  counth;
+  uint8_t  icc;
+  uint8_t  ctl;
+  uint32_t rsv1;
+} ahci_fis_h2d_t;
+
+typedef struct ahci_fis_register_device_to_host
+{
+  uint8_t  fis_type;
+  uint8_t  pmport : 4;
+  uint8_t  rsv0 : 2;
+  uint8_t  i : 1;
+  uint8_t  rsv1 : 1;
+  uint8_t  sts;
+  uint8_t  err;
+  uint8_t  lba0;
+  uint8_t  lba1;
+  uint8_t  lba2;
+  uint8_t  dev;
+  uint8_t  lba3;
+  uint8_t  lba4;
+  uint8_t  lba5;
+  uint8_t  rsv2;
+  uint8_t  countl;
+  uint8_t  counth;
+  uint16_t rsv3;
+  uint32_t rsv4;
+} ahci_fis_d2h_t;
+
+typedef struct ahci_fis_data_bi
+{
+  uint8_t  fis_type;
+  uint8_t  pmport : 4;
+  uint8_t  rsv0 : 4;
+  uint16_t rsv1;
+  uint32_t data[1]; // variable size
+} ahci_fis_data_t;
+
+typedef struct ahci_fis_pio_setup_d2h
+{
+  uint8_t  fis_type;
+  uint8_t  pmport : 4;
+  uint8_t  rsv0 : 1;
+  uint8_t  d : 1;
+  uint8_t  i : 1;
+  uint8_t  rsv1 : 1;
+  uint8_t  sts;
+  uint8_t  err;
+  uint8_t  lba0;
+  uint8_t  lba1;
+  uint8_t  lba2;
+  uint8_t  dev;
+  uint8_t  lba3;
+  uint8_t  lba4;
+  uint8_t  lba5;
+  uint8_t  rsv2;
+  uint8_t  countl;
+  uint8_t  counth;
+  uint8_t  rsv3;
+  uint8_t  e_status;
+  uint16_t tc;
+  uint16_t rsv4;
+} ahci_fis_pio_d2h_t;
+
+typedef struct ahci_fis_dma_setup_d2h
+{
+  uint8_t  fis_type;
+  uint8_t  pmport : 4;
+  uint8_t  rsv0 : 1;
+  uint8_t  d : 1;
+  uint8_t  i : 1;
+  uint8_t  a : 1;
+  uint8_t  rsv1[2];
+  uint64_t dma_buf_id;
+  uint32_t rsv2;
+  uint32_t dma_buf_offset;
+  uint32_t tc;
+  uint32_t rsv3;
+} __attribute__((packed)) ahci_fis_dma_d2h_t;
+
+typedef struct ahci_frame_information_structure
+{
+  ahci_fis_dma_d2h_t dsfis;
+  uint32_t           pad0;
+  ahci_fis_pio_d2h_t psfis;
+  uint8_t            pad1[12];
+  ahci_fis_d2h_t     rfis;
+  uint32_t           pad2;
+  uint64_t           sdbfis;
+  uint8_t            ufis[64];
+  uint8_t            rsv[0x100 - 0xA0];
+} ahci_fis_t;
+
+typedef struct ahci_command_header
+{
+  uint8_t           cfl : 5;
+  uint8_t           a : 1;
+  uint8_t           w : 1;
+  uint8_t           p : 1;
+  uint8_t           r : 1;
+  uint8_t           b : 1;
+  uint8_t           c : 1;
+  uint8_t           rsv0 : 1;
+  uint8_t           pmp : 4;
+  uint16_t          prdtl;
+  volatile uint32_t prdbc;
+  uint32_t          ctba;
+  uint32_t          ctbau;
+  uint32_t          rsv1[4];
+} ahci_cmd_hdr_t;
+
+typedef struct ahci_prdt_entry
+{
+  uint32_t dba;
+  uint32_t dbau;
+  uint32_t rsv0;
+  uint32_t dbc : 22;
+  uint32_t rsv1 : 9;
+  uint32_t i : 1;
+} ahci_prdt_t;
+
+typedef struct ahci_command_table
+{
+  uint8_t     cfis[64];
+  uint8_t     acmd[16];
+  uint8_t     rsv[48];
+  ahci_prdt_t prdt_entry[1];
+} ahci_cmd_tbl_t;
+
+// WIP struct
+typedef struct ahci_device
+{
+  uint32_t             type;
+  uint8_t              port_number;
+  ahci_port_t*         port;
+  ahci_cmd_hdr_t*      command_header;
+  void*                fis_base;
+  struct ahci_device*  next;
+  struct ahci_command* command_list;
+} ahci_dev_t;
+
+typedef struct ahci_command
+{
+  uint8_t              port;
+  uint8_t              slot;
+  void*                data;     // ptr to data
+  size_t               d_len;    // data length
+  volatile bool        complete; // flag set by the ahci_irq
+  struct ahci_command* next;
+  struct ahci_command* prev;
+} ahci_cmd_t;
+
+void init_ahci();
