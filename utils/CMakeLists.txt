@@ -1,3 +1,8 @@
 ADD_LIBRARY(lethe-utils STATIC)
+IF (DEFINED FEATURE_USE_STB)
+	ADD_COMPILE_DEFINITIONS(UTILS_STB)
+	TARGET_SOURCES(lethe-utils PRIVATE linked_list.c queue.c stb_ds.c)
+ELSE ()
 TARGET_SOURCES(lethe-utils PRIVATE hash_32a.c hash_64a.c hashmap.c linked_list.c queue.c)
+ENDIF ()
 INCLUDE_DIRECTORIES(include)
