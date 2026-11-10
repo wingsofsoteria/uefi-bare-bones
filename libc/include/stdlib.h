@@ -2,9 +2,14 @@
 #ifndef _STDLIB_H
 #define _STDLIB_H
 
-#include <stddef.h>
 #include <sys/cdefs.h>
-#if defined(__is_libk)
+
+__attribute__((__noreturn__)) static inline void halt()
+{
+  asm("cli");
+  for (;;) { asm volatile("hlt"); }
+  __builtin_unreachable();
+}
+
 __attribute__((__noreturn__)) void abort(void);
-#endif
 #endif

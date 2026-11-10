@@ -1,3 +1,5 @@
+#include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 void* memcpy(void* restrict dest, const void* restrict src, size_t size)
@@ -74,6 +76,17 @@ void* memset(void* mem, int val, size_t size)
   unsigned char* buf = (unsigned char*)mem;
   for (size_t i = 0; i < size; i++) { buf[i] = val; }
   return mem;
+}
+
+// temporary
+extern void* malloc(size_t);
+
+char* strdup(char* str)
+{
+  size_t len     = strlen(str);
+  char*  new_str = malloc(len * sizeof(char));
+  if (!new_str) return NULL;
+  return memcpy(new_str, str, len);
 }
 
 /*// assume str is at least char[size + 1]

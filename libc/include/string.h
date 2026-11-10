@@ -12,5 +12,6 @@ size_t strlen(const char*);
 size_t strnlen(const char*, size_t);
 int    strcmp(const char* s1, const char* s2);
 int    strncmp(const char* s1, const char* s2, size_t n);
+char*  strdup(char*);
 // char* itoa(unsigned long long int number, char* str, int base, int size);
 // int numlen(unsigned long long int value, int base);
