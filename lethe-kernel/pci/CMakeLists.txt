@@ -1,2 +1,0 @@
-ADD_LIBRARY(pci STATIC)
-TARGET_SOURCES(pci PRIVATE pci.c ahci.c msi.c)
