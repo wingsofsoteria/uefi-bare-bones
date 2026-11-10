@@ -4,7 +4,7 @@ PROJECT(lethe VERSION 0.1 DESCRIPTION "Operating system targeting x86_64 platfor
 SET(CMAKE_INSTALL_PREFIX "")
 UNSET(CMAKE_INSTALL_PREFIX)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-EXECUTE_PROCESS(COMMAND ${PROJECT_SOURCE_DIR}/lethe-utils/lethe-configurator ${PROJECT_SOURCE_DIR}/Config ${PROJECT_BINARY_DIR}/config.cmake WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+EXECUTE_PROCESS(COMMAND ${PROJECT_SOURCE_DIR}/misc/lethe-configurator ${PROJECT_SOURCE_DIR}/Config ${PROJECT_BINARY_DIR}/config.cmake WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 INCLUDE(${PROJECT_BINARY_DIR}/config.cmake)
 ADD_COMPILE_OPTIONS(-ffreestanding
         -nostdlib
@@ -26,20 +26,19 @@ ADD_LINK_OPTIONS(
         -Wl,-z,max-page-size=0x1000
         $<$<NOT:$<CONFIG:DEBUG>>:-O2>)
 ADD_COMPILE_DEFINITIONS(__is_libk)
-INCLUDE_DIRECTORIES(lethe-kernel/include)
-INCLUDE_DIRECTORIES(lethe-libc/include)
-ADD_SUBDIRECTORY(lethe-libc)
+INCLUDE_DIRECTORIES(kernel/include)
+INCLUDE_DIRECTORIES(libc/include)
+ADD_SUBDIRECTORY(libc)
 ADD_COMPILE_OPTIONS(-mcmodel=large)
 file(CREATE_LINK
   "${CMAKE_BINARY_DIR}/compile_commands.json"
   "${CMAKE_SOURCE_DIR}/compile_commands.json"
   SYMBOLIC
 )
-#ADD_SUBDIRECTORY(lethe-aml)
-ADD_SUBDIRECTORY(lethe-utils)
-INCLUDE_DIRECTORIES(lethe-utils/include)
-ADD_SUBDIRECTORY(lethe-aml/aml)
-INCLUDE_DIRECTORIES(lethe-aml/aml/include)
-ADD_SUBDIRECTORY(lethe-kernel)
-ADD_SUBDIRECTORY(lethe-bootloaders)
+#ADD_SUBDIRECTORY(modules/aml)
+ADD_SUBDIRECTORY(utils)
+INCLUDE_DIRECTORIES(utils/include)
+#INCLUDE_DIRECTORIES(lethe-aml/aml/include)
+ADD_SUBDIRECTORY(kernel)
+ADD_SUBDIRECTORY(bootloaders)
 ADD_SUBDIRECTORY(templates)
